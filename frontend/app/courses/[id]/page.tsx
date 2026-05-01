@@ -1,0 +1,179 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { BookOpen, Clock, Users, Play, Lock, ChevronDown, ChevronUp, Loader2, CheckCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+import api from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
+import { formatCurrency, levelColor, cn } from '@/lib/utils';
+
+interface Lesson {
+  id: string; title: string; type: string; duration_minutes: number; is_preview: boolean;
+}
+interface Section {
+  id: string; title: string; order_index: number; lessons: Lesson[];
+}
+interface Course {
+  id: string; title: string; description: string; type: string; level: string;
+  price: number; duration_hours: number; thumbnail_url: string;
+  instructor_name: string; enrollment_count: string;
+}
+
+export default function CourseDetailPage() {
+  const { id } = useParams();
+  const router = useRouter();
+  const { user } = useAuth();
+  const [course, setCourse] = useState<Course | null>(null);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [enrolled, setEnrolled] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get(`/courses/${id}`).then(({ data }) => {
+      setCourse(data.course);
+      setSections(data.sections || []);
+      if (data.sections?.length) setExpanded({ [data.sections[0].id]: true });
+    }).finally(() => setLoading(false));
+
+    if (user) {
+      api.get('/enrollments/my').then(({ data }) => {
+        setEnrolled(data.some((e: any) => e.course_id === id));
+      });
+    }
+  }, [id, user]);
+
+  const handleEnroll = async () => {
+    if (!user) { router.push('/login'); return; }
+    setEnrolling(true);
+    try {
+      await api.post('/enrollments', { course_id: id });
+      setEnrolled(true);
+      toast.success('Enrolled successfully! 🎉');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Enrollment failed');
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
+      </div>
+    );
+  }
+  if (!course) return <div className="min-h-screen bg-dark-900 flex items-center justify-center text-slate-400">Course not found.</div>;
+
+  const totalLessons = sections.reduce((acc, s) => acc + (s.lessons?.length || 0), 0);
+
+  return (
+    <div className="min-h-screen bg-dark-900">
+      {/* Nav */}
+      <div className="border-b border-dark-700 px-6 py-4 sticky top-0 bg-dark-900/80 backdrop-blur z-10">
+        <div className="max-w-6xl mx-auto flex items-center gap-3">
+          <Link href="/courses" className="text-slate-400 hover:text-white text-sm">← Courses</Link>
+          <span className="text-dark-600">/</span>
+          <span className="text-slate-300 text-sm truncate">{course.title}</span>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-10 grid lg:grid-cols-3 gap-8">
+        {/* Left: Course info */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center gap-2">
+            <span className={cn('badge', course.type === 'live' ? 'badge-purple' : 'badge-blue')}>{course.type}</span>
+            <span className={levelColor(course.level)}>{course.level}</span>
+          </div>
+          <h1 className="text-3xl font-bold text-white leading-snug">{course.title}</h1>
+          <p className="text-slate-400 leading-relaxed">{course.description}</p>
+          <div className="flex flex-wrap gap-6 text-sm text-slate-400">
+            <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-brand-400" />{course.duration_hours}h total</span>
+            <span className="flex items-center gap-1.5"><BookOpen className="w-4 h-4 text-brand-400" />{totalLessons} lessons</span>
+            <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-brand-400" />{course.enrollment_count} students</span>
+          </div>
+          <p className="text-slate-400 text-sm">Instructor: <span className="text-white font-medium">{course.instructor_name}</span></p>
+
+          {/* Curriculum */}
+          <div>
+            <h2 className="text-xl font-bold text-white mb-4">Course Content</h2>
+            <div className="space-y-2">
+              {sections.map((section) => (
+                <div key={section.id} className="border border-dark-700 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setExpanded((p) => ({ ...p, [section.id]: !p[section.id] }))}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-dark-800 hover:bg-dark-700 transition-colors text-left"
+                  >
+                    <span className="font-medium text-slate-200">{section.title}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-400 text-xs">{section.lessons?.length || 0} lessons</span>
+                      {expanded[section.id] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    </div>
+                  </button>
+                  {expanded[section.id] && (
+                    <div className="divide-y divide-dark-700">
+                      {section.lessons?.map((lesson) => (
+                        <div key={lesson.id} className="flex items-center gap-3 px-4 py-2.5 bg-dark-900/50">
+                          {lesson.is_preview || enrolled
+                            ? <Play className="w-4 h-4 text-brand-400 flex-shrink-0" />
+                            : <Lock className="w-4 h-4 text-slate-500 flex-shrink-0" />}
+                          <span className={cn('text-sm flex-1', lesson.is_preview || enrolled ? 'text-slate-300' : 'text-slate-500')}>
+                            {lesson.title}
+                          </span>
+                          {lesson.is_preview && !enrolled && (
+                            <span className="text-xs text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-full">Preview</span>
+                          )}
+                          <span className="text-xs text-slate-500">{lesson.duration_minutes}m</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Enrollment card */}
+        <div>
+          <div className="card sticky top-24">
+            <div className="w-full h-44 bg-gradient-to-br from-brand-500/30 to-purple-500/30 rounded-lg flex items-center justify-center mb-5">
+              <BookOpen className="w-14 h-14 text-brand-400" />
+            </div>
+            <p className="text-3xl font-bold text-white mb-1">
+              {course.price === 0 ? 'Free' : formatCurrency(course.price)}
+            </p>
+            <p className="text-slate-400 text-sm mb-5">Lifetime access · All devices</p>
+
+            {enrolled ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-green-400 font-medium text-sm mb-2">
+                  <CheckCircle className="w-4 h-4" /> You are enrolled
+                </div>
+                {sections[0]?.lessons?.[0] && (
+                  <Link href={`/courses/${id}/lessons/${sections[0].lessons[0].id}`} className="btn-primary w-full flex items-center justify-center gap-2">
+                    <Play className="w-4 h-4" /> Start Learning
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <button onClick={handleEnroll} disabled={enrolling} className="btn-primary w-full flex items-center justify-center gap-2">
+                {enrolling ? <><Loader2 className="w-4 h-4 animate-spin" /> Enrolling...</> : 'Enroll Now'}
+              </button>
+            )}
+
+            <div className="mt-5 space-y-2 text-sm text-slate-400">
+              <div className="flex justify-between"><span>Lessons</span><span className="text-white">{totalLessons}</span></div>
+              <div className="flex justify-between"><span>Duration</span><span className="text-white">{course.duration_hours}h</span></div>
+              <div className="flex justify-between"><span>Level</span><span className="text-white">{course.level}</span></div>
+              <div className="flex justify-between"><span>Type</span><span className="text-white capitalize">{course.type}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
