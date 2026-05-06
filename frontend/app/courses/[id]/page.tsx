@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { BookOpen, Clock, Users, Play, Lock, ChevronDown, ChevronUp, Loader2, CheckCircle } from 'lucide-react';
+import { BookOpen, Clock, Users, Play, Lock, ChevronDown, ChevronUp, Loader2, CheckCircle, ShoppingCart, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,7 +27,6 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [enrolled, setEnrolled] = useState(false);
-  const [enrolling, setEnrolling] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
@@ -45,18 +44,9 @@ export default function CourseDetailPage() {
     }
   }, [id, user]);
 
-  const handleEnroll = async () => {
-    if (!user) { router.push('/login'); return; }
-    setEnrolling(true);
-    try {
-      await api.post('/enrollments', { course_id: id });
-      setEnrolled(true);
-      toast.success('Enrolled successfully! 🎉');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error || 'Enrollment failed');
-    } finally {
-      setEnrolling(false);
-    }
+  const handleBuy = () => {
+    if (!user) { router.push(`/login?redirect=/courses/${id}/buy`); return; }
+    router.push(`/courses/${id}/buy`);
   };
 
   if (loading) {
@@ -151,18 +141,35 @@ export default function CourseDetailPage() {
             {enrolled ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-green-400 font-medium text-sm mb-2">
-                  <CheckCircle className="w-4 h-4" /> You are enrolled
+                  <CheckCircle className="w-4 h-4" /> أنت مسجل بالفعل
                 </div>
                 {sections[0]?.lessons?.[0] && (
                   <Link href={`/courses/${id}/lessons/${sections[0].lessons[0].id}`} className="btn-primary w-full flex items-center justify-center gap-2">
-                    <Play className="w-4 h-4" /> Start Learning
+                    <Play className="w-4 h-4" /> ابدأ التعلم
                   </Link>
                 )}
               </div>
-            ) : (
-              <button onClick={handleEnroll} disabled={enrolling} className="btn-primary w-full flex items-center justify-center gap-2">
-                {enrolling ? <><Loader2 className="w-4 h-4 animate-spin" /> Enrolling...</> : 'Enroll Now'}
+            ) : course.type === 'live' ? (
+              <div className="space-y-3">
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 text-sm text-purple-300 flex items-start gap-2">
+                  <Phone className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium mb-1">كورس مباشر</p>
+                    <p className="text-xs text-purple-300/80">للتسجيل في الكورس تواصل مع الإدارة لإنشاء حسابك</p>
+                  </div>
+                </div>
+                <a href="https://wa.me/201000000000" target="_blank" rel="noreferrer" className="btn-secondary w-full flex items-center justify-center gap-2">
+                  <Phone className="w-4 h-4" /> تواصل مع الإدارة
+                </a>
+              </div>
+            ) : parseFloat(String(course.price)) > 0 ? (
+              <button onClick={handleBuy} className="btn-primary w-full flex items-center justify-center gap-2">
+                <ShoppingCart className="w-4 h-4" /> اشترِ الكورس الآن
               </button>
+            ) : (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-sm text-blue-300 text-center">
+                للوصول لهذا الكورس تواصل مع الإدارة
+              </div>
             )}
 
             <div className="mt-5 space-y-2 text-sm text-slate-400">

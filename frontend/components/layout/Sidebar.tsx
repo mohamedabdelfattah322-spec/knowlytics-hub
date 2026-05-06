@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import {
   LayoutDashboard, BookOpen, Users, BarChart2, Video,
-  Settings, LogOut, Bell, FolderOpen, GraduationCap,
+  Settings, LogOut, Bell, FolderOpen, GraduationCap, CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,6 +13,7 @@ const adminNav = [
   { href: '/dashboard/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/admin/courses', icon: BookOpen, label: 'Courses' },
   { href: '/dashboard/admin/users', icon: Users, label: 'Users' },
+  { href: '/dashboard/admin/payments', icon: CreditCard, label: 'Payments' },
   { href: '/dashboard/admin/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/dashboard/admin/sessions', icon: Settings, label: 'Sessions' },
 ];

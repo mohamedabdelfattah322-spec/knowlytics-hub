@@ -20,6 +20,7 @@ const fileRoutes = require('./routes/files');
 const notificationRoutes = require('./routes/notifications');
 const zoomRoutes = require('./routes/zoom');
 const assignmentRoutes = require('./routes/assignments');
+const paymentRoutes = require('./routes/payments');
 
 const app = express();
 
@@ -87,6 +88,7 @@ app.use('/api/files', fileRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/zoom', zoomRoutes);
 app.use('/api/assignments', assignmentRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
