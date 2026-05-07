@@ -1,6 +1,9 @@
 'use client';
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { BookOpen, Users, Video, Award, ChevronRight, Star, Zap, Shield } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const features = [
   { icon: Video, title: 'Live & Recorded Courses', desc: 'Attend live Zoom sessions or watch recordings at your own pace.' },
@@ -17,6 +20,16 @@ const stats = [
 ];
 
 export default function LandingPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  // Auto-redirect logged-in users to their dashboard
+  useEffect(() => {
+    if (user) {
+      router.replace(user.role === 'admin' ? '/dashboard/admin' : '/dashboard/student');
+    }
+  }, [user, router]);
+
   return (
     <div className="min-h-screen bg-dark-900">
       {/* Nav */}

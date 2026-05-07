@@ -26,14 +26,16 @@ const getLesson = async (req, res, next) => {
       }
     }
 
-    // Build video URL — S3 signed URL or local stream endpoint
+    // Build video URL — external link, S3 signed URL, or local stream endpoint
     let videoUrl = null;
-    if (lesson.video_key) {
+    if (lesson.video_url) {
+      // External URL (Google Drive, YouTube, Vimeo, etc.) — use as-is
+      videoUrl = lesson.video_url;
+    } else if (lesson.video_key) {
       if (USE_S3) {
         const { getSignedVideoUrl } = require('../config/aws');
         videoUrl = await getSignedVideoUrl(lesson.video_key, 3600);
       } else {
-        // Local streaming via authenticated endpoint
         videoUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/files/stream/${lesson.video_key}`;
       }
     }
@@ -76,7 +78,7 @@ const createLesson = async (req, res, next) => {
 const updateLesson = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const allowed = ['title', 'type', 'video_key', 'duration_minutes', 'order_index', 'is_preview', 'content'];
+    const allowed = ['title', 'type', 'video_key', 'video_url', 'duration_minutes', 'order_index', 'is_preview', 'content'];
     const updates = [];
     const values = [];
     Object.entries(req.body).forEach(([k, v]) => {

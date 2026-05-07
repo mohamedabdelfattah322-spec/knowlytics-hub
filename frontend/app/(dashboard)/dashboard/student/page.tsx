@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, TrendingUp, Award, Play, ChevronRight, Sparkles } from 'lucide-react';
+import { BookOpen, TrendingUp, Award, Play, ChevronRight, Sparkles, Users, MessageSquare, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -16,19 +17,30 @@ interface Recommendation {
   level: string; duration_hours: number;
 }
 
+interface Batch {
+  id: string; name: string; description: string;
+  start_date: string | null; end_date: string | null;
+  course_title: string; course_type: string;
+  total_sessions: number;
+  recordings_count?: number;
+}
+
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       api.get('/enrollments/my'),
       api.get('/users/recommendations'),
-    ]).then(([e, r]) => {
+      api.get('/batches/my'),
+    ]).then(([e, r, b]) => {
       setEnrollments(e.data);
       setRecommendations(r.data);
+      setBatches(b.data);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -36,18 +48,28 @@ export default function StudentDashboard() {
   const notStarted = enrollments.filter((e) => e.progress_pct === 0);
   const completed = enrollments.filter((e) => e.progress_pct === 100);
 
+  const isLive = user?.student_type === 'live';
+
   return (
     <div className="space-y-8 animate-slide-up">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">
-          Welcome back, <span className="text-brand-400">{user?.name?.split(' ')[0]}</span> 👋
-        </h1>
-        <p className="text-slate-400 text-sm mt-1">
-          {inProgress.length > 0
-            ? `You have ${inProgress.length} course${inProgress.length > 1 ? 's' : ''} in progress.`
-            : 'Ready to start learning?'}
-        </p>
+      {/* Header with student type badge */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-white">
+            مرحباً، <span className="text-brand-400">{user?.name?.split(' ')[0]}</span> 👋
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            {isLive
+              ? (batches.length > 0 ? `عندك ${batches.length} دفعة Live شغالة` : 'استنى الأدمن يضيفك لدفعة')
+              : (inProgress.length > 0 ? `عندك ${inProgress.length} كورس قيد الدراسة` : 'استكشف الكورسات وابدأ التعلم')
+            }
+          </p>
+        </div>
+        <span className={cn('badge text-xs',
+          isLive ? 'badge-purple' : 'badge-blue'
+        )}>
+          {isLive ? '🔴 Live Student' : '💻 Online Student'}
+        </span>
       </div>
 
       {/* Stats row */}
@@ -64,6 +86,56 @@ export default function StudentDashboard() {
           </div>
         ))}
       </div>
+
+      {/* My Batches (Live groups) */}
+      {batches.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-purple-400" /> دفعاتي (Live Groups)
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {batches.map((b) => {
+              const total = b.total_sessions || 0;
+              const done = b.recordings_count || 0;
+              const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+              return (
+                <Link key={b.id} href={`/dashboard/student/batches/${b.id}`}
+                  className="card hover:border-purple-500/40 transition-all duration-200 group">
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-slate-400">{b.course_title}</p>
+                      <p className="font-semibold text-white truncate">{b.name}</p>
+                      {b.start_date && (
+                        <div className="flex items-center gap-1 text-xs text-slate-400 mt-1">
+                          <Calendar className="w-3 h-3" />
+                          {format(new Date(b.start_date), 'MMM d, yyyy')}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-purple-400 text-xs">
+                      <MessageSquare className="w-3.5 h-3.5" /> شات
+                    </div>
+                  </div>
+                  {total > 0 && (
+                    <div className="mt-3 pt-3 border-t border-dark-700">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="text-slate-400">المحاضرات</span>
+                        <span className="text-white font-medium">{done} / {total}</span>
+                      </div>
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Continue learning */}
       {inProgress.length > 0 && (
@@ -119,8 +191,8 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {/* Recommendations */}
-      {recommendations.length > 0 && (
+      {/* Recommendations — only for online students */}
+      {!isLive && recommendations.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-yellow-400" /> Recommended for You

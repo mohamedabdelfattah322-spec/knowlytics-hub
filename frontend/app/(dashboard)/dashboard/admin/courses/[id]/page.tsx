@@ -12,12 +12,13 @@ import {
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { cn, formatCurrency } from '@/lib/utils';
+import BatchesManager from '@/components/admin/BatchesManager';
 
 /* ─── Types ────────────────────────────────────────────── */
 interface Lesson {
   id: string; title: string; type: string;
   duration_minutes: number; order_index: number;
-  is_preview: boolean; video_key: string | null;
+  is_preview: boolean; video_key: string | null; video_url: string | null;
 }
 interface Section { id: string; title: string; order_index: number; lessons: Lesson[]; }
 interface Course {
@@ -73,7 +74,7 @@ export default function AdminCourseEditorPage() {
   const [enrolling, setEnrolling]       = useState(false);
 
   // Active tab
-  const [tab, setTab] = useState<'curriculum' | 'files' | 'students' | 'settings'>('curriculum');
+  const [tab, setTab] = useState<'curriculum' | 'files' | 'students' | 'batches' | 'settings'>('curriculum');
 
   /* ── Load data ── */
   useEffect(() => {
@@ -113,7 +114,7 @@ export default function AdminCourseEditorPage() {
 
   // Load assignments whenever sections change
   useEffect(() => {
-    const lessonIds = sections.flatMap((s) => s.lessons.map((l) => l.id));
+    const lessonIds = sections.flatMap((s) => (s.lessons ?? []).map((l) => l.id));
     if (!lessonIds.length) return;
     Promise.all(lessonIds.map((lid) => api.get(`/assignments/lesson/${lid}`)))
       .then((results) => {
@@ -171,7 +172,7 @@ export default function AdminCourseEditorPage() {
         section_id: sectionId, title: form.title,
         type: form.type || 'video',
         duration_minutes: parseInt(form.duration) || 0,
-        order_index: section.lessons.length,
+        order_index: (section.lessons?.length ?? 0),
         is_preview: false,
       });
       setSections((p) => p.map((s) => s.id === sectionId ? { ...s, lessons: [...s.lessons, data] } : s));
@@ -226,22 +227,43 @@ export default function AdminCourseEditorPage() {
     }
   };
 
-  /* ── Upload file (PDF/Excel/etc.) to course ── */
+  /* ── Upload file(s) (PDF/Excel/etc.) — supports multiple ── */
   const uploadCourseFile = async (e: React.ChangeEvent<HTMLInputElement>, lessonId?: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     setUploadingFile(true);
+    let success = 0;
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('course_id', id as string);
+        if (lessonId) formData.append('lesson_id', lessonId);
+        formData.append('title', file.name);
+        const { data } = await api.post('/files/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        setFiles((p) => [data.file, ...p]);
+        success++;
+      } catch (err: any) {
+        toast.error(`فشل رفع ${file.name}`);
+      }
+    }
+    if (success > 0) toast.success(`✅ تم رفع ${success} ملف`);
+    setUploadingFile(false);
+    e.target.value = '';
+  };
+
+  /* ── Set Drive/YouTube URL for a lesson ── */
+  const setLessonVideoUrl = async (lessonId: string, url: string) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('course_id', id as string);
-      if (lessonId) formData.append('lesson_id', lessonId);
-      formData.append('title', file.name);
-      const { data } = await api.post('/files/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setFiles((p) => [data.file, ...p]);
-      toast.success('✅ تم رفع الملف');
-    } catch { toast.error('فشل رفع الملف'); }
-    finally { setUploadingFile(false); e.target.value = ''; }
+      await api.put(`/lessons/${lessonId}`, { video_url: url || null });
+      setSections((p) =>
+        p.map((s) => ({
+          ...s,
+          lessons: s.lessons.map((l) => l.id === lessonId ? { ...l, video_url: url || null } : l),
+        }))
+      );
+      toast.success(url ? '✅ تم حفظ رابط الفيديو' : 'تم حذف الرابط');
+    } catch { toast.error('فشل الحفظ'); }
   };
 
   /* ── Delete file ── */
@@ -367,7 +389,8 @@ export default function AdminCourseEditorPage() {
       <div className="flex gap-1 bg-dark-800 border border-dark-700 rounded-xl p-1 w-fit flex-wrap">
         {([
           { key: 'curriculum', label: '📚 المحتوى' },
-          { key: 'students',   label: '👥 الطلاب' },
+          { key: 'batches',    label: '👥 الدفعات (Groups)' },
+          { key: 'students',   label: '🎓 جميع الطلاب' },
           { key: 'files',      label: '📎 الملفات' },
           { key: 'settings',   label: '⚙️ الإعدادات' },
         ] as const).map(({ key, label }) => (
@@ -416,7 +439,7 @@ export default function AdminCourseEditorPage() {
                     className="flex-1 flex items-center gap-2 text-left">
                     {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                     <span className="font-semibold text-white text-sm">{section.title}</span>
-                    <span className="text-slate-500 text-xs ml-auto">{section.lessons.length} درس</span>
+                    <span className="text-slate-500 text-xs ml-auto">{(section.lessons?.length ?? 0)} درس</span>
                   </button>
                   <button onClick={() => deleteSection(section.id)} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -425,7 +448,7 @@ export default function AdminCourseEditorPage() {
 
                 {isOpen && (
                   <div className="divide-y divide-dark-700/50 bg-dark-900/30">
-                    {section.lessons.map((lesson) => {
+                    {(section.lessons ?? []).map((lesson) => {
                       const Icon = lessonTypeIcon[lesson.type] || Video;
                       const lessonAssignments = assignments.filter((a) => a.lesson_id === lesson.id);
                       const na = newAssignment[lesson.id] || { title: '', description: '', due_days: '7' };
@@ -467,11 +490,60 @@ export default function AdminCourseEditorPage() {
                               </label>
                             )}
 
+                            {/* Multi-file upload */}
+                            <label title="رفع ملفات للدرس (PDF/Excel/Word) — يمكن اختيار عدة ملفات"
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-slate-600 bg-dark-700 text-slate-400 hover:border-purple-500/50 hover:text-purple-400 transition-all cursor-pointer">
+                              <Paperclip className="w-3 h-3" /> 📎 ملفات
+                              <input type="file" multiple className="sr-only"
+                                accept=".pdf,.xlsx,.xls,.docx,.doc,.zip,.rar,image/*"
+                                onChange={(e) => uploadCourseFile(e, lesson.id)} />
+                            </label>
+
                             <button onClick={() => deleteLesson(section.id, lesson.id)}
                               className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
+
+                          {/* Video URL row (Drive / YouTube) */}
+                          {lesson.type === 'video' && (
+                            <div className="mt-2 ml-7 flex gap-2 items-center">
+                              <span className="text-xs text-slate-500 whitespace-nowrap">🔗 رابط Drive/YouTube:</span>
+                              <input
+                                type="url"
+                                defaultValue={lesson.video_url || ''}
+                                onBlur={(e) => {
+                                  const v = e.target.value.trim();
+                                  if (v !== (lesson.video_url || '')) setLessonVideoUrl(lesson.id, v);
+                                }}
+                                placeholder="https://drive.google.com/file/d/.../preview أو رابط يوتيوب…"
+                                className="input text-xs py-1 flex-1"
+                              />
+                              {lesson.video_url && (
+                                <a href={lesson.video_url} target="_blank" rel="noreferrer"
+                                   className="text-xs text-brand-400 hover:underline whitespace-nowrap">معاينة</a>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Lesson files inline */}
+                          {(() => {
+                            const lessonFiles = files.filter((f) => f.lesson_id === lesson.id);
+                            if (lessonFiles.length === 0) return null;
+                            return (
+                              <div className="mt-2 ml-7 flex flex-wrap gap-1.5">
+                                {lessonFiles.map((f) => (
+                                  <div key={f.id} className="flex items-center gap-1 bg-purple-500/10 border border-purple-500/30 text-purple-300 rounded-full px-2 py-0.5 text-xs">
+                                    <Paperclip className="w-3 h-3" />
+                                    <span className="max-w-32 truncate">{f.name}</span>
+                                    <button onClick={() => deleteFileItem(f.id)} className="text-slate-400 hover:text-red-400">
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
 
                           {/* Assignments for this lesson */}
                           {lessonAssignments.length > 0 && (
@@ -557,6 +629,13 @@ export default function AdminCourseEditorPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════
+          TAB: BATCHES (Groups)
+      ══════════════════════════════════════════════════ */}
+      {tab === 'batches' && id && (
+        <BatchesManager courseId={String(id)} />
       )}
 
       {/* ══════════════════════════════════════════════════
@@ -706,8 +785,8 @@ export default function AdminCourseEditorPage() {
                 ? <><Loader2 className="w-6 h-6 text-brand-400 animate-spin" /><span className="text-slate-300">جاري الرفع…</span></>
                 : <><Upload className="w-6 h-6 text-slate-400" /><div><p className="text-slate-300 font-medium">اختر ملفاً للرفع</p><p className="text-xs text-slate-500">PDF · Excel · Word · صور · حتى 2GB</p></div></>
               }
-              <input type="file" className="sr-only" onChange={(e) => uploadCourseFile(e)} disabled={uploadingFile}
-                accept=".pdf,.xlsx,.xls,.docx,.doc,image/*" />
+              <input type="file" multiple className="sr-only" onChange={(e) => uploadCourseFile(e)} disabled={uploadingFile}
+                accept=".pdf,.xlsx,.xls,.docx,.doc,.zip,.rar,image/*" />
             </label>
           </div>
 

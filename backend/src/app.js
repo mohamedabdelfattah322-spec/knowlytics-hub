@@ -21,6 +21,7 @@ const notificationRoutes = require('./routes/notifications');
 const zoomRoutes = require('./routes/zoom');
 const assignmentRoutes = require('./routes/assignments');
 const paymentRoutes = require('./routes/payments');
+const batchRoutes = require('./routes/batches');
 
 const app = express();
 
@@ -89,6 +90,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/zoom', zoomRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/batches', batchRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));

@@ -62,13 +62,18 @@ const getCourse = async (req, res, next) => {
 
     const sectionsResult = await query(
       `SELECT s.id, s.title, s.order_index,
-              json_agg(
-                json_build_object(
-                  'id', l.id, 'title', l.title, 'type', l.type,
-                  'duration_minutes', l.duration_minutes, 'order_index', l.order_index,
-                  'is_preview', l.is_preview
-                ) ORDER BY l.order_index
-              ) FILTER (WHERE l.id IS NOT NULL) AS lessons
+              COALESCE(
+                json_agg(
+                  json_build_object(
+                    'id', l.id, 'title', l.title, 'type', l.type,
+                    'video_key', l.video_key,
+                    'video_url', l.video_url,
+                    'duration_minutes', l.duration_minutes, 'order_index', l.order_index,
+                    'is_preview', l.is_preview
+                  ) ORDER BY l.order_index
+                ) FILTER (WHERE l.id IS NOT NULL),
+                '[]'::json
+              ) AS lessons
        FROM sections s
        LEFT JOIN lessons l ON l.section_id = s.id
        WHERE s.course_id = $1

@@ -32,13 +32,14 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 bg-dark-800 border-r border-dark-700 flex flex-col h-screen sticky top-0">
-      {/* Logo */}
-      <div className="px-5 py-4 border-b border-dark-700 flex items-center gap-3">
+      {/* Logo - links to user's dashboard */}
+      <Link href={user?.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'}
+            className="px-5 py-4 border-b border-dark-700 flex items-center gap-3 hover:bg-dark-700/30 transition-colors">
         <Image src="/logo.png" alt="Knowlytics Hub" width={36} height={36} className="object-contain flex-shrink-0" priority />
         <span className="text-white font-bold text-base leading-tight">
           Knowlytics <span className="text-brand-400">Hub</span>
         </span>
-      </div>
+      </Link>
 
       {/* User info */}
       <div className="p-4 border-b border-dark-700">

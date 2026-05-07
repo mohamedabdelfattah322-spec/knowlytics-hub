@@ -13,8 +13,22 @@ const transporter = nodemailer.createTransport({
 const FROM = process.env.EMAIL_FROM || 'Knowlytics Hub <noreply@knowlyticshub.com>';
 
 const sendMail = async ({ to, subject, html }) => {
-  if (process.env.NODE_ENV === 'test') return; // suppress in tests
-  await transporter.sendMail({ from: FROM, to, subject, html });
+  if (process.env.NODE_ENV === 'test') return;
+  // Skip if SMTP isn't configured (dev mode) — log instead
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || process.env.SMTP_USER === 'your@gmail.com') {
+    console.log('\n📧 [EMAIL FALLBACK — SMTP not configured]');
+    console.log('   To:     ', to);
+    console.log('   Subject:', subject);
+    console.log('   (configure SMTP_HOST/USER/PASS in .env to actually send)\n');
+    return;
+  }
+  try {
+    await transporter.sendMail({ from: FROM, to, subject, html });
+    console.log(`📧 Email sent → ${to}: ${subject}`);
+  } catch (err) {
+    console.error(`❌ Email failed → ${to}:`, err.message);
+    throw err;
+  }
 };
 
 // ─── Templates ────────────────────────────────────────────
