@@ -7,7 +7,7 @@ import {
   Save, Loader2, Upload, ChevronDown, ChevronUp,
   Lock, Unlock, ClipboardList, CheckCircle, DollarSign,
   Eye, Image as ImageIcon, Paperclip, X, Users, UserPlus,
-  Search, BadgeCheck, Ban,
+  Search, BadgeCheck, Ban, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -20,10 +20,12 @@ interface Lesson {
   duration_minutes: number; order_index: number;
   is_preview: boolean; video_key: string | null; video_url: string | null;
 }
-interface Section { id: string; title: string; order_index: number; lessons: Lesson[]; }
+interface Section { id: string; title: string; description: string | null; order_index: number; lessons: Lesson[]; }
 interface Course {
   id: string; title: string; description: string; type: string;
   level: string; price: number; duration_hours: number; is_published: boolean;
+  thumbnail_url?: string | null;
+  default_access_days?: number;
 }
 interface CourseFile { id: string; name: string; file_type: string; file_size: number; lesson_id: string | null; }
 interface Assignment { id: string; lesson_id: string; title: string; description: string; due_days: number; submission_count: string; }
@@ -181,6 +183,51 @@ export default function AdminCourseEditorPage() {
     } catch { toast.error('فشل إضافة الدرس'); }
   };
 
+  /* ── Reorder lesson up/down within its section ── */
+  const moveLesson = async (sectionId: string, lessonId: string, direction: 'up' | 'down') => {
+    const section = sections.find((s) => s.id === sectionId);
+    if (!section || !section.lessons) return;
+    const idx = section.lessons.findIndex((l) => l.id === lessonId);
+    if (idx === -1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= section.lessons.length) return;
+    const a = section.lessons[idx], b = section.lessons[swapIdx];
+    const reorderedLessons = [...section.lessons];
+    reorderedLessons[idx] = b; reorderedLessons[swapIdx] = a;
+    setSections((p) => p.map((s) => s.id === sectionId ? { ...s, lessons: reorderedLessons } : s));
+    try {
+      await Promise.all([
+        api.put(`/lessons/${a.id}`, { order_index: swapIdx }),
+        api.put(`/lessons/${b.id}`, { order_index: idx }),
+      ]);
+    } catch { toast.error('فشل تغيير الترتيب'); }
+  };
+
+  /* ── Reorder section up/down ── */
+  const moveSection = async (sectionId: string, direction: 'up' | 'down') => {
+    const idx = sections.findIndex((s) => s.id === sectionId);
+    if (idx === -1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sections.length) return;
+
+    const a = sections[idx], b = sections[swapIdx];
+    // Optimistic UI
+    const reordered = [...sections];
+    reordered[idx] = b; reordered[swapIdx] = a;
+    setSections(reordered);
+
+    try {
+      await Promise.all([
+        api.put(`/admin/sections/${a.id}`, { order_index: swapIdx }),
+        api.put(`/admin/sections/${b.id}`, { order_index: idx }),
+      ]);
+      toast.success('تم تغيير الترتيب');
+    } catch {
+      toast.error('فشل تغيير الترتيب');
+      setSections(sections); // revert
+    }
+  };
+
   const deleteLesson = async (sectionId: string, lessonId: string) => {
     try {
       await api.delete(`/lessons/${lessonId}`);
@@ -189,6 +236,32 @@ export default function AdminCourseEditorPage() {
       );
       toast.success('تم حذف الدرس');
     } catch { toast.error('فشل حذف الدرس'); }
+  };
+
+  /* ── Rename lesson title ── */
+  const renameLesson = async (sectionId: string, lessonId: string, newTitle: string) => {
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+    try {
+      await api.put(`/lessons/${lessonId}`, { title: trimmed });
+      setSections((p) =>
+        p.map((s) => s.id === sectionId
+          ? { ...s, lessons: (s.lessons ?? []).map((l) => l.id === lessonId ? { ...l, title: trimmed } : l) }
+          : s)
+      );
+      toast.success('✏️ تم تعديل اسم الدرس');
+    } catch { toast.error('فشل التعديل'); }
+  };
+
+  /* ── Rename section title ── */
+  const renameSection = async (sectionId: string, newTitle: string) => {
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+    try {
+      await api.put(`/admin/sections/${sectionId}`, { title: trimmed });
+      setSections((p) => p.map((s) => s.id === sectionId ? { ...s, title: trimmed } : s));
+      toast.success('✏️ تم تعديل اسم القسم');
+    } catch { toast.error('فشل التعديل'); }
   };
 
   /* ── Toggle is_preview (free/paid) ── */
@@ -438,8 +511,36 @@ export default function AdminCourseEditorPage() {
                   <button onClick={() => setExpanded((p) => ({ ...p, [section.id]: !isOpen }))}
                     className="flex-1 flex items-center gap-2 text-left">
                     {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                    <span className="font-semibold text-white text-sm">{section.title}</span>
+                    <span
+                      contentEditable
+                      suppressContentEditableWarning
+                      onClick={(e) => e.stopPropagation()}
+                      onBlur={(e) => {
+                        const v = (e.currentTarget.textContent || '').trim();
+                        if (v && v !== section.title) renameSection(section.id, v);
+                        else if (!v) e.currentTarget.textContent = section.title;
+                      }}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === 'Enter') { e.preventDefault(); (e.currentTarget as HTMLElement).blur(); }
+                      }}
+                      title="اضغط للتعديل"
+                      className="font-semibold text-white text-sm outline-none focus:bg-dark-900 focus:px-2 focus:rounded cursor-text">
+                      {section.title}
+                    </span>
                     <span className="text-slate-500 text-xs ml-auto">{(section.lessons?.length ?? 0)} درس</span>
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up'); }}
+                    disabled={sections.indexOf(section) === 0}
+                    title="تحريك لأعلى"
+                    className="p-1.5 text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition-colors disabled:opacity-30 disabled:hover:text-slate-500 disabled:hover:bg-transparent">
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down'); }}
+                    disabled={sections.indexOf(section) === sections.length - 1}
+                    title="تحريك لأسفل"
+                    className="p-1.5 text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition-colors disabled:opacity-30 disabled:hover:text-slate-500 disabled:hover:bg-transparent">
+                    <ArrowDown className="w-3.5 h-3.5" />
                   </button>
                   <button onClick={() => deleteSection(section.id)} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -458,7 +559,19 @@ export default function AdminCourseEditorPage() {
                           {/* Lesson row */}
                           <div className="flex items-center gap-3">
                             <Icon className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                            <span className="text-slate-200 text-sm font-medium flex-1">{lesson.title}</span>
+                            <span
+                              contentEditable
+                              suppressContentEditableWarning
+                              onBlur={(e) => {
+                                const v = (e.currentTarget.textContent || '').trim();
+                                if (v && v !== lesson.title) renameLesson(section.id, lesson.id, v);
+                                else if (!v) e.currentTarget.textContent = lesson.title;
+                              }}
+                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.currentTarget as HTMLElement).blur(); } }}
+                              title="اضغط للتعديل"
+                              className="text-slate-200 text-sm font-medium flex-1 outline-none focus:bg-dark-700 focus:px-2 focus:rounded cursor-text">
+                              {lesson.title}
+                            </span>
                             <span className="text-slate-500 text-xs">{lesson.duration_minutes}د</span>
 
                             {/* Free / Paid toggle */}
@@ -499,6 +612,18 @@ export default function AdminCourseEditorPage() {
                                 onChange={(e) => uploadCourseFile(e, lesson.id)} />
                             </label>
 
+                            <button onClick={() => moveLesson(section.id, lesson.id, 'up')}
+                              disabled={(section.lessons ?? []).indexOf(lesson) === 0}
+                              title="تحريك لأعلى"
+                              className="p-1 text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 rounded transition-colors disabled:opacity-30 disabled:hover:text-slate-500 disabled:hover:bg-transparent">
+                              <ArrowUp className="w-3 h-3" />
+                            </button>
+                            <button onClick={() => moveLesson(section.id, lesson.id, 'down')}
+                              disabled={(section.lessons ?? []).indexOf(lesson) === ((section.lessons ?? []).length - 1)}
+                              title="تحريك لأسفل"
+                              className="p-1 text-slate-500 hover:text-brand-400 hover:bg-brand-500/10 rounded transition-colors disabled:opacity-30 disabled:hover:text-slate-500 disabled:hover:bg-transparent">
+                              <ArrowDown className="w-3 h-3" />
+                            </button>
                             <button onClick={() => deleteLesson(section.id, lesson.id)}
                               className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />
@@ -833,6 +958,56 @@ export default function AdminCourseEditorPage() {
               <label className="block text-sm font-medium text-slate-300 mb-1.5">العنوان</label>
               <input value={course.title} onChange={(e) => setCourse({ ...course, title: e.target.value })} className="input" />
             </div>
+
+            {/* Thumbnail */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">صورة الكورس (Thumbnail)</label>
+              {course.thumbnail_url && (
+                <div className="mb-2 relative w-full h-40 rounded-lg overflow-hidden bg-dark-700">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={course.thumbnail_url} alt="thumbnail" className="w-full h-full object-cover" />
+                  <button onClick={() => setCourse({ ...course, thumbnail_url: null })}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500/90 hover:bg-red-600 rounded-lg text-white">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input type="url" value={course.thumbnail_url || ''}
+                  onChange={(e) => setCourse({ ...course, thumbnail_url: e.target.value })}
+                  placeholder="رابط صورة (أو ارفع ملف ←)"
+                  className="input flex-1" />
+                <label className="btn-secondary cursor-pointer flex items-center gap-2 whitespace-nowrap">
+                  <Upload className="w-4 h-4" />
+                  رفع
+                  <input type="file" accept="image/*" className="sr-only"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      const fd = new FormData();
+                      fd.append('file', f);
+                      fd.append('course_id', course.id);
+                      fd.append('title', f.name);
+                      try {
+                        const { data } = await api.post('/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                        // Build a public URL: /uploads/<file_key>  (Express serves uploads/ statically)
+                        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+                        const baseHost = apiBase.replace(/\/api\/?$/, '');
+                        const url = `${baseHost}/uploads/${data.file.file_key}`;
+                        setCourse({ ...course, thumbnail_url: url });
+                        toast.success('✅ تم رفع الصورة');
+                      } catch (err: any) {
+                        toast.error(err?.response?.data?.error || 'فشل الرفع');
+                      }
+                      e.target.value = '';
+                    }} />
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                الصق رابط مباشر (مثلاً من Drive — لازم يكون "Anyone with the link") أو ارفع صورة من جهازك
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">الوصف</label>
               <textarea value={course.description || ''} onChange={(e) => setCourse({ ...course, description: e.target.value })}
@@ -859,7 +1034,7 @@ export default function AdminCourseEditorPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center gap-1">
-                  <DollarSign className="w-3.5 h-3.5 text-green-400" /> السعر (USD)
+                  <DollarSign className="w-3.5 h-3.5 text-green-400" /> السعر (جنيه مصري EGP)
                 </label>
                 <input type="number" value={course.price} min={0} step={0.01}
                   onChange={(e) => setCourse({ ...course, price: parseFloat(e.target.value) || 0 })} className="input" />
@@ -870,6 +1045,17 @@ export default function AdminCourseEditorPage() {
                 <input type="number" value={course.duration_hours} min={0} step={0.5}
                   onChange={(e) => setCourse({ ...course, duration_hours: parseFloat(e.target.value) || 0 })} className="input" />
               </div>
+            </div>
+
+            {/* Access duration after purchase */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">مدة الوصول بعد الشراء (يوم)</label>
+              <input type="number" value={course.default_access_days ?? 0} min={0} step={1}
+                onChange={(e) => setCourse({ ...course, default_access_days: parseInt(e.target.value) || 0 })}
+                className="input" />
+              <p className="text-xs text-slate-500 mt-1">
+                مثلاً: <strong>365</strong> سنة · <strong>180</strong> ستة شهور · <strong>30</strong> شهر · <strong>0</strong> مدى الحياة
+              </p>
             </div>
 
             {/* Published toggle */}

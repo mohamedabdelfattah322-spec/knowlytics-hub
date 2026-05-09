@@ -22,6 +22,11 @@ const zoomRoutes = require('./routes/zoom');
 const assignmentRoutes = require('./routes/assignments');
 const paymentRoutes = require('./routes/payments');
 const batchRoutes = require('./routes/batches');
+const certificateRoutes = require('./routes/certificates');
+const couponRoutes = require('./routes/coupons');
+const bundleRoutes = require('./routes/bundles');
+const notesRoutes = require('./routes/notes');
+const { sendBroadcast, getBroadcastHistory } = require('./controllers/broadcastController');
 
 const app = express();
 
@@ -91,6 +96,15 @@ app.use('/api/zoom', zoomRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/batches', batchRoutes);
+app.use('/api/certificates', certificateRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/bundles', bundleRoutes);
+app.use('/api/notes', notesRoutes);
+
+// ─── Admin broadcast ──────────────────────────────────────
+const { authenticate, authorize } = require('./middleware/auth');
+app.post('/api/admin/broadcast',  authenticate, authorize('admin'), sendBroadcast);
+app.get('/api/admin/broadcasts',  authenticate, authorize('admin'), getBroadcastHistory);
 
 // ─── 404 ──────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));

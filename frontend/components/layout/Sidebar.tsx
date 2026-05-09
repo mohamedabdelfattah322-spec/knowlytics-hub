@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import {
   LayoutDashboard, BookOpen, Users, BarChart2, Video,
-  Settings, LogOut, Bell, FolderOpen, GraduationCap, CreditCard,
+  Settings, LogOut, Bell, FolderOpen, GraduationCap, CreditCard, Tag, Package, Mail,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,7 +14,10 @@ const adminNav = [
   { href: '/dashboard/admin/courses', icon: BookOpen, label: 'Courses' },
   { href: '/dashboard/admin/users', icon: Users, label: 'Users' },
   { href: '/dashboard/admin/payments', icon: CreditCard, label: 'Payments' },
+  { href: '/dashboard/admin/coupons', icon: Tag, label: 'Coupons' },
+  { href: '/dashboard/admin/bundles', icon: Package, label: 'Bundles' },
   { href: '/dashboard/admin/analytics', icon: BarChart2, label: 'Analytics' },
+  { href: '/dashboard/admin/newsletter', icon: Mail, label: 'Newsletter' },
   { href: '/dashboard/admin/sessions', icon: Settings, label: 'Sessions' },
 ];
 
@@ -22,6 +25,7 @@ const studentNav = [
   { href: '/dashboard/student', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/student/courses', icon: BookOpen, label: 'My Courses' },
   { href: '/dashboard/student/progress', icon: BarChart2, label: 'Progress' },
+  { href: '/dashboard/student/notes', icon: FolderOpen, label: 'Notes & Bookmarks' },
   { href: '/courses', icon: GraduationCap, label: 'Browse Courses' },
 ];
 
@@ -34,11 +38,15 @@ export default function Sidebar() {
     <aside className="w-64 bg-dark-800 border-r border-dark-700 flex flex-col h-screen sticky top-0">
       {/* Logo - links to user's dashboard */}
       <Link href={user?.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'}
-            className="px-5 py-4 border-b border-dark-700 flex items-center gap-3 hover:bg-dark-700/30 transition-colors">
-        <Image src="/logo.png" alt="Knowlytics Hub" width={36} height={36} className="object-contain flex-shrink-0" priority />
-        <span className="text-white font-bold text-base leading-tight">
-          Knowlytics <span className="text-brand-400">Hub</span>
-        </span>
+            className="px-5 py-4 border-b border-dark-700 flex items-center justify-center hover:bg-dark-700/30 transition-colors">
+        <Image
+          src="/logo.png"
+          alt="Knowlytics Hub"
+          width={180}
+          height={50}
+          className="object-contain"
+          priority
+        />
       </Link>
 
       {/* User info */}

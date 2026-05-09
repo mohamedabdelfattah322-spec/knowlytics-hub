@@ -112,9 +112,30 @@ const sendNewLiveSessionEmail = async (user, meeting) => {
   });
 };
 
+const sendRefundEmail = async (user, payment, reason) => {
+  await sendMail({
+    to: user.email,
+    subject: `💸 استرداد المبلغ — ${payment.amount} جنيه`,
+    html: baseTemplate(`
+      <h2>تم استرداد مبلغك</h2>
+      <p>مرحباً ${user.name}،</p>
+      <p>تم استرداد مبلغ <strong>${payment.amount} ${payment.currency}</strong> الخاص بطلبك.</p>
+      ${reason ? `<p>السبب: ${reason}</p>` : ''}
+      <p>سيتم إرجاع المبلغ خلال 5-7 أيام عمل حسب بنكك.</p>
+      <a href="${process.env.FRONTEND_URL}/dashboard/student" class="btn">الذهاب للداشبورد</a>
+    `),
+  });
+};
+
+const sendBroadcastEmail = async (to, subject, htmlBody) => {
+  await sendMail({ to, subject, html: baseTemplate(htmlBody) });
+};
+
 module.exports = {
   sendEnrollmentConfirmation,
   sendCourseCompletionEmail,
   sendInactivityReminder,
   sendNewLiveSessionEmail,
+  sendRefundEmail,
+  sendBroadcastEmail,
 };

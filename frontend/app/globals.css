@@ -94,3 +94,16 @@
     @apply h-full bg-brand-500 rounded-full transition-all duration-500;
   }
 }
+
+/* ─── Print styles for Invoice ─────────────────────────── */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  /* Hide everything except invoice */
+  body > * { display: none !important; }
+  #invoice-print, #invoice { display: block !important; }
+  .print\:hidden { display: none !important; }
+  aside, header, nav { display: none !important; }
+}

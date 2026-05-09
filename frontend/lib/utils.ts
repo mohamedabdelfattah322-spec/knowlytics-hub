@@ -9,8 +9,11 @@ export const formatDuration = (minutes: number): string => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
-export const formatCurrency = (amount: number): string =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+export const formatCurrency = (amount: number | string): string => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (!num || num === 0) return 'مجاناً';
+  return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(num)} جنيه`;
+};
 
 export const levelColor = (level: string) => {
   const map: Record<string, string> = {

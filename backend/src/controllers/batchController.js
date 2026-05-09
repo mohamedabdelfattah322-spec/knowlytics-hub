@@ -119,7 +119,13 @@ const myBatches = async (req, res, next) => {
     const result = await query(
       `SELECT b.*, c.title AS course_title, c.type AS course_type, c.thumbnail_url,
               e.id AS enrollment_id, e.progress_pct,
-              (SELECT COUNT(*) FROM batch_recordings WHERE batch_id = b.id)::int AS recordings_count
+              GREATEST(
+                (SELECT COUNT(*) FROM batch_recordings WHERE batch_id = b.id),
+                (SELECT COUNT(*) FROM lessons l
+                 JOIN sections s ON s.id = l.section_id
+                 WHERE s.course_id = b.course_id
+                   AND (l.video_url IS NOT NULL OR l.video_key IS NOT NULL))
+              )::int AS recordings_count
        FROM enrollments e
        JOIN course_batches b ON b.id = e.batch_id
        JOIN courses c ON c.id = b.course_id

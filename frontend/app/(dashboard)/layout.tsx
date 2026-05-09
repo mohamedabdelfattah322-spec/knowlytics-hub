@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Sidebar from '@/components/layout/Sidebar';
+import NotificationBell from '@/components/layout/NotificationBell';
 import { getToken } from '@/lib/auth';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -31,11 +32,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen bg-dark-900">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <div className="p-6 lg:p-8 animate-fade-in">
-          {children}
-        </div>
-      </main>
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        {/* Top bar */}
+        <header className="sticky top-0 z-30 bg-dark-900/90 backdrop-blur-sm border-b border-dark-700 px-6 py-3 flex items-center justify-end gap-2">
+          <NotificationBell />
+        </header>
+        <main className="flex-1 overflow-auto">
+          <div className="p-6 lg:p-8 animate-fade-in">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

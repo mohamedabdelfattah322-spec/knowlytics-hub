@@ -52,7 +52,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-3">
-            <Image src="/logo.png" alt="Knowlytics Hub" width={180} height={70} className="object-contain" priority />
+            <Image src="/logo.png" alt="Knowlytics Hub" width={220} height={70} className="object-contain" priority />
           </div>
           <p className="text-slate-400">ابدأ رحلتك التعليمية اليوم</p>
         </div>

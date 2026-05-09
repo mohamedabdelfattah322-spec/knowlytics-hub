@@ -100,10 +100,10 @@ const deleteUser = async (req, res, next) => {
 // POST /api/admin/sections  — create course section
 const createSection = async (req, res, next) => {
   try {
-    const { course_id, title, order_index } = req.body;
+    const { course_id, title, description, order_index } = req.body;
     const result = await query(
-      `INSERT INTO sections (course_id, title, order_index) VALUES ($1, $2, $3) RETURNING *`,
-      [course_id, title, order_index]
+      `INSERT INTO sections (course_id, title, description, order_index) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [course_id, title, description || null, order_index]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -114,10 +114,14 @@ const createSection = async (req, res, next) => {
 // PUT /api/admin/sections/:id
 const updateSection = async (req, res, next) => {
   try {
-    const { title, order_index } = req.body;
+    const { title, description, order_index } = req.body;
     const result = await query(
-      `UPDATE sections SET title = COALESCE($1, title), order_index = COALESCE($2, order_index) WHERE id = $3 RETURNING *`,
-      [title, order_index, req.params.id]
+      `UPDATE sections SET
+         title = COALESCE($1, title),
+         description = COALESCE($2, description),
+         order_index = COALESCE($3, order_index)
+       WHERE id = $4 RETURNING *`,
+      [title, description, order_index, req.params.id]
     );
     res.json(result.rows[0]);
   } catch (err) {

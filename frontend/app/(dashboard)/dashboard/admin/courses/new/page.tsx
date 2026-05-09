@@ -82,7 +82,7 @@ export default function NewCoursePage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Price (USD)</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">السعر (جنيه مصري EGP)</label>
             <input {...register('price')} type="number" step="0.01" min="0" className="input" placeholder="0.00" />
           </div>
           <div>

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Search, BookOpen, Clock, Users, Filter } from 'lucide-react';
 import api from '@/lib/api';
 import { formatCurrency, levelColor, cn } from '@/lib/utils';
@@ -31,11 +32,14 @@ export default function CoursesPage() {
       {/* Header */}
       <div className="border-b border-dark-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-brand-500" />
-            <span className="font-bold text-white">Knowlytics <span className="text-brand-500">Hub</span></span>
+          <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
+            <Image src="/logo.png" alt="Knowlytics Hub" width={150} height={42} className="object-contain" priority />
           </Link>
           <div className="flex items-center gap-3">
+            <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
+               className="hidden sm:inline-flex items-center gap-1.5 text-sm text-green-400 hover:text-green-300 font-medium">
+              💬 واتساب
+            </a>
             {user
               ? <Link href={user.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'} className="btn-primary text-sm">Dashboard</Link>
               : <><Link href="/login" className="btn-secondary text-sm">Sign In</Link><Link href="/register" className="btn-primary text-sm">Get Started</Link></>

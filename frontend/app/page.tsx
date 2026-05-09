@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { BookOpen, Users, Video, Award, ChevronRight, Star, Zap, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -35,11 +36,14 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="border-b border-dark-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-7 h-7 text-brand-500" />
-            <span className="text-xl font-bold text-white">Knowlytics <span className="text-brand-500">Hub</span></span>
+          <div className="flex items-center">
+            <Image src="/logo.png" alt="Knowlytics Hub" width={170} height={48} className="object-contain" priority />
           </div>
           <div className="flex items-center gap-3">
+            <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
+               className="hidden sm:inline-flex items-center gap-1.5 text-sm text-green-400 hover:text-green-300 font-medium">
+              💬 واتساب
+            </a>
             <Link href="/login" className="btn-secondary text-sm">Sign In</Link>
             <Link href="/register" className="btn-primary text-sm">Get Started</Link>
           </div>
@@ -116,9 +120,8 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-dark-700 py-8 text-center text-slate-500 text-sm">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <BookOpen className="w-4 h-4 text-brand-500" />
-          <span className="font-semibold text-slate-400">Knowlytics Hub</span>
+        <div className="flex items-center justify-center mb-2">
+          <Image src="/logo.png" alt="Knowlytics Hub" width={120} height={32} className="object-contain opacity-80" />
         </div>
         © {new Date().getFullYear()} Knowlytics Hub. All rights reserved.
       </footer>

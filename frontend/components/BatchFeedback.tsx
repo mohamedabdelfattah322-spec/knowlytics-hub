@@ -54,13 +54,8 @@ export default function BatchFeedback({
       });
   }, [batchId, kind]);
 
-  // Auto-prompt logic:
-  // - "first" prompt: only if no recording yet OR first recording, and not submitted
-  // - "last" prompt: only if reached total_sessions, and not submitted
-  const shouldPrompt = !existing && (
-    kind === 'first' ? recordingsCount <= 1
-                     : recordingsCount >= totalSessions && totalSessions > 0
-  );
+  // Show prompt always if not submitted (so user can leave feedback anytime)
+  const shouldPrompt = !existing;
 
   const submit = async () => {
     if (form.rating === 0) { toast.error('اختار تقييم بالنجوم'); return; }

@@ -162,29 +162,45 @@ const paymobWebhook = async (req, res, next) => {
     );
 
     if (success) {
-      // 3. Auto-enroll the student
-      const existing = await query(
-        'SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2',
-        [payment.user_id, payment.course_id]
-      );
+      // Bundle payment OR course payment
+      if (payment.bundle_id) {
+        // Activate bundle subscription
+        const bundleRes = await query('SELECT duration_days FROM bundles WHERE id = $1', [payment.bundle_id]);
+        const days = bundleRes.rows[0]?.duration_days || 0;
+        const expiresClause = days > 0 ? `NOW() + INTERVAL '${days} days'` : 'NULL';
+        await query(
+          `INSERT INTO bundle_subscriptions (user_id, bundle_id, payment_id, expires_at)
+           VALUES ($1, $2, $3, ${expiresClause})`,
+          [payment.user_id, payment.bundle_id, payment.id]
+        );
+      } else if (payment.course_id) {
+        // Per-course expiration based on course.default_access_days
+        const courseRes = await query('SELECT default_access_days FROM courses WHERE id = $1', [payment.course_id]);
+        const days = courseRes.rows[0]?.default_access_days || 0;
+        const expiresClause = days > 0 ? `NOW() + INTERVAL '${days} days'` : 'NULL';
 
-      if (existing.rows.length) {
-        await query(
-          `UPDATE enrollments SET is_active = true, payment_ref = $1, enrolled_at = NOW()
-           WHERE user_id = $2 AND course_id = $3`,
-          [String(body.id), payment.user_id, payment.course_id]
+        const existing = await query(
+          'SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2',
+          [payment.user_id, payment.course_id]
         );
-      } else {
-        await query(
-          `INSERT INTO enrollments (user_id, course_id, payment_ref) VALUES ($1, $2, $3)`,
-          [payment.user_id, payment.course_id, String(body.id)]
-        );
+        if (existing.rows.length) {
+          await query(
+            `UPDATE enrollments SET is_active = true, payment_ref = $1,
+             enrolled_at = NOW(), expires_at = ${expiresClause}
+             WHERE user_id = $2 AND course_id = $3`,
+            [String(body.id), payment.user_id, payment.course_id]
+          );
+        } else {
+          await query(
+            `INSERT INTO enrollments (user_id, course_id, payment_ref, expires_at)
+             VALUES ($1, $2, $3, ${expiresClause})`,
+            [payment.user_id, payment.course_id, String(body.id)]
+          );
+        }
+        const userRes = await query('SELECT email, name FROM users WHERE id = $1', [payment.user_id]);
+        const courseInfoRes = await query('SELECT * FROM courses WHERE id = $1', [payment.course_id]);
+        emailService.sendEnrollmentConfirmation(userRes.rows[0], courseInfoRes.rows[0]).catch(() => {});
       }
-
-      // 4. Email confirmation
-      const userRes = await query('SELECT email, name FROM users WHERE id = $1', [payment.user_id]);
-      const courseRes = await query('SELECT * FROM courses WHERE id = $1', [payment.course_id]);
-      emailService.sendEnrollmentConfirmation(userRes.rows[0], courseRes.rows[0]).catch(() => {});
     }
 
     res.json({ ok: true });
@@ -198,8 +214,11 @@ const paymobWebhook = async (req, res, next) => {
 const myPayments = async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT p.*, c.title AS course_title
-       FROM payments p JOIN courses c ON c.id = p.course_id
+      `SELECT p.*, COALESCE(c.title, b.name) AS item_title,
+              c.title AS course_title, b.name AS bundle_name
+       FROM payments p
+       LEFT JOIN courses c ON c.id = p.course_id
+       LEFT JOIN bundles b ON b.id = p.bundle_id
        WHERE p.user_id = $1 ORDER BY p.created_at DESC`,
       [req.user.user_id]
     );
@@ -219,10 +238,12 @@ const listAllPayments = async (req, res, next) => {
 
     const result = await query(
       `SELECT p.*, u.name AS user_name, u.email AS user_email,
-              c.title AS course_title, c.price AS course_price
+              c.title AS course_title, c.price AS course_price,
+              b.name AS bundle_name
        FROM payments p
        JOIN users u ON u.id = p.user_id
-       JOIN courses c ON c.id = p.course_id
+       LEFT JOIN courses c ON c.id = p.course_id
+       LEFT JOIN bundles b ON b.id = p.bundle_id
        ${where}
        ORDER BY p.created_at DESC LIMIT $${values.length}`,
       values
@@ -231,4 +252,99 @@ const listAllPayments = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { initiatePayment, paymobWebhook, myPayments, listAllPayments };
+// ─── POST /api/payments/:id/refund  (admin only)  ─────────
+const refundPayment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const payRes = await query('SELECT * FROM payments WHERE id = $1', [id]);
+    if (!payRes.rows.length) return res.status(404).json({ error: 'Payment not found' });
+    const payment = payRes.rows[0];
+    if (payment.status !== 'success') return res.status(400).json({ error: 'Only successful payments can be refunded' });
+
+    // Mark payment as refunded
+    await query(`UPDATE payments SET status = 'refunded' WHERE id = $1`, [id]);
+
+    // Deactivate enrollment (if course payment)
+    if (payment.course_id) {
+      await query(
+        `UPDATE enrollments SET is_active = false WHERE user_id = $1 AND course_id = $2`,
+        [payment.user_id, payment.course_id]
+      );
+    }
+    // Deactivate bundle subscription (if bundle payment)
+    if (payment.bundle_id) {
+      await query(
+        `UPDATE bundle_subscriptions SET is_active = false WHERE payment_id = $1`,
+        [id]
+      );
+    }
+
+    // Log refund
+    await query(
+      `INSERT INTO refund_requests (payment_id, admin_id, reason) VALUES ($1, $2, $3)`,
+      [id, req.user.user_id, reason || null]
+    );
+
+    // Notify student
+    const { createNotification } = require('./notificationController');
+    await createNotification(payment.user_id,
+      `تم استرداد مبلغ ${payment.amount} جنيه — ${reason || 'استرداد من الإدارة'}`,
+      'info', '/dashboard/student'
+    );
+
+    // Email student
+    const userRes = await query('SELECT name, email FROM users WHERE id = $1', [payment.user_id]);
+    if (userRes.rows.length) {
+      emailService.sendRefundEmail(userRes.rows[0], payment, reason).catch(() => {});
+    }
+
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+};
+
+// ─── GET /api/payments/:id/invoice  ────────────────────────
+//  Returns invoice data (JSON). Frontend renders as HTML/PDF.
+const getInvoice = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.user_id;
+    const isAdmin = req.user.role === 'admin';
+
+    const result = await query(
+      `SELECT p.*, u.name AS user_name, u.email AS user_email,
+              COALESCE(c.title, b.name) AS item_title,
+              c.title AS course_title, b.name AS bundle_name,
+              c.type AS course_type, c.level AS course_level
+       FROM payments p
+       JOIN users u ON u.id = p.user_id
+       LEFT JOIN courses c ON c.id = p.course_id
+       LEFT JOIN bundles b ON b.id = p.bundle_id
+       WHERE p.id = $1`,
+      [id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Payment not found' });
+    const p = result.rows[0];
+
+    // Students can only see their own invoices
+    if (!isAdmin && p.user_id !== userId) return res.status(403).json({ error: 'Forbidden' });
+    if (p.status !== 'success' && p.status !== 'refunded') return res.status(400).json({ error: 'No invoice for pending/failed payments' });
+
+    res.json({
+      invoice_number: `INV-${p.id.slice(0, 8).toUpperCase()}`,
+      issued_at: p.paid_at || p.created_at,
+      status: p.status,
+      customer: { name: p.user_name, email: p.user_email, phone: p.customer_phone },
+      item_title: p.item_title,
+      course_title: p.course_title,
+      bundle_name: p.bundle_name,
+      amount: parseFloat(p.amount),
+      currency: p.currency,
+      payment_method: p.payment_method,
+      paymob_txn_id: p.paymob_txn_id,
+    });
+  } catch (err) { next(err); }
+};
+
+module.exports = { initiatePayment, paymobWebhook, myPayments, listAllPayments, refundPayment, getInvoice };

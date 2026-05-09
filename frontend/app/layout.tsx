@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Toaster } from 'react-hot-toast';
+import WhatsAppFloat from '@/components/WhatsAppFloat';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body>
         {children}
+        <WhatsAppFloat />
         <Toaster
           position="top-right"
           toastOptions={{

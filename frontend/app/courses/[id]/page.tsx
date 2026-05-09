@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { BookOpen, Clock, Users, Play, Lock, ChevronDown, ChevronUp, Loader2, CheckCircle, ShoppingCart, Phone } from 'lucide-react';
+import { BookOpen, Clock, Users, Play, Lock, ChevronDown, ChevronUp, Loader2, CheckCircle, ShoppingCart, Phone, Trophy, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency, levelColor, cn } from '@/lib/utils';
+import CourseFeedback from '@/components/CourseFeedback';
+import CertificateButton from '@/components/CertificateButton';
 
 interface Lesson {
   id: string; title: string; type: string; duration_minutes: number; is_preview: boolean;
@@ -27,6 +29,8 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [enrolled, setEnrolled] = useState(false);
+  const [examStatus, setExamStatus] = useState<any>(null);
+  const [feedbackSummary, setFeedbackSummary] = useState<{ total_reviews: number; avg_rating: number; recommend_count: number } | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
@@ -37,10 +41,15 @@ export default function CourseDetailPage() {
       if (data.sections?.length) setExpanded({ [data.sections[0].id]: true });
     }).finally(() => setLoading(false));
 
+    api.get(`/courses/${id}/feedback-summary`).then(({ data }) => setFeedbackSummary(data)).catch(() => {});
+
     if (user) {
       api.get('/enrollments/my').then(({ data }) => {
         setEnrolled(data.some((e: any) => e.course_id === id));
       });
+      api.get(`/courses/${id}/final-quiz-status`)
+        .then(({ data }) => setExamStatus(data))
+        .catch(() => {});
     }
   }, [id, user]);
 
@@ -79,13 +88,31 @@ export default function CourseDetailPage() {
             <span className={levelColor(course.level)}>{course.level}</span>
           </div>
           <h1 className="text-3xl font-bold text-white leading-snug">{course.title}</h1>
-          <p className="text-slate-400 leading-relaxed">{course.description}</p>
+          <p className="text-slate-400 leading-relaxed whitespace-pre-line md:columns-2 md:gap-8 md:[column-rule:1px_solid_rgb(51_65_85_/_0.5)]">
+            {course.description}
+          </p>
           <div className="flex flex-wrap gap-6 text-sm text-slate-400">
-            <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-brand-400" />{course.duration_hours}h total</span>
-            <span className="flex items-center gap-1.5"><BookOpen className="w-4 h-4 text-brand-400" />{totalLessons} lessons</span>
-            <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-brand-400" />{course.enrollment_count} students</span>
+            <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-brand-400" />{course.duration_hours} ساعة</span>
+            <span className="flex items-center gap-1.5"><BookOpen className="w-4 h-4 text-brand-400" />{sections.length} قسم</span>
+            <span className="flex items-center gap-1.5"><Play className="w-4 h-4 text-brand-400" />{totalLessons} درس</span>
+            <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-brand-400" />{course.enrollment_count} طالب</span>
+            {feedbackSummary && feedbackSummary.total_reviews > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                <span className="text-yellow-400 font-bold">{feedbackSummary.avg_rating}</span>
+                <span>({feedbackSummary.total_reviews} تقييم)</span>
+              </span>
+            )}
           </div>
           <p className="text-slate-400 text-sm">Instructor: <span className="text-white font-medium">{course.instructor_name}</span></p>
+
+          {/* Course Feedback (only for enrolled students) */}
+          {enrolled && user?.role !== 'admin' && (
+            <div className="space-y-3">
+              <CourseFeedback courseId={String(id)} kind="first" />
+              <CourseFeedback courseId={String(id)} kind="last" />
+            </div>
+          )}
 
           {/* Curriculum */}
           <div>
@@ -148,6 +175,39 @@ export default function CourseDetailPage() {
                     <Play className="w-4 h-4" /> ابدأ التعلم
                   </Link>
                 )}
+
+                {/* Final Exam status */}
+                {examStatus?.final_quiz && (
+                  <div className="bg-dark-700/50 border border-dark-600 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Trophy className="w-4 h-4 text-yellow-400" />
+                      <span className="text-white font-medium">الامتحان النهائي</span>
+                    </div>
+                    {!examStatus.lessons_done ? (
+                      <p className="text-xs text-slate-400">
+                        🔒 يفتح بعد إكمال كل الدروس ({examStatus.completed_lessons}/{examStatus.total_lessons})
+                      </p>
+                    ) : examStatus.passed ? (
+                      <p className="text-xs text-green-400">✓ نجحت بـ {examStatus.my_attempt?.score_pct}%</p>
+                    ) : examStatus.my_attempt ? (
+                      <p className="text-xs text-orange-400">حاولت — {examStatus.my_attempt.score_pct}% (النجاح من {examStatus.final_quiz.passing_score}%)</p>
+                    ) : (
+                      <p className="text-xs text-slate-400">جاهز للامتحان</p>
+                    )}
+                    <Link
+                      href={`/courses/${id}/final-exam`}
+                      className={`btn-secondary w-full text-sm flex items-center justify-center gap-1 ${!examStatus.lessons_done ? 'opacity-50 pointer-events-none' : ''}`}>
+                      {examStatus.passed ? '🎉 شوف نتيجتك' : examStatus.my_attempt ? 'حاول مرة أخرى' : 'ابدأ الامتحان'}
+                    </Link>
+                  </div>
+                )}
+
+                {/* Certificate button — only after passing final quiz (or no quiz exists) */}
+                {(!examStatus?.final_quiz || examStatus.passed) && (
+                  <div className="flex justify-center pt-2">
+                    <CertificateButton courseId={String(id)} />
+                  </div>
+                )}
               </div>
             ) : course.type === 'live' ? (
               <div className="space-y-3">
@@ -158,7 +218,7 @@ export default function CourseDetailPage() {
                     <p className="text-xs text-purple-300/80">للتسجيل في الكورس تواصل مع الإدارة لإنشاء حسابك</p>
                   </div>
                 </div>
-                <a href="https://wa.me/201000000000" target="_blank" rel="noreferrer" className="btn-secondary w-full flex items-center justify-center gap-2">
+                <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer" className="btn-secondary w-full flex items-center justify-center gap-2">
                   <Phone className="w-4 h-4" /> تواصل مع الإدارة
                 </a>
               </div>

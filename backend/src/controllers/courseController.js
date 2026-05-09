@@ -61,7 +61,7 @@ const getCourse = async (req, res, next) => {
     if (!courseResult.rows.length) return res.status(404).json({ error: 'Course not found' });
 
     const sectionsResult = await query(
-      `SELECT s.id, s.title, s.order_index,
+      `SELECT s.id, s.title, s.description, s.order_index,
               COALESCE(
                 json_agg(
                   json_build_object(
@@ -109,7 +109,7 @@ const updateCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
     const fields = req.body;
-    const allowed = ['title', 'description', 'type', 'level', 'price', 'duration_hours', 'thumbnail_url', 'is_published'];
+    const allowed = ['title', 'description', 'type', 'level', 'price', 'duration_hours', 'thumbnail_url', 'is_published', 'default_access_days'];
     const updates = [];
     const values = [];
 
@@ -169,4 +169,127 @@ const getCourseAnalytics = async (req, res, next) => {
   }
 };
 
-module.exports = { listCourses, getCourse, createCourse, updateCourse, deleteCourse, getCourseAnalytics };
+// ─── POST /api/courses/:id/feedback  (student) ───────
+const submitCourseFeedback = async (req, res, next) => {
+  try {
+    const { kind, rating, expectations, highlights, improvements, recommend } = req.body;
+    if (!['first', 'last'].includes(kind)) return res.status(400).json({ error: 'kind must be first|last' });
+
+    // Must be enrolled
+    const ok = await query(
+      `SELECT 1 FROM enrollments WHERE user_id = $1 AND course_id = $2 AND is_active = true`,
+      [req.user.user_id, req.params.id]
+    );
+    if (!ok.rows.length) return res.status(403).json({ error: 'لازم تكون مسجل في الكورس' });
+
+    const result = await query(
+      `INSERT INTO course_feedback (course_id, user_id, kind, rating, expectations, highlights, improvements, recommend)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (course_id, user_id, kind) DO UPDATE
+         SET rating = EXCLUDED.rating, expectations = EXCLUDED.expectations,
+             highlights = EXCLUDED.highlights, improvements = EXCLUDED.improvements,
+             recommend = EXCLUDED.recommend, created_at = NOW()
+       RETURNING *`,
+      [req.params.id, req.user.user_id, kind, rating || null, expectations || null, highlights || null, improvements || null, recommend ?? null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) { next(err); }
+};
+
+// ─── GET /api/courses/:id/feedback-summary  (public) ─
+const courseFeedbackSummary = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT COUNT(*)::int AS total_reviews,
+              ROUND(AVG(rating)::numeric, 1) AS avg_rating,
+              COUNT(*) FILTER (WHERE recommend = true)::int AS recommend_count
+       FROM course_feedback
+       WHERE course_id = $1 AND rating IS NOT NULL`,
+      [req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) { next(err); }
+};
+
+// ─── GET /api/courses/:id/my-feedback  (student) ─────
+const myCourseFeedback = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT * FROM course_feedback WHERE course_id = $1 AND user_id = $2`,
+      [req.params.id, req.user.user_id]
+    );
+    res.json(result.rows);
+  } catch (err) { next(err); }
+};
+
+// ─── GET /api/courses/:id/feedback  (admin) ──────────
+const allCourseFeedback = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT f.*, u.name, u.email FROM course_feedback f
+       JOIN users u ON u.id = f.user_id
+       WHERE f.course_id = $1
+       ORDER BY f.kind, f.created_at DESC`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) { next(err); }
+};
+
+// ─── GET /api/courses/:id/final-quiz-status  ────────────
+//   Returns lesson progress + final quiz info + user attempt
+const finalQuizStatus = async (req, res, next) => {
+  try {
+    const userId = req.user.user_id;
+    const courseId = req.params.id;
+
+    // Total + completed lessons (excluding final-quiz section if it has lessons)
+    const lessonsRes = await query(
+      `SELECT COUNT(l.id)::int AS total,
+              COUNT(lp.lesson_id) FILTER (WHERE lp.completed = true)::int AS completed
+       FROM sections s
+       JOIN lessons l ON l.section_id = s.id
+       LEFT JOIN lesson_progress lp ON lp.lesson_id = l.id AND lp.user_id = $1
+       WHERE s.course_id = $2`,
+      [userId, courseId]
+    );
+    const { total, completed } = lessonsRes.rows[0];
+
+    // Final quiz
+    const quizRes = await query(
+      `SELECT q.id, q.title, q.description, q.passing_score
+       FROM quizzes q
+       WHERE q.course_id = $1 AND q.is_final = true
+       ORDER BY q.created_at DESC LIMIT 1`,
+      [courseId]
+    );
+
+    // My latest attempt
+    let attempt = null;
+    if (quizRes.rows.length) {
+      const aRes = await query(
+        `SELECT score_pct, earned_points, total_points, level, created_at
+         FROM quiz_attempts WHERE quiz_id = $1 AND user_id = $2
+         ORDER BY created_at DESC LIMIT 1`,
+        [quizRes.rows[0].id, userId]
+      );
+      if (aRes.rows.length) attempt = aRes.rows[0];
+    }
+
+    const lessons_done = total > 0 && completed >= total;
+    const quiz = quizRes.rows[0] || null;
+    const passed = attempt && quiz && attempt.score_pct >= quiz.passing_score;
+
+    res.json({
+      total_lessons: total,
+      completed_lessons: completed,
+      lessons_done,
+      final_quiz: quiz,
+      my_attempt: attempt,
+      passed: !!passed,
+      can_get_certificate: !!passed,
+    });
+  } catch (err) { next(err); }
+};
+
+module.exports = { listCourses, getCourse, createCourse, updateCourse, deleteCourse, getCourseAnalytics, submitCourseFeedback, myCourseFeedback, allCourseFeedback, finalQuizStatus, courseFeedbackSummary };
