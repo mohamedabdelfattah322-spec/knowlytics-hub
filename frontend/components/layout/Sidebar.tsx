@@ -27,6 +27,7 @@ const studentNav = [
   { href: '/dashboard/student/progress', icon: BarChart2, label: 'Progress' },
   { href: '/dashboard/student/notes', icon: FolderOpen, label: 'Notes & Bookmarks' },
   { href: '/courses', icon: GraduationCap, label: 'Browse Courses' },
+  { href: '/dashboard/student/settings', icon: Settings, label: 'الإعدادات' },
 ];
 
 export default function Sidebar() {

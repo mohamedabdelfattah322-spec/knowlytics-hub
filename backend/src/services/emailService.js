@@ -131,6 +131,25 @@ const sendBroadcastEmail = async (to, subject, htmlBody) => {
   await sendMail({ to, subject, html: baseTemplate(htmlBody) });
 };
 
+const sendPasswordResetEmail = async (user, resetUrl) => {
+  await sendMail({
+    to: user.email,
+    subject: 'إعادة تعيين كلمة المرور — Knowlytics Hub',
+    html: baseTemplate(`
+      <h1>مرحباً ${user.name}</h1>
+      <p>وصلنا طلب إعادة تعيين كلمة المرور لحسابك. اضغط الزر التالي لتعيين كلمة مرور جديدة:</p>
+      <a href="${resetUrl}" class="btn">إعادة تعيين كلمة المرور</a>
+      <p style="margin-top:20px; color:#94a3b8; font-size:13px;">
+        هذا الرابط صالح لمدة <strong>30 دقيقة فقط</strong>. إذا لم تطلب إعادة التعيين، تجاهل هذه الرسالة.
+      </p>
+      <p style="color:#94a3b8; font-size:12px; margin-top:10px;">
+        إن لم يعمل الزر، انسخ هذا الرابط إلى متصفحك:<br>
+        <span style="word-break:break-all; color:#6366f1;">${resetUrl}</span>
+      </p>
+    `),
+  });
+};
+
 module.exports = {
   sendEnrollmentConfirmation,
   sendCourseCompletionEmail,
@@ -138,4 +157,5 @@ module.exports = {
   sendNewLiveSessionEmail,
   sendRefundEmail,
   sendBroadcastEmail,
+  sendPasswordResetEmail,
 };

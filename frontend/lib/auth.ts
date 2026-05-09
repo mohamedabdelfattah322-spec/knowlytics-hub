@@ -10,8 +10,11 @@ export interface User {
   avatar_url?: string;
 }
 
-export const saveToken = (token: string) => {
-  Cookies.set('kh_token', token, { expires: 7, sameSite: 'strict' });
+export const saveToken = (token: string, days?: number) => {
+  // If days not set → session cookie (expires when browser closes)
+  const opts: Cookies.CookieAttributes = { sameSite: 'strict' };
+  if (days) opts.expires = days;
+  Cookies.set('kh_token', token, opts);
 };
 
 export const getToken = () => Cookies.get('kh_token');

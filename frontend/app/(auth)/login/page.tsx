@@ -21,13 +21,14 @@ export default function LoginPage() {
   const { login } = useAuth();
   const [showPass, setShowPass] = useState(false);
 
+  const [remember, setRemember] = useState(true);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
 
   const onSubmit = async (data: FormValues) => {
     try {
-      await login(data.email, data.password);
+      await login(data.email, data.password, remember);
       toast.success('Welcome back!');
       // Redirect based on role (fetchMe is called inside login)
       const user = useAuth.getState().user;
@@ -88,16 +89,32 @@ export default function LoginPage() {
               {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}
             </div>
 
+            {/* Remember me + Forgot password */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="w-4 h-4 rounded border-dark-600 bg-dark-700 text-brand-500 focus:ring-brand-500"
+                />
+                <span className="text-sm text-slate-400">تذكّرني</span>
+              </label>
+              <Link href="/forgot-password" className="text-sm text-brand-400 hover:text-brand-300">
+                نسيت كلمة المرور؟
+              </Link>
+            </div>
+
             <button type="submit" disabled={isSubmitting} className="btn-primary w-full flex items-center justify-center gap-2">
-              {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</> : 'Sign In'}
+              {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> جارِ الدخول...</> : 'تسجيل الدخول'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-slate-400 text-sm">
-              Don&apos;t have an account?{' '}
+              مش عندك حساب؟{' '}
               <Link href="/register" className="text-brand-400 hover:text-brand-300 font-medium">
-                Create one
+                سجّل الآن
               </Link>
             </p>
           </div>
