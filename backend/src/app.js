@@ -72,6 +72,13 @@ app.use(rateLimit({
 // ─── Local uploads static serving (dev only, behind auth via /api/files/stream) ─
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// ─── Stripe webhook MUST receive raw body (mount BEFORE json parser) ──
+const { stripeWebhook } = require('./routes/payments');
+app.post('/api/payments/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  stripeWebhook
+);
+
 // ─── Body Parsing ─────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
