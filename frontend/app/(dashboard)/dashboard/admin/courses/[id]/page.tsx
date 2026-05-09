@@ -1034,7 +1034,7 @@ export default function AdminCourseEditorPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center gap-1">
-                  <DollarSign className="w-3.5 h-3.5 text-green-400" /> السعر (جنيه مصري EGP)
+                  <DollarSign className="w-3.5 h-3.5 text-green-400" /> السعر (جنيه)
                 </label>
                 <input type="number" value={course.price} min={0} step={0.01}
                   onChange={(e) => setCourse({ ...course, price: parseFloat(e.target.value) || 0 })} className="input" />

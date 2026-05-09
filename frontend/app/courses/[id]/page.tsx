@@ -6,7 +6,7 @@ import { BookOpen, Clock, Users, Play, Lock, ChevronDown, ChevronUp, Loader2, Ch
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { formatCurrency, levelColor, cn } from '@/lib/utils';
+import { formatPrice, levelColor, cn } from '@/lib/utils';
 import CourseFeedback from '@/components/CourseFeedback';
 import CertificateButton from '@/components/CertificateButton';
 
@@ -161,7 +161,7 @@ export default function CourseDetailPage() {
               <BookOpen className="w-14 h-14 text-brand-400" />
             </div>
             <p className="text-3xl font-bold text-white mb-1">
-              {course.price === 0 ? 'Free' : formatCurrency(course.price)}
+              {formatPrice(course.price)}
             </p>
             <p className="text-slate-400 text-sm mb-5">Lifetime access · All devices</p>
 

@@ -8,7 +8,7 @@ const getDashboardStats = async (req, res, next) => {
       query(`SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE role = 'student') AS students, COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') AS new_this_month FROM users`),
       query(`SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE is_published = true) AS published FROM courses`),
       query(`SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE completed_at IS NOT NULL) AS completed FROM enrollments`),
-      query(`SELECT COALESCE(SUM(c.price), 0) AS total FROM enrollments e JOIN courses c ON c.id = e.course_id WHERE e.enrolled_at > NOW() - INTERVAL '30 days'`),
+      query(`SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE status = 'success' AND paid_at > NOW() - INTERVAL '30 days'`),
     ]);
 
     const recentEnrollments = await query(

@@ -7,7 +7,7 @@ import { Loader2, BookOpen, ShoppingCart, CheckCircle, ArrowLeft } from 'lucide-
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { formatCurrency } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 
 interface Course {
   id: string; title: string; description: string; type: string;
@@ -114,7 +114,7 @@ export default function BuyCoursePage() {
                 <div className="flex justify-between"><span>النوع</span><span className="text-white capitalize">{course.type}</span></div>
                 <div className="flex justify-between text-lg font-bold border-t border-dark-700 pt-3 mt-3">
                   <span className="text-slate-300">الإجمالي</span>
-                  <span className="text-white">{formatCurrency(course.price)}</span>
+                  <span className="text-white">{formatPrice(course.price)}</span>
                 </div>
               </div>
             </div>
@@ -147,7 +147,7 @@ export default function BuyCoursePage() {
                 </div>
 
                 <button type="submit" disabled={isSubmitting} className="btn-primary w-full flex items-center justify-center gap-2">
-                  {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> جارِ التحميل...</> : `ادفع ${formatCurrency(course.price)}`}
+                  {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> جارِ التحميل...</> : `ادفع ${formatPrice(course.price)}`}
                 </button>
               </form>
             </div>

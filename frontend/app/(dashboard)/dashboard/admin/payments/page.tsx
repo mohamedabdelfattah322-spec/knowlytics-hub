@@ -114,13 +114,13 @@ function InvoiceModal({ paymentId, onClose }: { paymentId: string; onClose: () =
           <tbody>
             <tr className="border-b border-gray-100">
               <td className="py-3 text-right">{inv.item_title}</td>
-              <td className="py-3 text-left font-semibold">{inv.amount.toLocaleString()} {inv.currency}</td>
+              <td className="py-3 text-left font-semibold">{inv.amount.toLocaleString('ar-EG')} جنيه</td>
             </tr>
           </tbody>
           <tfoot>
             <tr>
               <td className="py-3 text-right font-bold text-gray-800">الإجمالي</td>
-              <td className="py-3 text-left font-bold text-indigo-600 text-lg">{inv.amount.toLocaleString()} {inv.currency}</td>
+              <td className="py-3 text-left font-bold text-indigo-600 text-lg">{inv.amount.toLocaleString('ar-EG')} جنيه</td>
             </tr>
           </tfoot>
         </table>

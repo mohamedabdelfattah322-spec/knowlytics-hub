@@ -9,11 +9,15 @@ export const formatDuration = (minutes: number): string => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
-export const formatCurrency = (amount: number | string): string => {
+export const formatCurrency = (amount: number | string, zeroLabel?: string): string => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (!num || num === 0) return 'مجاناً';
+  if (isNaN(num) || num === 0) return zeroLabel ?? '0 جنيه';
   return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(num)} جنيه`;
 };
+
+// For course prices where 0 means "Free"
+export const formatPrice = (amount: number | string): string =>
+  formatCurrency(amount, 'مجاناً');
 
 export const levelColor = (level: string) => {
   const map: Record<string, string> = {

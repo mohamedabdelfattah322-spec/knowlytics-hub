@@ -92,7 +92,7 @@ export default function StudentInvoicePage() {
                   {inv.payment_method && <p className="text-xs text-gray-400 mt-0.5">عبر {inv.payment_method}</p>}
                 </td>
                 <td className="py-4 px-4 text-left font-semibold text-gray-800">
-                  {inv.amount.toLocaleString('ar-EG')} {inv.currency}
+                  {inv.amount.toLocaleString('ar-EG')} جنيه
                 </td>
               </tr>
             </tbody>
@@ -100,7 +100,7 @@ export default function StudentInvoicePage() {
               <tr>
                 <td className="py-3 px-4 text-right font-bold text-gray-700">الإجمالي</td>
                 <td className="py-3 px-4 text-left font-bold text-indigo-600 text-lg">
-                  {inv.amount.toLocaleString('ar-EG')} {inv.currency}
+                  {inv.amount.toLocaleString('ar-EG')} جنيه
                 </td>
               </tr>
             </tfoot>

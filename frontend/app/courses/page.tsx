@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Search, BookOpen, Clock, Users, Filter } from 'lucide-react';
 import api from '@/lib/api';
-import { formatCurrency, levelColor, cn } from '@/lib/utils';
+import { formatPrice, levelColor, cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Course {
@@ -99,7 +99,7 @@ export default function CoursesPage() {
                   <span className="flex items-center gap-1"><Users className="w-3 h-3" />{c.enrollment_count}</span>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-dark-700">
-                  <span className="text-white font-bold">{c.price === 0 ? 'Free' : formatCurrency(c.price)}</span>
+                  <span className="text-white font-bold">{formatPrice(c.price)}</span>
                   <span className="text-xs text-slate-400">{c.instructor_name}</span>
                 </div>
               </Link>

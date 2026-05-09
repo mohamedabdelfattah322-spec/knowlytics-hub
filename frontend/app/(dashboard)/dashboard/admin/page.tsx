@@ -67,7 +67,7 @@ export default function AdminDashboard() {
         <StatCard icon={Users} label="Total Users" value={stats?.users.total} sub={`${stats?.users.new_this_month} new this month`} color="bg-blue-600" />
         <StatCard icon={BookOpen} label="Courses" value={stats?.courses.total} sub={`${stats?.courses.published} published`} color="bg-purple-600" />
         <StatCard icon={TrendingUp} label="Enrollments" value={stats?.enrollments.total} sub={`${stats?.enrollments.completed} completed`} color="bg-green-600" />
-        <StatCard icon={DollarSign} label="Monthly Revenue" value={formatCurrency(parseFloat(stats?.monthly_revenue || '0'))} color="bg-brand-600" />
+        <StatCard icon={DollarSign} label="الإيرادات الشهرية" value={formatCurrency(parseFloat(stats?.monthly_revenue || '0'))} color="bg-brand-600" />
       </div>
 
       {/* Recent Enrollments */}

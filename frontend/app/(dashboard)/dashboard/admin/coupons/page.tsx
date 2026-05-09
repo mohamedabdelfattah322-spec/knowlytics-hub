@@ -144,7 +144,7 @@ export default function CouponsPage() {
                     {c.description && <p className="text-xs text-slate-500 mt-0.5">{c.description}</p>}
                   </td>
                   <td className="px-4 py-3 text-white font-bold">
-                    {c.discount_type === 'percent' ? `${c.discount_value}%` : `${c.discount_value} EGP`}
+                    {c.discount_type === 'percent' ? `${c.discount_value}%` : `${c.discount_value} جنيه`}
                   </td>
                   <td className="px-4 py-3 text-slate-300">{c.course_title || <span className="text-slate-500">كل الكورسات</span>}</td>
                   <td className="px-4 py-3 text-slate-300">{c.audience || <span className="text-slate-500">للجميع</span>}</td>
