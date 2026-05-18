@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {  typescript: {
+const nextConfig = {
+  typescript: {
     ignoreBuildErrors: true,
+  },
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
   },
   images: {
     remotePatterns: [
