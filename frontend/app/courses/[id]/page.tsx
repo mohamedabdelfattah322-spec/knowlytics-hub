@@ -10,6 +10,7 @@ import { formatPrice, levelColor, cn } from '@/lib/utils';
 import CourseFeedback from '@/components/CourseFeedback';
 import CertificateButton from '@/components/CertificateButton';
 import ReviewSection from '@/components/course/ReviewSection';
+import DiscussionForum from '@/components/course/DiscussionForum';
 
 interface Lesson {
   id: string; title: string; type: string; duration_minutes: number; is_preview: boolean;
@@ -156,6 +157,9 @@ export default function CourseDetailPage() {
 
           {/* Reviews */}
           <ReviewSection courseId={String(id)} />
+
+          {/* Discussion Forum */}
+          {enrolled && <DiscussionForum courseId={String(id)} />}
         </div>
 
         {/* Right: Enrollment card */}

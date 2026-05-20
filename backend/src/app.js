@@ -35,6 +35,7 @@ const teamRoutes = require('./routes/teams');
 const calendarRoutes = require('./routes/calendar');
 const analyticsRoutes = require('./routes/analytics');
 const referralRoutes = require('./routes/referrals');
+const discussionRoutes = require('./routes/discussions');
 const { sendBroadcast, getBroadcastHistory } = require('./controllers/broadcastController');
 
 const app = express();
@@ -125,6 +126,7 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/referrals', referralRoutes);
+app.use('/api/discussions', discussionRoutes);
 
 // ─── Admin broadcast ──────────────────────────────────────
 const { authenticate, authorize } = require('./middleware/auth');

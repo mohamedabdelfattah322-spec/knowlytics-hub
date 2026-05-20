@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useVideoAnalytics } from '@/hooks/useVideoAnalytics';
+import DiscussionForum from '@/components/course/DiscussionForum';
 
 interface Lesson {
   id: string; title: string; type: string; content: string;
@@ -382,6 +383,9 @@ export default function LessonPlayerPage() {
             );
           })()}
         </div>
+
+        {/* Lesson Discussion */}
+        <DiscussionForum courseId={String(courseId)} lessonId={String(lessonId)} />
 
         {/* All lessons list (sidebar-like) */}
         {allLessons.length > 1 && (
