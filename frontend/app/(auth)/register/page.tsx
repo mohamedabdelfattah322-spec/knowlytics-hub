@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,12 +23,20 @@ type FormValues = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setUser } = useAuth();
   const [showPass, setShowPass] = useState(false);
+  const [refCode, setRefCode] = useState('');
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
+
+  // Capture referral code from URL
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) setRefCode(ref);
+  }, [searchParams]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -40,6 +48,12 @@ export default function RegisterPage() {
       });
       saveToken(res.token);
       setUser(res.user);
+
+      // Apply referral code after registration
+      if (refCode) {
+        api.post('/referrals/apply', { referral_code: refCode }).catch(() => {});
+      }
+
       toast.success('تم إنشاء الحساب! مرحباً بك في Knowlytics Hub 🎉');
       router.push('/dashboard/student');
     } catch (err: any) {
@@ -56,6 +70,12 @@ export default function RegisterPage() {
           </div>
           <p className="text-slate-400">ابدأ رحلتك التعليمية اليوم</p>
         </div>
+
+        {refCode && (
+          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 mb-4 text-center">
+            <p className="text-green-400 text-sm font-medium">🎁 لديك كود إحالة! ستحصل على خصم على أول عملية شراء</p>
+          </div>
+        )}
 
         <div className="card">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

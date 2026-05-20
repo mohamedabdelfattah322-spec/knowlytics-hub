@@ -2,6 +2,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { query } = require('../config/database');
 const emailService = require('../services/emailService');
+const { processReferralReward } = require('./referralController');
 
 // ─── Paymob config (from env) ─────────────────────────────
 const PAYMOB_API_KEY        = process.env.PAYMOB_API_KEY;
@@ -289,6 +290,9 @@ const fulfilPayment = async (payment, txnId, paymentMethod) => {
       emailService.sendEnrollmentConfirmation(userRes.rows[0], courseInfoRes.rows[0]).catch(() => {});
     }
   }
+
+  // Process referral reward
+  processReferralReward(payment.user_id, payment.id, payment.course_id, parseFloat(payment.amount || 0)).catch(() => {});
 
   // Track checkout_complete analytics
   query(

@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, BookOpen, Users, BarChart2, Video,
   Settings, LogOut, Bell, FolderOpen, GraduationCap, CreditCard, Tag, Package, Mail,
-  ShoppingCart, Trophy, Calendar, UserCheck,
+  ShoppingCart, Trophy, Calendar, UserCheck, Share2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,6 +41,7 @@ export default function Sidebar() {
     { href: '/dashboard/student/badges', icon: Trophy, label: t('nav.badges') },
     { href: '/dashboard/student/cart', icon: ShoppingCart, label: t('nav.cart') },
     { href: '/dashboard/student/calendar', icon: Calendar, label: t('nav.calendar') },
+    { href: '/dashboard/student/referrals', icon: Share2, label: t('nav.referrals') },
     { href: '/courses', icon: GraduationCap, label: t('nav.browse') },
     { href: '/dashboard/student/settings', icon: Settings, label: t('nav.settings') },
   ];

@@ -63,6 +63,7 @@ const translations = {
   'nav.badges': { ar: 'الإنجازات', en: 'Achievements' },
   'nav.cart': { ar: 'السلة', en: 'Cart' },
   'nav.calendar': { ar: 'التقويم', en: 'Calendar' },
+  'nav.referrals': { ar: 'الإحالات', en: 'Referrals' },
   'nav.browse': { ar: 'تصفح الكورسات', en: 'Browse Courses' },
   'nav.settings': { ar: 'الإعدادات', en: 'Settings' },
 
