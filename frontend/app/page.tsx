@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import ThemeLogo from '@/components/ThemeLogo';
 import { BookOpen, Users, Video, Award, ChevronRight, Star, Zap, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -37,7 +37,7 @@ export default function LandingPage() {
       <nav className="border-b border-dark-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center">
-            <Image src="/logo.png" alt="Knowlytics Hub" width={170} height={48} className="object-contain" priority />
+            <ThemeLogo width={170} height={48} priority />
           </div>
           <div className="flex items-center gap-3">
             <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
@@ -121,7 +121,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-dark-700 py-8 text-center text-slate-500 text-sm">
         <div className="flex items-center justify-center mb-2">
-          <Image src="/logo.png" alt="Knowlytics Hub" width={120} height={32} className="object-contain opacity-80" />
+          <ThemeLogo width={120} height={32} className="object-contain opacity-80" />
         </div>
         © {new Date().getFullYear()} Knowlytics Hub. All rights reserved.
       </footer>

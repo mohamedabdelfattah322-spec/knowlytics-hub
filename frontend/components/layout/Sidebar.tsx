@@ -1,7 +1,6 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 import {
   LayoutDashboard, BookOpen, Users, BarChart2, Video,
   Settings, LogOut, Bell, FolderOpen, GraduationCap, CreditCard, Tag, Package, Mail,
@@ -10,6 +9,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
+import ThemeLogo from '@/components/ThemeLogo';
 import ThemeSwitcher from './ThemeSwitcher';
 import LanguageSwitcher from './LanguageSwitcher';
 
@@ -52,7 +52,7 @@ export default function Sidebar() {
       {/* Logo */}
       <Link href={user?.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'}
             className="px-5 py-4 border-b border-dark-700 flex items-center justify-center hover:bg-dark-700/30 transition-colors">
-        <Image src="/logo.png" alt="Knowlytics Hub" width={180} height={50} className="object-contain" priority />
+        <ThemeLogo width={180} height={50} priority />
       </Link>
 
       {/* User info */}

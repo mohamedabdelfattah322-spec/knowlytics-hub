@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import Image from 'next/image';
+import ThemeLogo from '@/components/ThemeLogo';
 import { useAuth } from '@/hooks/useAuth';
 
 const schema = z.object({
@@ -49,7 +49,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-3">
-            <Image src="/logo.png" alt="Knowlytics Hub" width={220} height={70} className="object-contain" priority />
+            <ThemeLogo width={220} height={70} priority />
           </div>
           <p className="text-slate-400">Sign in to continue learning</p>
         </div>

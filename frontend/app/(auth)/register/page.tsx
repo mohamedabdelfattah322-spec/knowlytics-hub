@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import Image from 'next/image';
+import ThemeLogo from '@/components/ThemeLogo';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/lib/api';
@@ -52,7 +52,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-3">
-            <Image src="/logo.png" alt="Knowlytics Hub" width={220} height={70} className="object-contain" priority />
+            <ThemeLogo width={220} height={70} priority />
           </div>
           <p className="text-slate-400">ابدأ رحلتك التعليمية اليوم</p>
         </div>

@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Search, BookOpen, Clock, Users, Filter, Star, ShoppingCart } from 'lucide-react';
 import api from '@/lib/api';
 import { formatPrice, levelColor, cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
+import ThemeLogo from '@/components/ThemeLogo';
 
 interface Course {
   id: string; title: string; description: string; type: string;
@@ -47,7 +47,7 @@ export default function CoursesPage() {
       <div className="border-b border-dark-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
-            <Image src="/logo.png" alt="Knowlytics Hub" width={150} height={42} className="object-contain" priority />
+            <ThemeLogo width={150} height={42} priority />
           </Link>
           <div className="flex items-center gap-3">
             <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
