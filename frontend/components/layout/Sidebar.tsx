@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import ThemeSwitcher from './ThemeSwitcher';
 
 const adminNav = [
   { href: '/dashboard/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -94,8 +95,9 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="p-4 border-t border-dark-700">
+      {/* Theme + Logout */}
+      <div className="p-4 border-t border-dark-700 space-y-1">
+        <ThemeSwitcher />
         <button
           onClick={() => logout()}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-900/20 w-full transition-all duration-200"

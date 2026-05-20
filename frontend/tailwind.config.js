@@ -8,20 +8,30 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50:  '#eef2ff',
-          100: '#e0e7ff',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          900: '#312e81',
+          50:  'var(--color-brand-50)',
+          100: 'var(--color-brand-100)',
+          400: 'var(--color-brand-400)',
+          500: 'var(--color-brand-500)',
+          600: 'var(--color-brand-600)',
+          700: 'var(--color-brand-700)',
+          900: 'var(--color-brand-900)',
         },
         dark: {
-          900: '#0a1628',
-          800: '#0d1f3c',
-          700: '#152847',
-          600: '#1e3a5f',
+          900: 'var(--color-bg-900)',
+          800: 'var(--color-bg-800)',
+          700: 'var(--color-bg-700)',
+          600: 'var(--color-bg-600)',
         },
+        // Semantic text colors
+        t: {
+          primary:   'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          muted:     'var(--color-text-muted)',
+          inverse:   'var(--color-text-inverse)',
+        },
+      },
+      borderColor: {
+        DEFAULT: 'var(--color-border)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
