@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, BookOpen, Clock, Users, Filter } from 'lucide-react';
+import { Search, BookOpen, Clock, Users, Filter, Star, ShoppingCart } from 'lucide-react';
 import api from '@/lib/api';
 import { formatPrice, levelColor, cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,21 +11,33 @@ interface Course {
   id: string; title: string; description: string; type: string;
   level: string; price: number; thumbnail_url: string;
   duration_hours: number; enrollment_count: string; instructor_name: string;
+  avg_rating: number; review_count: number; category_name: string; category_name_ar: string;
+}
+
+interface Category {
+  id: string; name: string; name_ar: string; slug: string; icon: string; course_count: number;
 }
 
 export default function CoursesPage() {
   const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [sortBy, setSortBy] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    api.get('/categories').then(({ data }) => setCategories(data)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
-    api.get('/courses', { params: { search, type: typeFilter || undefined, limit: 50 } })
+    api.get('/courses', { params: { search, type: typeFilter || undefined, category: categoryFilter || undefined, sort: sortBy || undefined, limit: 50 } })
       .then(({ data }) => setCourses(data.courses))
       .finally(() => setLoading(false));
-  }, [search, typeFilter]);
+  }, [search, typeFilter, categoryFilter, sortBy]);
 
   return (
     <div className="min-h-screen bg-dark-900">
@@ -60,13 +72,26 @@ export default function CoursesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input type="text" placeholder="Search courses..." value={search} onChange={(e) => setSearch(e.target.value)} className="input pl-10" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Filter className="w-4 h-4 text-slate-400" />
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="input w-auto">
               <option value="">All Types</option>
               <option value="online">Online</option>
               <option value="live">Live</option>
               <option value="hybrid">Hybrid</option>
+            </select>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="input w-auto">
+              <option value="">كل الأقسام</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name_ar || cat.name} ({cat.course_count})</option>
+              ))}
+            </select>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input w-auto">
+              <option value="">الأحدث</option>
+              <option value="popular">الأكثر تسجيلاً</option>
+              <option value="rating">الأعلى تقييماً</option>
+              <option value="price_low">السعر: الأقل</option>
+              <option value="price_high">السعر: الأعلى</option>
             </select>
           </div>
         </div>
@@ -94,10 +119,18 @@ export default function CoursesPage() {
                 </div>
                 <h3 className="font-semibold text-white text-sm mb-1 line-clamp-2 group-hover:text-brand-300 transition-colors">{c.title}</h3>
                 <p className="text-slate-400 text-xs line-clamp-2 mb-3 flex-1">{c.description}</p>
-                <div className="flex items-center justify-between text-xs text-slate-500 mb-3">
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{c.duration_hours}h</span>
                   <span className="flex items-center gap-1"><Users className="w-3 h-3" />{c.enrollment_count}</span>
                 </div>
+                {c.avg_rating > 0 && (
+                  <div className="flex items-center gap-1 mb-3 text-xs">
+                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                    <span className="text-yellow-400">{parseFloat(String(c.avg_rating)).toFixed(1)}</span>
+                    <span className="text-slate-500">({c.review_count})</span>
+                    {c.category_name_ar && <span className="text-slate-600 mr-2">• {c.category_name_ar}</span>}
+                  </div>
+                )}
                 <div className="flex items-center justify-between pt-3 border-t border-dark-700">
                   <span className="text-white font-bold">{formatPrice(c.price)}</span>
                   <span className="text-xs text-slate-400">{c.instructor_name}</span>

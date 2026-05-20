@@ -26,6 +26,13 @@ const certificateRoutes = require('./routes/certificates');
 const couponRoutes = require('./routes/coupons');
 const bundleRoutes = require('./routes/bundles');
 const notesRoutes = require('./routes/notes');
+const categoryRoutes = require('./routes/categories');
+const reviewRoutes = require('./routes/reviews');
+const badgeRoutes = require('./routes/badges');
+const cartRoutes = require('./routes/cart');
+const subscriptionRoutes = require('./routes/subscriptions');
+const teamRoutes = require('./routes/teams');
+const calendarRoutes = require('./routes/calendar');
 const { sendBroadcast, getBroadcastHistory } = require('./controllers/broadcastController');
 
 const app = express();
@@ -107,6 +114,13 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/bundles', bundleRoutes);
 app.use('/api/notes', notesRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/courses/:courseId/reviews', reviewRoutes);
+app.use('/api/badges', badgeRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/teams', teamRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // ─── Admin broadcast ──────────────────────────────────────
 const { authenticate, authorize } = require('./middleware/auth');

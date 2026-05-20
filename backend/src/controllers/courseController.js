@@ -4,7 +4,7 @@ const { deleteObject } = require('../config/aws');
 // GET /api/courses  — public listing with filters
 const listCourses = async (req, res, next) => {
   try {
-    const { type, search, page = 1, limit = 12, admin } = req.query;
+    const { type, search, page = 1, limit = 12, admin, category, language, level: lvl, sort } = req.query;
     const offset = (page - 1) * limit;
     const params = [];
     // Admin sees all courses (drafts + published); students see only published
@@ -12,21 +12,34 @@ const listCourses = async (req, res, next) => {
 
     if (type) { params.push(type); conditions.push(`c.type = $${params.length}`); }
     if (search) { params.push(`%${search}%`); conditions.push(`(c.title ILIKE $${params.length} OR c.description ILIKE $${params.length})`); }
+    if (category) { params.push(category); conditions.push(`c.category_id = $${params.length}`); }
+    if (language) { params.push(language); conditions.push(`c.language = $${params.length}`); }
+    if (lvl) { params.push(lvl); conditions.push(`c.level = $${params.length}`); }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     params.push(limit, offset);
 
+    // Sort options
+    let orderBy = 'c.created_at DESC';
+    if (sort === 'popular') orderBy = 'enrollment_count DESC';
+    else if (sort === 'rating') orderBy = 'c.avg_rating DESC NULLS LAST';
+    else if (sort === 'price_low') orderBy = 'c.price ASC';
+    else if (sort === 'price_high') orderBy = 'c.price DESC';
+
     const result = await query(
       `SELECT c.id, c.title, c.description, c.type, c.thumbnail_url, c.price,
-              c.level, c.duration_hours, c.created_at,
+              c.level, c.duration_hours, c.created_at, c.category_id, c.language,
+              c.short_description, c.avg_rating, c.review_count,
               u.name AS instructor_name,
+              cat.name AS category_name, cat.name_ar AS category_name_ar,
               COUNT(DISTINCT e.id) AS enrollment_count
        FROM courses c
        LEFT JOIN users u ON u.id = c.instructor_id
        LEFT JOIN enrollments e ON e.course_id = c.id
+       LEFT JOIN categories cat ON cat.id = c.category_id
        ${where}
-       GROUP BY c.id, u.name
-       ORDER BY c.created_at DESC
+       GROUP BY c.id, u.name, cat.name, cat.name_ar
+       ORDER BY ${orderBy}
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params
     );
@@ -109,7 +122,7 @@ const updateCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
     const fields = req.body;
-    const allowed = ['title', 'description', 'type', 'level', 'price', 'duration_hours', 'thumbnail_url', 'is_published', 'default_access_days'];
+    const allowed = ['title', 'description', 'type', 'level', 'price', 'duration_hours', 'thumbnail_url', 'is_published', 'default_access_days', 'category_id', 'language', 'short_description'];
     const updates = [];
     const values = [];
 

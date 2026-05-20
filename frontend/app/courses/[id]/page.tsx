@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatPrice, levelColor, cn } from '@/lib/utils';
 import CourseFeedback from '@/components/CourseFeedback';
 import CertificateButton from '@/components/CertificateButton';
+import ReviewSection from '@/components/course/ReviewSection';
 
 interface Lesson {
   id: string; title: string; type: string; duration_minutes: number; is_preview: boolean;
@@ -152,6 +153,9 @@ export default function CourseDetailPage() {
               ))}
             </div>
           </div>
+
+          {/* Reviews */}
+          <ReviewSection courseId={String(id)} />
         </div>
 
         {/* Right: Enrollment card */}

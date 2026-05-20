@@ -133,7 +133,7 @@ export default function LessonPlayerPage() {
     try {
       // Request as blob to support both S3-redirected and local-binary responses
       const res = await api.get(`/files/${fileId}/download`, { responseType: 'blob' });
-      const ct = res.headers['content-type'] || '';
+      const ct = String(res.headers['content-type'] || '');
 
       if (ct.includes('application/json')) {
         // S3 mode — returns JSON { url }

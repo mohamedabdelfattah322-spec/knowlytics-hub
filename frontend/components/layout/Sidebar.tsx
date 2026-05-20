@@ -5,6 +5,7 @@ import Image from 'next/image';
 import {
   LayoutDashboard, BookOpen, Users, BarChart2, Video,
   Settings, LogOut, Bell, FolderOpen, GraduationCap, CreditCard, Tag, Package, Mail,
+  ShoppingCart, Trophy, Calendar, UserCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,9 @@ const adminNav = [
   { href: '/dashboard/admin/bundles', icon: Package, label: 'Bundles' },
   { href: '/dashboard/admin/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/dashboard/admin/newsletter', icon: Mail, label: 'Newsletter' },
+  { href: '/dashboard/admin/categories', icon: FolderOpen, label: 'Categories' },
+  { href: '/dashboard/admin/subscriptions', icon: CreditCard, label: 'Subscriptions' },
+  { href: '/dashboard/admin/teams', icon: UserCheck, label: 'Teams' },
   { href: '/dashboard/admin/sessions', icon: Settings, label: 'Sessions' },
 ];
 
@@ -26,6 +30,9 @@ const studentNav = [
   { href: '/dashboard/student/courses', icon: BookOpen, label: 'My Courses' },
   { href: '/dashboard/student/progress', icon: BarChart2, label: 'Progress' },
   { href: '/dashboard/student/notes', icon: FolderOpen, label: 'Notes & Bookmarks' },
+  { href: '/dashboard/student/badges', icon: Trophy, label: 'الإنجازات' },
+  { href: '/dashboard/student/cart', icon: ShoppingCart, label: 'السلة' },
+  { href: '/dashboard/student/calendar', icon: Calendar, label: 'التقويم' },
   { href: '/courses', icon: GraduationCap, label: 'Browse Courses' },
   { href: '/dashboard/student/settings', icon: Settings, label: 'الإعدادات' },
 ];
