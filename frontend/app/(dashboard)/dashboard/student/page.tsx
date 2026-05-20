@@ -5,6 +5,7 @@ import { BookOpen, TrendingUp, Award, Play, ChevronRight, Sparkles, Users, Messa
 import { format } from 'date-fns';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/hooks/useLanguage';
 import { cn } from '@/lib/utils';
 
 interface Enrollment {
@@ -27,6 +28,7 @@ interface Batch {
 
 export default function StudentDashboard() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -52,32 +54,30 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-8 animate-slide-up">
-      {/* Header with student type badge */}
+      {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white">
-            مرحباً، <span className="text-brand-400">{user?.name?.split(' ')[0]}</span> 👋
+            {t('student.welcome')} <span className="text-brand-400">{user?.name?.split(' ')[0]}</span> 👋
           </h1>
           <p className="text-slate-400 text-sm mt-1">
             {isLive
-              ? (batches.length > 0 ? `عندك ${batches.length} دفعة Live شغالة` : 'استنى الأدمن يضيفك لدفعة')
-              : (inProgress.length > 0 ? `عندك ${inProgress.length} كورس قيد الدراسة` : 'استكشف الكورسات وابدأ التعلم')
+              ? (batches.length > 0 ? `${batches.length} ${t('student.hasActiveBatches')}` : t('student.waitAdmin'))
+              : (inProgress.length > 0 ? `${inProgress.length} ${t('student.hasInProgress')}` : t('student.exploreStart'))
             }
           </p>
         </div>
-        <span className={cn('badge text-xs',
-          isLive ? 'badge-purple' : 'badge-blue'
-        )}>
-          {isLive ? '🔴 Live Student' : '💻 Online Student'}
+        <span className={cn('badge text-xs', isLive ? 'badge-purple' : 'badge-blue')}>
+          {isLive ? `🔴 ${t('student.liveStudent')}` : `💻 ${t('student.onlineStudent')}`}
         </span>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { icon: BookOpen, label: 'Enrolled', value: enrollments.length, color: 'text-blue-400' },
-          { icon: TrendingUp, label: 'In Progress', value: inProgress.length, color: 'text-yellow-400' },
-          { icon: Award, label: 'Completed', value: completed.length, color: 'text-green-400' },
+          { icon: BookOpen, label: t('student.enrolled'), value: enrollments.length, color: 'text-blue-400' },
+          { icon: TrendingUp, label: t('student.inProgress'), value: inProgress.length, color: 'text-yellow-400' },
+          { icon: Award, label: t('student.completed'), value: completed.length, color: 'text-green-400' },
         ].map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="card text-center">
             <Icon className={cn('w-6 h-6 mx-auto mb-2', color)} />
@@ -87,11 +87,11 @@ export default function StudentDashboard() {
         ))}
       </div>
 
-      {/* My Batches (Live groups) */}
+      {/* My Batches */}
       {batches.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5 text-purple-400" /> دفعاتي (Live Groups)
+            <Users className="w-5 h-5 text-purple-400" /> {t('student.myBatches')}
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
             {batches.map((b) => {
@@ -116,13 +116,13 @@ export default function StudentDashboard() {
                       )}
                     </div>
                     <div className="flex items-center gap-1 text-purple-400 text-xs">
-                      <MessageSquare className="w-3.5 h-3.5" /> شات
+                      <MessageSquare className="w-3.5 h-3.5" /> {t('student.chat')}
                     </div>
                   </div>
                   {total > 0 && (
                     <div className="mt-3 pt-3 border-t border-dark-700">
                       <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-slate-400">المحاضرات</span>
+                        <span className="text-slate-400">{t('student.lectures')}</span>
                         <span className="text-white font-medium">{done} / {total}</span>
                       </div>
                       <div className="progress-bar">
@@ -141,7 +141,7 @@ export default function StudentDashboard() {
       {inProgress.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Play className="w-5 h-5 text-brand-400" /> Continue Learning
+            <Play className="w-5 h-5 text-brand-400" /> {t('student.continueLearning')}
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
             {inProgress.map((e) => (
@@ -155,14 +155,14 @@ export default function StudentDashboard() {
                     <div className="progress-bar mt-2 mb-1">
                       <div className="progress-fill" style={{ width: `${e.progress_pct}%` }} />
                     </div>
-                    <p className="text-xs text-slate-400">{e.progress_pct}% complete</p>
+                    <p className="text-xs text-slate-400">{e.progress_pct}% {t('student.complete')}</p>
                   </div>
                 </div>
                 <Link
                   href={e.last_lesson_id ? `/courses/${e.course_id}/lessons/${e.last_lesson_id}` : `/courses/${e.course_id}`}
                   className="mt-4 btn-primary w-full text-sm flex items-center justify-center gap-2"
                 >
-                  <Play className="w-3.5 h-3.5" /> Resume
+                  <Play className="w-3.5 h-3.5" /> {t('student.resume')}
                 </Link>
               </div>
             ))}
@@ -173,7 +173,7 @@ export default function StudentDashboard() {
       {/* Not started */}
       {notStarted.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-white mb-4">Not Started Yet</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">{t('student.notStarted')}</h2>
           <div className="grid md:grid-cols-3 gap-4">
             {notStarted.map((e) => (
               <Link key={e.course_id} href={`/courses/${e.course_id}`} className="card hover:border-brand-500/40 transition-all duration-200 group flex items-center gap-3">
@@ -191,11 +191,11 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {/* Recommendations — only for online students */}
+      {/* Recommendations */}
       {!isLive && recommendations.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-yellow-400" /> Recommended for You
+            <Sparkles className="w-5 h-5 text-yellow-400" /> {t('student.recommended')}
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
             {recommendations.map((r) => (
@@ -218,10 +218,10 @@ export default function StudentDashboard() {
       {enrollments.length === 0 && !loading && (
         <div className="card text-center py-16">
           <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <h3 className="text-white font-semibold mb-2">No courses yet</h3>
-          <p className="text-slate-400 text-sm mb-6">Explore our catalog and enroll in your first course.</p>
+          <h3 className="text-white font-semibold mb-2">{t('student.noCourses')}</h3>
+          <p className="text-slate-400 text-sm mb-6">{t('student.noCoursesDesc')}</p>
           <Link href="/courses" className="btn-primary inline-flex items-center gap-2">
-            Browse Courses <ChevronRight className="w-4 h-4" />
+            {t('nav.browse')} <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
       )}

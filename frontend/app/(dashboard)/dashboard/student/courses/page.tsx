@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { BookOpen, Play, Clock, Award } from 'lucide-react';
 import api from '@/lib/api';
+import { useLanguage } from '@/hooks/useLanguage';
 import { cn } from '@/lib/utils';
 
 interface Enrollment {
@@ -13,6 +14,7 @@ interface Enrollment {
 }
 
 export default function MyCoursesPage() {
+  const { t } = useLanguage();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [filter, setFilter] = useState<'all' | 'in-progress' | 'completed' | 'not-started'>('all');
   const [loading, setLoading] = useState(true);
@@ -31,17 +33,17 @@ export default function MyCoursesPage() {
   return (
     <div className="space-y-6 animate-slide-up">
       <div>
-        <h1 className="text-2xl font-bold text-white">My Courses</h1>
-        <p className="text-slate-400 text-sm mt-1">{enrollments.length} enrolled courses</p>
+        <h1 className="text-2xl font-bold text-white">{t('nav.myCourses')}</h1>
+        <p className="text-slate-400 text-sm mt-1">{enrollments.length} {t('courses.enrolledCount')}</p>
       </div>
 
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
         {([
-          { key: 'all', label: 'All' },
-          { key: 'in-progress', label: 'In Progress' },
-          { key: 'completed', label: 'Completed' },
-          { key: 'not-started', label: 'Not Started' },
+          { key: 'all', label: t('common.all') },
+          { key: 'in-progress', label: t('student.inProgress') },
+          { key: 'completed', label: t('student.completed') },
+          { key: 'not-started', label: t('student.notStarted') },
         ] as const).map(({ key, label }) => (
           <button
             key={key}
@@ -70,48 +72,36 @@ export default function MyCoursesPage() {
           ))
           : filtered.map((e) => (
             <div key={e.course_id} className="card hover:border-brand-500/40 transition-all duration-200 flex flex-col">
-              {/* Thumbnail */}
               <div className="w-full h-32 bg-gradient-to-br from-brand-500/20 to-purple-500/20 rounded-lg mb-4 flex items-center justify-center relative">
                 <BookOpen className="w-10 h-10 text-brand-400" />
                 {e.progress_pct === 100 && (
-                  <div className="absolute top-2 right-2">
-                    <Award className="w-5 h-5 text-yellow-400" />
-                  </div>
+                  <div className="absolute top-2 right-2"><Award className="w-5 h-5 text-yellow-400" /></div>
                 )}
               </div>
-
-              {/* Badges */}
               <div className="flex items-center gap-2 mb-2">
                 <span className={cn('badge', e.type === 'live' ? 'badge-purple' : 'badge-blue')}>{e.type}</span>
-                {e.progress_pct === 100 && <span className="badge badge-green">Completed</span>}
+                {e.progress_pct === 100 && <span className="badge badge-green">{t('student.completed')}</span>}
               </div>
-
               <h3 className="font-semibold text-white text-sm mb-2 flex-1 line-clamp-2">{e.course_title}</h3>
-
               <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
                 <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{e.duration_hours}h</span>
                 <span>{e.instructor_name}</span>
               </div>
-
-              {/* Progress bar */}
               <div className="mb-3">
                 <div className="flex justify-between text-xs text-slate-400 mb-1">
-                  <span>Progress</span>
+                  <span>{t('progress.progress')}</span>
                   <span className="font-medium text-white">{e.progress_pct}%</span>
                 </div>
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${e.progress_pct}%` }} />
                 </div>
               </div>
-
               <Link
-                href={e.last_lesson_id
-                  ? `/courses/${e.course_id}/lessons/${e.last_lesson_id}`
-                  : `/courses/${e.course_id}`}
+                href={e.last_lesson_id ? `/courses/${e.course_id}/lessons/${e.last_lesson_id}` : `/courses/${e.course_id}`}
                 className="btn-primary w-full text-sm flex items-center justify-center gap-2"
               >
                 <Play className="w-3.5 h-3.5" />
-                {e.progress_pct === 0 ? 'Start' : e.progress_pct === 100 ? 'Review' : 'Resume'}
+                {e.progress_pct === 0 ? t('student.start') : e.progress_pct === 100 ? t('student.review') : t('student.resume')}
               </Link>
             </div>
           ))}
@@ -120,10 +110,8 @@ export default function MyCoursesPage() {
       {!loading && filtered.length === 0 && (
         <div className="card text-center py-14">
           <BookOpen className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400 mb-4">
-            {filter === 'all' ? 'No courses enrolled yet.' : `No ${filter.replace('-', ' ')} courses.`}
-          </p>
-          <Link href="/courses" className="btn-primary text-sm inline-flex">Browse Courses</Link>
+          <p className="text-slate-400 mb-4">{t('student.noCourses')}</p>
+          <Link href="/courses" className="btn-primary text-sm inline-flex">{t('nav.browse')}</Link>
         </div>
       )}
     </div>

@@ -6,6 +6,7 @@ import { Search, BookOpen, Clock, Users, Filter, Star, ShoppingCart } from 'luci
 import api from '@/lib/api';
 import { formatPrice, levelColor, cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface Course {
   id: string; title: string; description: string; type: string;
@@ -20,6 +21,7 @@ interface Category {
 
 export default function CoursesPage() {
   const { user } = useAuth();
+  const { t, isAr } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
@@ -50,11 +52,11 @@ export default function CoursesPage() {
           <div className="flex items-center gap-3">
             <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
                className="hidden sm:inline-flex items-center gap-1.5 text-sm text-green-400 hover:text-green-300 font-medium">
-              💬 واتساب
+              💬 {t('courses.whatsapp')}
             </a>
             {user
-              ? <Link href={user.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'} className="btn-primary text-sm">Dashboard</Link>
-              : <><Link href="/login" className="btn-secondary text-sm">Sign In</Link><Link href="/register" className="btn-primary text-sm">Get Started</Link></>
+              ? <Link href={user.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'} className="btn-primary text-sm">{t('nav.dashboard')}</Link>
+              : <><Link href="/login" className="btn-secondary text-sm">{t('auth.signIn')}</Link><Link href="/register" className="btn-primary text-sm">{t('auth.signUp')}</Link></>
             }
           </div>
         </div>
@@ -62,36 +64,36 @@ export default function CoursesPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Course Catalog</h1>
-          <p className="text-slate-400">Explore our library of expert-led courses</p>
+          <h1 className="text-3xl font-bold text-white mb-2">{t('courses.catalog')}</h1>
+          <p className="text-slate-400">{t('courses.catalogDesc')}</p>
         </div>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input type="text" placeholder="Search courses..." value={search} onChange={(e) => setSearch(e.target.value)} className="input pl-10" />
+            <input type="text" placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="input pl-10" />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Filter className="w-4 h-4 text-slate-400" />
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="input w-auto">
-              <option value="">All Types</option>
-              <option value="online">Online</option>
-              <option value="live">Live</option>
-              <option value="hybrid">Hybrid</option>
+              <option value="">{t('courses.allTypes')}</option>
+              <option value="online">{t('courses.online')}</option>
+              <option value="live">{t('courses.live')}</option>
+              <option value="hybrid">{t('courses.hybrid')}</option>
             </select>
             <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="input w-auto">
-              <option value="">كل الأقسام</option>
+              <option value="">{t('courses.allCategories')}</option>
               {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name_ar || cat.name} ({cat.course_count})</option>
+                <option key={cat.id} value={cat.id}>{cat.icon} {isAr ? (cat.name_ar || cat.name) : cat.name} ({cat.course_count})</option>
               ))}
             </select>
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input w-auto">
-              <option value="">الأحدث</option>
-              <option value="popular">الأكثر تسجيلاً</option>
-              <option value="rating">الأعلى تقييماً</option>
-              <option value="price_low">السعر: الأقل</option>
-              <option value="price_high">السعر: الأعلى</option>
+              <option value="">{t('courses.newest')}</option>
+              <option value="popular">{t('courses.popular')}</option>
+              <option value="rating">{t('courses.topRated')}</option>
+              <option value="price_low">{t('courses.priceLow')}</option>
+              <option value="price_high">{t('courses.priceHigh')}</option>
             </select>
           </div>
         </div>
@@ -128,7 +130,7 @@ export default function CoursesPage() {
                     <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                     <span className="text-yellow-400">{parseFloat(String(c.avg_rating)).toFixed(1)}</span>
                     <span className="text-slate-500">({c.review_count})</span>
-                    {c.category_name_ar && <span className="text-slate-600 mr-2">• {c.category_name_ar}</span>}
+                    {(c.category_name || c.category_name_ar) && <span className="text-slate-600 mr-2">• {isAr ? (c.category_name_ar || c.category_name) : c.category_name}</span>}
                   </div>
                 )}
                 <div className="flex items-center justify-between pt-3 border-t border-dark-700">
@@ -142,7 +144,7 @@ export default function CoursesPage() {
         {!loading && courses.length === 0 && (
           <div className="text-center py-16">
             <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">No courses found. Try adjusting your filters.</p>
+            <p className="text-slate-400">{t('courses.noCourses')}</p>
           </div>
         )}
       </div>
