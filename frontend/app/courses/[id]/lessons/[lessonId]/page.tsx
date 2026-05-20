@@ -9,6 +9,7 @@ import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useVideoAnalytics } from '@/hooks/useVideoAnalytics';
 import DiscussionForum from '@/components/course/DiscussionForum';
+import AIChatbot from '@/components/AIChatbot';
 
 interface Lesson {
   id: string; title: string; type: string; content: string;
@@ -415,6 +416,9 @@ export default function LessonPlayerPage() {
           </div>
         )}
       </div>
+
+      {/* AI Chatbot */}
+      <AIChatbot courseId={String(courseId)} lessonId={String(lessonId)} />
     </div>
   );
 }

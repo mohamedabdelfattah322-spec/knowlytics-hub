@@ -11,6 +11,7 @@ import CourseFeedback from '@/components/CourseFeedback';
 import CertificateButton from '@/components/CertificateButton';
 import ReviewSection from '@/components/course/ReviewSection';
 import DiscussionForum from '@/components/course/DiscussionForum';
+import AIChatbot from '@/components/AIChatbot';
 
 interface Lesson {
   id: string; title: string; type: string; duration_minutes: number; is_preview: boolean;
@@ -249,6 +250,9 @@ export default function CourseDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Chatbot */}
+      {enrolled && <AIChatbot courseId={String(id)} />}
     </div>
   );
 }
