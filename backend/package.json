@@ -9,8 +9,10 @@
     "migrate": "node migrations/run.js",
     "seed": "node seeds/run.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.95.1",
     "@aws-sdk/client-s3": "^3.450.0",
     "@aws-sdk/s3-request-presigner": "^3.450.0",
     "axios": "^1.6.2",
