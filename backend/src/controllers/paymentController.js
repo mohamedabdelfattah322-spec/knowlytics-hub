@@ -289,6 +289,14 @@ const fulfilPayment = async (payment, txnId, paymentMethod) => {
       emailService.sendEnrollmentConfirmation(userRes.rows[0], courseInfoRes.rows[0]).catch(() => {});
     }
   }
+
+  // Track checkout_complete analytics
+  query(
+    `INSERT INTO cart_events (user_id, course_id, bundle_id, event_type, payment_method, amount)
+     VALUES ($1, $2, $3, 'checkout_complete', $4, $5)`,
+    [payment.user_id, payment.course_id || null, payment.bundle_id || null,
+     paymentMethod || payment.payment_method || 'unknown', payment.amount || 0]
+  ).catch(() => {});
 };
 
 // ───────────────────────────────────────────────────────────

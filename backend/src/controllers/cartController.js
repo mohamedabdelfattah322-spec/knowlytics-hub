@@ -55,6 +55,15 @@ const addToCart = async (req, res, next) => {
       [req.user.user_id, course_id || null, bundle_id || null]
     );
 
+    // Track cart analytics
+    if (result.rows.length > 0) {
+      query(
+        `INSERT INTO cart_events (user_id, course_id, bundle_id, event_type)
+         VALUES ($1, $2, $3, 'add_to_cart')`,
+        [req.user.user_id, course_id || null, bundle_id || null]
+      ).catch(() => {});
+    }
+
     res.status(201).json(result.rows[0] || { message: 'Already in cart' });
   } catch (err) { next(err); }
 };
@@ -62,10 +71,23 @@ const addToCart = async (req, res, next) => {
 // DELETE /api/cart/:id — remove item
 const removeFromCart = async (req, res, next) => {
   try {
+    // Get item details before deleting for analytics
+    const item = await query(
+      'SELECT course_id, bundle_id FROM cart_items WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user.user_id]
+    );
     await query(
       'DELETE FROM cart_items WHERE id = $1 AND user_id = $2',
       [req.params.id, req.user.user_id]
     );
+    // Track removal
+    if (item.rows.length > 0) {
+      query(
+        `INSERT INTO cart_events (user_id, course_id, bundle_id, event_type)
+         VALUES ($1, $2, $3, 'remove_from_cart')`,
+        [req.user.user_id, item.rows[0].course_id, item.rows[0].bundle_id]
+      ).catch(() => {});
+    }
     res.json({ message: 'Removed from cart' });
   } catch (err) { next(err); }
 };

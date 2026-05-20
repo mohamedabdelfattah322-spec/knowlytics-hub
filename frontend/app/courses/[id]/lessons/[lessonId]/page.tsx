@@ -7,6 +7,7 @@ import NotesPanel from '@/components/lesson/NotesPanel';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { useVideoAnalytics } from '@/hooks/useVideoAnalytics';
 
 interface Lesson {
   id: string; title: string; type: string; content: string;
@@ -18,6 +19,10 @@ export default function LessonPlayerPage() {
   const router = useRouter();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { attachToVideo } = useVideoAnalytics({
+    lessonId: String(lessonId),
+    courseId: String(courseId),
+  });
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -227,7 +232,10 @@ export default function LessonPlayerPage() {
           return (
             <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
               <video
-                ref={videoRef}
+                ref={(el) => {
+                  (videoRef as any).current = el;
+                  if (el) attachToVideo(el);
+                }}
                 src={videoUrl}
                 controls
                 controlsList="nodownload nofullscreen"

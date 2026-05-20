@@ -39,7 +39,16 @@ export default function CartPage() {
 
   const removeItem = async (id: string) => {
     try {
+      const item = items.find(i => i.id === id);
       await api.delete(`/cart/${id}`);
+      // Track remove event
+      if (item) {
+        api.post('/analytics/cart-event', {
+          course_id: item.course_id, bundle_id: item.bundle_id,
+          event_type: 'remove_from_cart',
+          amount: item.course_price || item.bundle_price,
+        }).catch(() => {});
+      }
       toast.success('تم الحذف');
       fetchCart();
     } catch { toast.error('فشل الحذف'); }
