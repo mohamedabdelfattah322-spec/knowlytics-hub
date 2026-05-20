@@ -236,6 +236,17 @@
 [data-theme="light"] .btn-primary { color: #ffffff !important; }
 [data-theme="light"] .btn-danger  { color: #ffffff !important; }
 
+/* ─── Light theme badge overrides ─────────────────────── */
+[data-theme="light"] .badge-green  { background-color: #dcfce7 !important; color: #166534 !important; }
+[data-theme="light"] .badge-blue   { background-color: #dbeafe !important; color: #1e40af !important; }
+[data-theme="light"] .badge-yellow { background-color: #fef9c3 !important; color: #854d0e !important; }
+[data-theme="light"] .badge-red    { background-color: #fee2e2 !important; color: #991b1b !important; }
+[data-theme="light"] .badge-purple { background-color: #f3e8ff !important; color: #6b21a8 !important; }
+
+/* Light theme text readability */
+[data-theme="light"] .text-slate-200 { color: #1e293b !important; }
+[data-theme="light"] .text-slate-300 { color: #334155 !important; }
+
 /* ═══════════════════════════════════════════════════════ */
 /*  RTL / LTR SUPPORT                                      */
 /* ═══════════════════════════════════════════════════════ */
