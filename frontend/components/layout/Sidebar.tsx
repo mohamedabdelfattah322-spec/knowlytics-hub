@@ -29,6 +29,7 @@ export default function Sidebar() {
     { href: '/dashboard/admin/newsletter', icon: Mail, label: t('nav.newsletter') },
     { href: '/dashboard/admin/categories', icon: FolderOpen, label: t('nav.categories') },
     { href: '/dashboard/admin/subscriptions', icon: CreditCard, label: t('nav.subscriptions') },
+    { href: '/dashboard/admin/referrals', icon: Share2, label: t('nav.referrals') },
     { href: '/dashboard/admin/teams', icon: UserCheck, label: t('nav.teams') },
     { href: '/dashboard/admin/sessions', icon: Settings, label: t('nav.sessions') },
   ];
