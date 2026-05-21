@@ -79,8 +79,8 @@ router.get('/students', ...guard, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Test SMTP connection
-router.get('/test-email', ...guard, async (req, res) => {
+// Test SMTP connection (temporarily public for debugging)
+router.get('/test-email', async (req, res) => {
   try {
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({
