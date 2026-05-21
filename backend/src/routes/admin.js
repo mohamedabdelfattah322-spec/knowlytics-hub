@@ -79,8 +79,8 @@ router.get('/students', ...guard, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Test SMTP connection
-router.get('/test-email', ...guard, async (req, res) => {
+// Test SMTP connection (temp public)
+router.get('/test-email', async (req, res) => {
   try {
     const nodemailer = require('nodemailer');
     const port = (process.env.SMTP_PORT || '587').trim();
@@ -88,7 +88,11 @@ router.get('/test-email', ...guard, async (req, res) => {
       host: (process.env.SMTP_HOST || '').trim(),
       port: parseInt(port),
       secure: port === '465',
+      requireTLS: port !== '465',
       auth: { user: (process.env.SMTP_USER || '').trim(), pass: (process.env.SMTP_PASS || '').trim() },
+      tls: { rejectUnauthorized: false },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
     });
     await transporter.verify();
     // Send test email to admin

@@ -5,10 +5,14 @@ const transporter = nodemailer.createTransport({
   host: (process.env.SMTP_HOST || '').trim(),
   port: parseInt(smtpPort),
   secure: smtpPort === '465',
+  requireTLS: smtpPort !== '465',
   auth: {
     user: (process.env.SMTP_USER || '').trim(),
     pass: (process.env.SMTP_PASS || '').trim(),
   },
+  tls: { rejectUnauthorized: false },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
 });
 
 const FROM = process.env.EMAIL_FROM || 'Knowlytics Hub <Sales@knowlyticshub.com>';
