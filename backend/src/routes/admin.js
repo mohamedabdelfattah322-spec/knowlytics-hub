@@ -79,4 +79,36 @@ router.get('/students', ...guard, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Test SMTP connection
+router.get('/test-email', ...guard, async (req, res) => {
+  try {
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_PORT === '465',
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    });
+    await transporter.verify();
+    // Send test email to admin
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+      to: process.env.SMTP_USER,
+      subject: 'Test Email from Knowlytics Hub',
+      html: '<h2>SMTP is working!</h2><p>This is a test email.</p>',
+    });
+    res.json({ success: true, message: 'SMTP verified and test email sent to ' + process.env.SMTP_USER });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message,
+      code: err.code,
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      user: process.env.SMTP_USER ? '✓ set' : '✗ missing',
+      pass: process.env.SMTP_PASS ? '✓ set' : '✗ missing',
+    });
+  }
+});
+
 module.exports = router;
