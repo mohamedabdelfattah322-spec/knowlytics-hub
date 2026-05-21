@@ -123,7 +123,10 @@ export default function LandingPage() {
         <div className="flex items-center justify-center mb-2">
           <ThemeLogo width={120} height={32} className="object-contain opacity-80" />
         </div>
-        © {new Date().getFullYear()} Knowlytics Hub. All rights reserved.
+        <p className="mb-2">© {new Date().getFullYear()} Knowlytics Hub. All rights reserved.</p>
+        <a href="mailto:Sales@knowlyticshub.com" className="text-brand-400 hover:text-brand-300 transition-colors">
+          Sales@knowlyticshub.com
+        </a>
       </footer>
     </div>
   );

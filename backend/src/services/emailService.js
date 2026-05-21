@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const FROM = process.env.EMAIL_FROM || 'Knowlytics Hub <noreply@knowlyticshub.com>';
+const FROM = process.env.EMAIL_FROM || 'Knowlytics Hub <Sales@knowlyticshub.com>';
 
 const sendMail = async ({ to, subject, html }) => {
   if (process.env.NODE_ENV === 'test') return;
