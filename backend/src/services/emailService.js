@@ -1,12 +1,13 @@
 const nodemailer = require('nodemailer');
 
+const smtpPort = (process.env.SMTP_PORT || '587').trim();
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_PORT === '465',
+  host: (process.env.SMTP_HOST || '').trim(),
+  port: parseInt(smtpPort),
+  secure: smtpPort === '465',
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: (process.env.SMTP_USER || '').trim(),
+    pass: (process.env.SMTP_PASS || '').trim(),
   },
 });
 
