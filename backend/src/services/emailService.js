@@ -1,40 +1,68 @@
 const nodemailer = require('nodemailer');
 
-const smtpPort = (process.env.SMTP_PORT || '587').trim();
-const transporter = nodemailer.createTransport({
-  host: (process.env.SMTP_HOST || '').trim(),
-  port: parseInt(smtpPort),
-  secure: smtpPort === '465',
-  requireTLS: smtpPort !== '465',
-  auth: {
-    user: (process.env.SMTP_USER || '').trim(),
-    pass: (process.env.SMTP_PASS || '').trim(),
-  },
-  tls: { rejectUnauthorized: false },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-});
+// ─── Email Provider Setup ────────────────────────────────
+// Priority: RESEND_API_KEY (HTTP API) > SMTP (direct connection)
+
+let sendMail;
 
 const FROM = process.env.EMAIL_FROM || 'Knowlytics Hub <Sales@knowlyticshub.com>';
 
-const sendMail = async ({ to, subject, html }) => {
-  if (process.env.NODE_ENV === 'test') return;
-  // Skip if SMTP isn't configured (dev mode) — log instead
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || process.env.SMTP_USER === 'your@gmail.com') {
-    console.log('\n📧 [EMAIL FALLBACK — SMTP not configured]');
+if (process.env.RESEND_API_KEY) {
+  // ── Resend (HTTP API — works on all cloud platforms) ──
+  const { Resend } = require('resend');
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  sendMail = async ({ to, subject, html }) => {
+    if (process.env.NODE_ENV === 'test') return;
+    try {
+      await resend.emails.send({ from: FROM, to, subject, html });
+      console.log(`📧 Email sent (Resend) → ${to}: ${subject}`);
+    } catch (err) {
+      console.error(`❌ Email failed (Resend) → ${to}:`, err.message);
+      throw err;
+    }
+  };
+  console.log('📧 Email provider: Resend (HTTP API)');
+
+} else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_USER !== 'your@gmail.com') {
+  // ── SMTP (direct connection) ──
+  const smtpPort = (process.env.SMTP_PORT || '587').trim();
+  const transporter = nodemailer.createTransport({
+    host: (process.env.SMTP_HOST || '').trim(),
+    port: parseInt(smtpPort),
+    secure: smtpPort === '465',
+    requireTLS: smtpPort !== '465',
+    auth: {
+      user: (process.env.SMTP_USER || '').trim(),
+      pass: (process.env.SMTP_PASS || '').trim(),
+    },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+  });
+
+  sendMail = async ({ to, subject, html }) => {
+    if (process.env.NODE_ENV === 'test') return;
+    try {
+      await transporter.sendMail({ from: FROM, to, subject, html });
+      console.log(`📧 Email sent (SMTP) → ${to}: ${subject}`);
+    } catch (err) {
+      console.error(`❌ Email failed (SMTP) → ${to}:`, err.message);
+      throw err;
+    }
+  };
+  console.log('📧 Email provider: SMTP');
+
+} else {
+  // ── Fallback: log only ──
+  sendMail = async ({ to, subject }) => {
+    console.log('\n📧 [EMAIL FALLBACK — not configured]');
     console.log('   To:     ', to);
     console.log('   Subject:', subject);
-    console.log('   (configure SMTP_HOST/USER/PASS in .env to actually send)\n');
-    return;
-  }
-  try {
-    await transporter.sendMail({ from: FROM, to, subject, html });
-    console.log(`📧 Email sent → ${to}: ${subject}`);
-  } catch (err) {
-    console.error(`❌ Email failed → ${to}:`, err.message);
-    throw err;
-  }
-};
+    console.log('   (set RESEND_API_KEY or SMTP vars to send)\n');
+  };
+  console.log('📧 Email provider: NONE (logging only)');
+}
 
 // ─── Templates ────────────────────────────────────────────
 

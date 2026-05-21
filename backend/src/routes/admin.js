@@ -79,39 +79,34 @@ router.get('/students', ...guard, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Test SMTP connection (temp public)
+// Test email connection (temp public for debugging)
 router.get('/test-email', async (req, res) => {
   try {
-    const nodemailer = require('nodemailer');
-    const port = (process.env.SMTP_PORT || '587').trim();
-    const transporter = nodemailer.createTransport({
-      host: (process.env.SMTP_HOST || '').trim(),
-      port: parseInt(port),
-      secure: port === '465',
-      requireTLS: port !== '465',
-      auth: { user: (process.env.SMTP_USER || '').trim(), pass: (process.env.SMTP_PASS || '').trim() },
-      tls: { rejectUnauthorized: false },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-    });
-    await transporter.verify();
-    // Send test email to admin
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-      to: process.env.SMTP_USER,
-      subject: 'Test Email from Knowlytics Hub',
-      html: '<h2>SMTP is working!</h2><p>This is a test email.</p>',
-    });
-    res.json({ success: true, message: 'SMTP verified and test email sent to ' + process.env.SMTP_USER });
+    const provider = process.env.RESEND_API_KEY ? 'resend' : 'smtp';
+    if (provider === 'resend') {
+      const { Resend } = require('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const from = process.env.EMAIL_FROM || 'Knowlytics Hub <Sales@knowlyticshub.com>';
+      const to = (process.env.SMTP_USER || 'Sales@knowlyticshub.com').trim();
+      await resend.emails.send({ from, to, subject: 'Test Email — Knowlytics Hub', html: '<h2>Resend is working!</h2>' });
+      res.json({ success: true, provider: 'resend', message: 'Test email sent to ' + to });
+    } else {
+      const nodemailer = require('nodemailer');
+      const port = (process.env.SMTP_PORT || '587').trim();
+      const transporter = nodemailer.createTransport({
+        host: (process.env.SMTP_HOST || '').trim(), port: parseInt(port),
+        secure: port === '465', requireTLS: port !== '465',
+        auth: { user: (process.env.SMTP_USER || '').trim(), pass: (process.env.SMTP_PASS || '').trim() },
+        tls: { rejectUnauthorized: false }, connectionTimeout: 10000,
+      });
+      await transporter.verify();
+      await transporter.sendMail({ from: process.env.EMAIL_FROM, to: process.env.SMTP_USER, subject: 'Test Email', html: '<h2>SMTP works!</h2>' });
+      res.json({ success: true, provider: 'smtp' });
+    }
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-      code: err.code,
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      user: process.env.SMTP_USER ? '✓ set' : '✗ missing',
-      pass: process.env.SMTP_PASS ? '✓ set' : '✗ missing',
+    res.status(500).json({ success: false, error: err.message, code: err.code,
+      provider: process.env.RESEND_API_KEY ? 'resend' : 'smtp',
+      resend_key: process.env.RESEND_API_KEY ? '✓ set' : '✗ missing',
     });
   }
 });
