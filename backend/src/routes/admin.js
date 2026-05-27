@@ -79,8 +79,8 @@ router.get('/students', ...guard, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Test email connection (temp public for debugging)
-router.get('/test-email', async (req, res) => {
+// Test email connection
+router.get('/test-email', ...guard, async (req, res) => {
   try {
     const provider = process.env.RESEND_API_KEY ? 'resend' : 'smtp';
     if (provider === 'resend') {
