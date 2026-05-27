@@ -58,9 +58,15 @@ const allowedOrigins = [
   'http://localhost:3000',
 ].filter(Boolean);
 
+// Additional Vercel preview URLs (set ALLOWED_VERCEL_PREFIX=knowlytics-hub in env)
+const vercelPrefix = process.env.ALLOWED_VERCEL_PREFIX || '';
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else if (vercelPrefix && origin.endsWith('.vercel.app') && origin.includes(vercelPrefix)) {
+      // Only allow Vercel preview URLs matching your project prefix
       callback(null, true);
     } else {
       callback(new Error('CORS: origin not allowed'));
@@ -80,8 +86,11 @@ app.use(rateLimit({
   message: { error: 'Too many requests, please try again later.' },
 }));
 
-// ─── Local uploads static serving (dev only, behind auth via /api/files/stream) ─
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// ─── Local uploads static serving ─────────────────────────
+// Only serve in dev; in production all file access goes through /api/files/stream (auth-protected)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+}
 
 // ─── Stripe webhook MUST receive raw body (mount BEFORE json parser) ──
 const { stripeWebhook } = require('./routes/payments');

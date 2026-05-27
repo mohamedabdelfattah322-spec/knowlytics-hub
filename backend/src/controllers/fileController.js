@@ -164,8 +164,11 @@ const streamVideo = async (req, res, next) => {
   try {
     const fileKey = req.params.fileKey;
 
-    // Security: only allow paths that are in uploads/ folder
-    if (fileKey.includes('..')) return res.status(400).json({ error: 'Invalid path' });
+    // Security: block path traversal (encoded & raw) and absolute paths
+    const decoded = decodeURIComponent(fileKey);
+    if (decoded.includes('..') || fileKey.includes('..') || path.isAbsolute(fileKey) || /[<>"|?*]/.test(fileKey)) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
 
     const localPath = path.join(UPLOAD_DIR, fileKey);
     if (!fs.existsSync(localPath)) return res.status(404).json({ error: 'الفيديو غير موجود' });

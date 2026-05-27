@@ -14,7 +14,17 @@ const signToken = (userId) =>
 // POST /api/auth/register
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, role = 'student', student_type = 'online' } = req.body;
+    const { name, email, password, student_type = 'online' } = req.body;
+
+    // SECURITY: Never allow role from request body — always 'student'
+    const role = 'student';
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email and password are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
 
     const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {

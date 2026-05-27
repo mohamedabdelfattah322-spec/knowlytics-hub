@@ -254,7 +254,7 @@ const fulfilPayment = async (payment, txnId, paymentMethod) => {
 
   if (payment.bundle_id) {
     const bundleRes = await query('SELECT duration_days FROM bundles WHERE id = $1', [payment.bundle_id]);
-    const days = bundleRes.rows[0]?.duration_days || 0;
+    const days = parseInt(bundleRes.rows[0]?.duration_days, 10) || 0;
     const expiresClause = days > 0 ? `NOW() + INTERVAL '${days} days'` : 'NULL';
     await query(
       `INSERT INTO bundle_subscriptions (user_id, bundle_id, payment_id, expires_at)
@@ -263,7 +263,7 @@ const fulfilPayment = async (payment, txnId, paymentMethod) => {
     );
   } else if (payment.course_id) {
     const courseRes = await query('SELECT default_access_days FROM courses WHERE id = $1', [payment.course_id]);
-    const days = courseRes.rows[0]?.default_access_days || 0;
+    const days = parseInt(courseRes.rows[0]?.default_access_days, 10) || 0;
     const expiresClause = days > 0 ? `NOW() + INTERVAL '${days} days'` : 'NULL';
 
     const existing = await query(
