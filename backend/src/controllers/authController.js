@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 const { createSession, revokeSession } = require('../middleware/sessionGuard');
 const emailService = require('../services/emailService');
+const { createNotification } = require('./notificationController');
 
 const signToken = (userId) =>
   jwt.sign({ sub: userId }, process.env.JWT_SECRET, {
@@ -77,8 +78,13 @@ const login = async (req, res, next) => {
 
     const token = signToken(user.id);
     const deviceId = req.headers['x-device-id'] || uuidv4();
+    const currentIp = req.ip || req.connection?.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'Unknown device';
 
-    await createSession(user.id, token, deviceId, req.ip);
+    await createSession(user.id, token, deviceId, currentIp);
+
+    // ── New device / new IP detection → notify user ──
+    detectNewLoginAndNotify(user, currentIp, deviceId, userAgent).catch(() => {});
 
     const { password_hash, ...safeUser } = user;
     res.json({ user: safeUser, token });
@@ -117,6 +123,15 @@ const changePassword = async (req, res, next) => {
     }
     const hash = await bcrypt.hash(new_password, 12);
     await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hash, req.user.user_id]);
+
+    // Notify about password change
+    await createNotification(
+      req.user.user_id,
+      '🔑 تم تغيير كلمة المرور بنجاح.',
+      'info',
+      '/dashboard/student'
+    ).catch(() => {});
+
     res.json({ message: 'Password updated successfully' });
   } catch (err) {
     next(err);
@@ -194,10 +209,81 @@ const resetPassword = async (req, res, next) => {
     await query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [row.id]);
 
     // Revoke all existing sessions (force re-login on all devices for security)
-    await query('UPDATE user_sessions SET is_active = false WHERE user_id = $1', [row.user_id]).catch(() => {});
+    await query('UPDATE sessions SET is_active = false WHERE user_id = $1', [row.user_id]).catch(() => {});
+
+    // Notify user about password change
+    await createNotification(
+      row.user_id,
+      '🔑 تم تغيير كلمة المرور الخاصة بك. إذا لم تقم بذلك، تواصل مع الدعم فوراً.',
+      'warning',
+      '/dashboard/student'
+    ).catch(() => {});
+
+    // Send email alert about password change
+    emailService.sendPasswordChangedEmail({ name: row.name, email: row.email }).catch(() => {});
 
     res.json({ message: 'تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول.' });
   } catch (err) { next(err); }
+};
+
+// ─── Helper: detect new device/IP login & notify ────────
+const detectNewLoginAndNotify = async (user, ip, deviceId, userAgent) => {
+  try {
+    // Check if this IP or device was used before by this user
+    const prevSessions = await query(
+      `SELECT DISTINCT ip_address, device_id FROM sessions
+       WHERE user_id = $1 AND is_active = false
+       ORDER BY created_at DESC LIMIT 50`,
+      [user.id]
+    );
+
+    const knownIPs = new Set(prevSessions.rows.map(s => s.ip_address));
+    const knownDevices = new Set(prevSessions.rows.map(s => s.device_id).filter(Boolean));
+
+    const isLocal = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(ip);
+    const isNewIP = !isLocal && knownIPs.size > 0 && !knownIPs.has(ip);
+    const isNewDevice = knownDevices.size > 0 && !knownDevices.has(deviceId);
+
+    // Parse basic device info from user-agent
+    const deviceInfo = parseDeviceInfo(userAgent);
+    const now = new Date();
+    const timeStr = now.toLocaleString('ar-EG', { timeZone: 'Africa/Cairo', hour12: true });
+
+    if (isNewIP || isNewDevice) {
+      // In-app notification
+      const msg = `🔐 تم تسجيل دخول جديد${isNewIP ? ' من عنوان IP مختلف' : ''}${isNewDevice ? ' من جهاز جديد' : ''} — ${deviceInfo} (${timeStr})`;
+      await createNotification(user.id, msg, 'warning', '/dashboard/student');
+
+      // Email alert
+      emailService.sendLoginAlertEmail(user, {
+        ip, deviceInfo, time: timeStr,
+        isNewIP, isNewDevice,
+      }).catch((e) => console.error('Login alert email failed:', e.message));
+    }
+  } catch (err) {
+    console.error('detectNewLoginAndNotify error:', err.message);
+  }
+};
+
+// Simple user-agent parser (no dependency needed)
+const parseDeviceInfo = (ua) => {
+  if (!ua) return 'جهاز غير معروف';
+  const parts = [];
+
+  // OS detection
+  if (/Windows/i.test(ua)) parts.push('Windows');
+  else if (/Mac OS/i.test(ua)) parts.push('Mac');
+  else if (/Android/i.test(ua)) parts.push('Android');
+  else if (/iPhone|iPad/i.test(ua)) parts.push('iOS');
+  else if (/Linux/i.test(ua)) parts.push('Linux');
+
+  // Browser detection
+  if (/Chrome/i.test(ua) && !/Edge/i.test(ua)) parts.push('Chrome');
+  else if (/Firefox/i.test(ua)) parts.push('Firefox');
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) parts.push('Safari');
+  else if (/Edge/i.test(ua)) parts.push('Edge');
+
+  return parts.length ? parts.join(' / ') : 'جهاز غير معروف';
 };
 
 module.exports = { register, login, logout, me, changePassword, forgotPassword, resetPassword };

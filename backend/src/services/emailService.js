@@ -183,6 +183,45 @@ const sendPasswordResetEmail = async (user, resetUrl) => {
   });
 };
 
+const sendLoginAlertEmail = async (user, { ip, deviceInfo, time, isNewIP, isNewDevice }) => {
+  const reason = isNewIP && isNewDevice
+    ? 'من جهاز جديد وعنوان IP مختلف'
+    : isNewIP ? 'من عنوان IP مختلف' : 'من جهاز جديد';
+
+  await sendMail({
+    to: user.email,
+    subject: '🔐 تنبيه أمان — تسجيل دخول جديد لحسابك',
+    html: baseTemplate(`
+      <h2>تسجيل دخول جديد ${reason}</h2>
+      <p>مرحباً ${user.name}،</p>
+      <p>تم تسجيل الدخول إلى حسابك ${reason}. إليك التفاصيل:</p>
+      <table style="width:100%; border-collapse:collapse; margin:16px 0;">
+        <tr><td style="padding:8px; color:#94a3b8;">📱 الجهاز</td><td style="padding:8px; color:#f8fafc;">${deviceInfo}</td></tr>
+        <tr><td style="padding:8px; color:#94a3b8;">🌐 عنوان IP</td><td style="padding:8px; color:#f8fafc;">${ip}</td></tr>
+        <tr><td style="padding:8px; color:#94a3b8;">🕐 الوقت</td><td style="padding:8px; color:#f8fafc;">${time}</td></tr>
+      </table>
+      <p style="color:#f59e0b; font-weight:600;">⚠️ إذا لم تكن أنت، غيّر كلمة المرور فوراً:</p>
+      <a href="${process.env.FRONTEND_URL}/forgot-password" class="btn" style="background:#ef4444;">تغيير كلمة المرور الآن</a>
+      <p style="margin-top:16px; color:#64748b; font-size:13px;">إذا كنت أنت من سجّل الدخول، تجاهل هذه الرسالة.</p>
+    `),
+  });
+};
+
+const sendPasswordChangedEmail = async (user) => {
+  await sendMail({
+    to: user.email,
+    subject: '🔑 تم تغيير كلمة المرور — Knowlytics Hub',
+    html: baseTemplate(`
+      <h2>تم تغيير كلمة المرور</h2>
+      <p>مرحباً ${user.name}،</p>
+      <p>تم تغيير كلمة المرور الخاصة بحسابك بنجاح.</p>
+      <p>تم تسجيل الخروج من جميع الأجهزة الأخرى للأمان.</p>
+      <p style="color:#f59e0b; font-weight:600;">⚠️ إذا لم تقم بهذا التغيير، تواصل مع الدعم فوراً:</p>
+      <a href="mailto:Sales@knowlyticshub.com" class="btn" style="background:#ef4444;">تواصل مع الدعم</a>
+    `),
+  });
+};
+
 module.exports = {
   sendEnrollmentConfirmation,
   sendCourseCompletionEmail,
@@ -191,4 +230,6 @@ module.exports = {
   sendRefundEmail,
   sendBroadcastEmail,
   sendPasswordResetEmail,
+  sendLoginAlertEmail,
+  sendPasswordChangedEmail,
 };
