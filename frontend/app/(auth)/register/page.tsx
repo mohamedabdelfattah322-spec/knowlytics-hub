@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import ThemeLogo from '@/components/ThemeLogo';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Sparkles, Shield, Clock, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/lib/api';
 import { saveToken } from '@/lib/auth';
@@ -32,7 +32,6 @@ export default function RegisterPage() {
     resolver: zodResolver(schema),
   });
 
-  // Capture referral code from URL
   useEffect(() => {
     const ref = searchParams.get('ref');
     if (ref) setRefCode(ref);
@@ -40,7 +39,6 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      // Public signup is always 'online' student — admin can change later if needed
       const { data: res } = await api.post('/auth/register', {
         ...data,
         role: 'student',
@@ -49,12 +47,11 @@ export default function RegisterPage() {
       saveToken(res.token);
       setUser(res.user);
 
-      // Apply referral code after registration
       if (refCode) {
         api.post('/referrals/apply', { referral_code: refCode }).catch(() => {});
       }
 
-      toast.success('تم إنشاء الحساب! مرحباً بك في Knowlytics Hub 🎉');
+      toast.success('تم إنشاء الحساب! مرحباً بك في Knowlytics Hub');
       router.push('/dashboard/student');
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'Registration failed');
@@ -62,59 +59,151 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-900 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <ThemeLogo width={220} height={70} priority />
-          </div>
-          <p className="text-slate-400">ابدأ رحلتك التعليمية اليوم</p>
+    <div className="min-h-screen flex">
+      {/* ── Left: Branding Panel ── */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-indigo-900 via-blue-800 to-blue-900 flex-col items-center justify-center p-12 overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-10 right-20 w-80 h-80 bg-white rounded-full blur-3xl" />
+          <div className="absolute bottom-10 left-10 w-96 h-96 bg-indigo-400 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-blue-300 rounded-full blur-3xl" />
         </div>
 
-        {refCode && (
-          <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 mb-4 text-center">
-            <p className="text-green-400 text-sm font-medium">🎁 لديك كود إحالة! ستحصل على خصم على أول عملية شراء</p>
+        {/* Content */}
+        <div className="relative z-10 max-w-md text-center">
+          <div className="flex justify-center mb-8">
+            <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
+              <Sparkles className="w-10 h-10 text-white" />
+            </div>
           </div>
-        )}
+          <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
+            انضم إلينا اليوم
+          </h1>
+          <p className="text-blue-200 text-lg mb-12 leading-relaxed">
+            أنشئ حسابك وابدأ التعلّم مع آلاف الطلاب حول العالم
+          </p>
 
-        <div className="card">
+          {/* Features */}
+          <div className="space-y-6 text-right">
+            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="w-10 h-10 bg-blue-500/30 rounded-lg flex items-center justify-center shrink-0">
+                <GraduationCap className="w-5 h-5 text-blue-200" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">تعلّم بالسرعة التي تناسبك</h3>
+                <p className="text-blue-300 text-xs mt-0.5">وصول غير محدود للدورات المسجّلة</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="w-10 h-10 bg-emerald-500/30 rounded-lg flex items-center justify-center shrink-0">
+                <Shield className="w-5 h-5 text-emerald-200" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">حساب آمن ومحمي</h3>
+                <p className="text-blue-300 text-xs mt-0.5">تشفير كامل وإشعارات أمان فورية</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="w-10 h-10 bg-amber-500/30 rounded-lg flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-amber-200" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">دعم فني على مدار الساعة</h3>
+                <p className="text-blue-300 text-xs mt-0.5">فريق متخصص لمساعدتك في أي وقت</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute bottom-6 text-blue-400/50 text-xs">
+          &copy; {new Date().getFullYear()} Knowlytics Hub. All rights reserved.
+        </div>
+      </div>
+
+      {/* ── Right: Register Form ── */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <ThemeLogo width={200} height={60} priority />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-1">إنشاء حساب جديد</h2>
+            <p className="text-gray-500 text-sm">ابدأ رحلتك التعليمية اليوم</p>
+          </div>
+
+          {refCode && (
+            <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-3 mb-5 text-center">
+              <p className="text-emerald-700 text-sm font-medium">🎁 لديك كود إحالة! ستحصل على خصم على أول عملية شراء</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">الاسم بالكامل</label>
-              <input {...register('name')} type="text" placeholder="Sara Ahmed" className="input" />
-              {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
+              <label className="block text-sm font-semibold text-gray-700 mb-2">الاسم بالكامل</label>
+              <input
+                {...register('name')}
+                type="text"
+                placeholder="مثال: محمد أحمد"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-200"
+              />
+              {errors.name && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.name.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">البريد الإلكتروني</label>
-              <input {...register('email')} type="email" placeholder="you@example.com" className="input" />
-              {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
+              <label className="block text-sm font-semibold text-gray-700 mb-2">البريد الإلكتروني</label>
+              <input
+                {...register('email')}
+                type="email"
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-200"
+              />
+              {errors.email && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.email.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">كلمة السر</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">كلمة المرور</label>
               <div className="relative">
-                <input {...register('password')} type={showPass ? 'text' : 'password'} placeholder="8 أحرف على الأقل، حرف كبير، رقم" className="input pr-10" />
-                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <input
+                  {...register('password')}
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="8 أحرف على الأقل، حرف كبير، رقم"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-200 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}
+              {errors.password && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.password.message}</p>}
             </div>
 
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-xs text-blue-300">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
               💡 الكورسات المسجلة تُشترى مباشرة بعد إنشاء الحساب. الكورسات المباشرة (Live) يقوم الأدمن بتسجيلك فيها بعد التواصل.
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full flex items-center justify-center gap-2">
-              {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> جارِ إنشاء الحساب...</> : 'إنشاء حساب'}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> جارِ إنشاء الحساب...</> : 'إنشاء حساب'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-slate-400 text-sm">
+          <p className="mt-8 text-center text-gray-500 text-sm">
             لديك حساب بالفعل؟{' '}
-            <Link href="/login" className="text-brand-400 hover:text-brand-300 font-medium">سجّل دخول</Link>
+            <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">سجّل دخول</Link>
           </p>
+
+          <div className="mt-8 lg:hidden text-center">
+            <p className="text-gray-400 text-xs">&copy; {new Date().getFullYear()} Knowlytics Hub</p>
+          </div>
         </div>
       </div>
     </div>
