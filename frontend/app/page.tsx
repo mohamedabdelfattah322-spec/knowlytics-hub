@@ -34,7 +34,7 @@ export default function LandingPage() {
     <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
 
       {/* ── Navbar (Dark Navy) ── */}
-      <nav style={{ backgroundColor: '#060e1e', borderBottom: '1px solid rgba(255,255,255,0.08)' }} className="px-6 py-4 sticky top-0 z-50">
+      <nav style={{ backgroundColor: '#0b1426', borderBottom: '1px solid rgba(255,255,255,0.08)' }} className="px-6 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Image src="/logo-white.png" alt="Knowlytics Hub" width={50} height={50} className="object-contain" priority />
           <div className="flex items-center gap-3">
