@@ -3,26 +3,21 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Video, Award, ChevronRight, Star, Zap, Shield, ArrowRight, GraduationCap, Clock, Globe } from 'lucide-react';
+import { Video, Award, ChevronRight, Star, Zap, Shield, ArrowRight, GraduationCap, Clock, Globe, Sun, Moon, Languages } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/hooks/useLanguage';
+import { useTheme } from '@/hooks/useTheme';
 
-const features = [
-  { icon: Video, title: 'دورات مباشرة ومسجّلة', desc: 'احضر حصص Zoom مباشرة أو شاهد التسجيلات في أي وقت يناسبك.', color: 'blue' },
-  { icon: Zap, title: 'اختبارات تفاعلية', desc: 'تقييم فوري ونتائج لحظية بعد كل درس بأسلوب ممتع.', color: 'purple' },
-  { icon: Shield, title: 'منصة آمنة ومحمية', desc: 'مراقبة الجلسات، حماية الفيديو، وقفل الأجهزة.', color: 'emerald' },
-  { icon: Award, title: 'تتبّع تقدّمك', desc: 'لوحة تحكم بصرية تعرض الإنجازات والنتائج والتوصيات.', color: 'amber' },
-];
-
-const stats = [
-  { value: '+10,000', label: 'طالب' },
-  { value: '+150', label: 'دورة' },
-  { value: '98%', label: 'رضا الطلاب' },
-  { value: '24/7', label: 'دعم فني' },
-];
+const featureIcons = [Video, Zap, Shield, Award];
+const featureColors = ['blue', 'purple', 'emerald', 'amber'];
 
 export default function LandingPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { t, locale, setLocale, dir, isAr } = useLanguage();
+  const { theme, setTheme } = useTheme();
+
+  const isDark = theme === 'dark' || theme === 'ocean' || theme === 'emerald' || theme === 'sunset';
 
   useEffect(() => {
     if (user) {
@@ -30,110 +25,188 @@ export default function LandingPage() {
     }
   }, [user, router]);
 
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
+  // Color schemes based on theme
+  const colors = isDark ? {
+    pageBg: '#0a1628',
+    navBg: '#0b1426',
+    heroBg: '#0f1d32',
+    heroText: '#ffffff',
+    heroSub: 'rgba(255,255,255,0.7)',
+    statValue: '#60a5fa',
+    statLabel: 'rgba(255,255,255,0.6)',
+    sectionBg: '#111d33',
+    sectionTitle: '#ffffff',
+    sectionDesc: 'rgba(255,255,255,0.6)',
+    cardBg: '#162038',
+    cardBorder: 'rgba(255,255,255,0.08)',
+    cardTitle: '#ffffff',
+    cardDesc: 'rgba(255,255,255,0.6)',
+    darkSectionBg: '#060e1e',
+    footerBg: '#0b1426',
+    footerBorder: 'rgba(255,255,255,0.08)',
+    footerText: 'rgba(255,255,255,0.4)',
+    btnOutlineBorder: 'rgba(255,255,255,0.2)',
+    btnOutlineText: '#ffffff',
+    browseBtnBorder: 'rgba(255,255,255,0.25)',
+    browseBtnText: '#ffffff',
+  } : {
+    pageBg: '#ffffff',
+    navBg: '#0b1426',
+    heroBg: '#ffffff',
+    heroText: '#0f172a',
+    heroSub: '#64748b',
+    statValue: '#1e3a5f',
+    statLabel: '#6b7280',
+    sectionBg: '#f8fafc',
+    sectionTitle: '#0f172a',
+    sectionDesc: '#64748b',
+    cardBg: '#ffffff',
+    cardBorder: '#e5e7eb',
+    cardTitle: '#0f172a',
+    cardDesc: '#64748b',
+    darkSectionBg: '#0b1426',
+    footerBg: '#ffffff',
+    footerBorder: '#e5e7eb',
+    footerText: '#9ca3af',
+    btnOutlineBorder: 'rgba(255,255,255,0.2)',
+    btnOutlineText: '#ffffff',
+    browseBtnBorder: '#d1d5db',
+    browseBtnText: '#1e293b',
+  };
 
-      {/* ── Navbar (Dark Navy) ── */}
-      <nav style={{ backgroundColor: '#0b1426', borderBottom: '1px solid rgba(255,255,255,0.08)' }} className="px-6 py-4 sticky top-0 z-50">
+  const colorMap: Record<string, { bg: string; iconColor: string }> = {
+    blue:    { bg: isDark ? 'rgba(37,99,235,0.15)' : '#eff6ff', iconColor: '#2563eb' },
+    purple:  { bg: isDark ? 'rgba(124,58,237,0.15)' : '#f5f3ff', iconColor: '#7c3aed' },
+    emerald: { bg: isDark ? 'rgba(5,150,105,0.15)' : '#ecfdf5', iconColor: '#059669' },
+    amber:   { bg: isDark ? 'rgba(217,119,6,0.15)' : '#fffbeb', iconColor: '#d97706' },
+  };
+
+  const featureTitleKeys = ['landing.feat1Title', 'landing.feat2Title', 'landing.feat3Title', 'landing.feat4Title'] as const;
+  const featureDescKeys = ['landing.feat1Desc', 'landing.feat2Desc', 'landing.feat3Desc', 'landing.feat4Desc'] as const;
+
+  return (
+    <div className="min-h-screen" dir={dir} style={{ backgroundColor: colors.pageBg }}>
+
+      {/* ── Navbar ── */}
+      <nav style={{ backgroundColor: colors.navBg, borderBottom: '1px solid rgba(255,255,255,0.08)' }} className="px-6 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Image src="/logo-white.png" alt="Knowlytics Hub" width={50} height={50} className="object-contain" priority />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Language Toggle */}
+            <button
+              onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white/10"
+              style={{ color: 'rgba(255,255,255,0.8)' }}
+              title={locale === 'ar' ? 'Switch to English' : 'التبديل للعربية'}
+            >
+              <Languages className="w-4 h-4" />
+              <span className="hidden sm:inline">{locale === 'ar' ? 'EN' : 'عربي'}</span>
+            </button>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white/10"
+              style={{ color: 'rgba(255,255,255,0.8)' }}
+              title={isDark ? 'Light mode' : 'Dark mode'}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
             <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
                className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium"
                style={{ color: '#4ade80' }}>
-              💬 واتساب
+              {t('landing.whatsapp')}
             </a>
             <Link href="/login"
-                  className="text-sm px-5 py-2.5 rounded-xl font-semibold transition-all duration-200"
-                  style={{ color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)' }}>
-              Sign In
+                  className="text-sm px-4 sm:px-5 py-2.5 rounded-xl font-semibold transition-all duration-200"
+                  style={{ color: colors.btnOutlineText, border: `1px solid ${colors.btnOutlineBorder}` }}>
+              {t('landing.signIn')}
             </Link>
             <Link href="/register"
-                  className="text-sm px-5 py-2.5 rounded-xl font-semibold transition-all duration-200"
+                  className="text-sm px-4 sm:px-5 py-2.5 rounded-xl font-semibold transition-all duration-200"
                   style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}>
-              Get Started
+              {t('landing.getStarted')}
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero (White) ── */}
-      <section className="relative overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden" style={{ backgroundColor: colors.heroBg }}>
         <div className="relative max-w-7xl mx-auto px-6 pt-24 pb-24 text-center">
           <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-8"
-               style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}>
+               style={{ backgroundColor: isDark ? 'rgba(37,99,235,0.15)' : '#eff6ff', border: `1px solid ${isDark ? 'rgba(59,130,246,0.3)' : '#bfdbfe'}` }}>
             <Star className="w-4 h-4" style={{ color: '#2563eb' }} />
-            <span className="text-sm font-semibold" style={{ color: '#2563eb' }}>The Smart Way to Learn</span>
+            <span className="text-sm font-semibold" style={{ color: '#2563eb' }}>{t('landing.badge')}</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight" style={{ color: '#0f172a' }}>
-            Learn Without<br />
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight" style={{ color: colors.heroText }}>
+            {t('landing.heroTitle1')}<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-500 to-blue-600">
-              Limits
+              {t('landing.heroTitle2')}
             </span>
           </h1>
 
-          <p className="text-xl max-w-2xl mx-auto mb-12 leading-relaxed" style={{ color: '#64748b' }}>
-            Knowlytics Hub combines live instruction, on-demand video, and gamified quizzes
-            into one powerful learning experience.
+          <p className="text-xl max-w-2xl mx-auto mb-12 leading-relaxed" style={{ color: colors.heroSub }}>
+            {t('landing.heroDesc')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/register"
                   className="text-base px-8 py-4 rounded-xl font-bold inline-flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02]"
                   style={{ backgroundColor: '#1e3a5f', color: '#ffffff', boxShadow: '0 8px 30px rgba(30,58,95,0.25)' }}>
-              Start Learning Free <ChevronRight className="w-5 h-5" />
+              {t('landing.startFree')} <ChevronRight className="w-5 h-5" />
             </Link>
             <Link href="/courses"
                   className="text-base px-8 py-4 rounded-xl font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02]"
-                  style={{ color: '#1e293b', border: '2px solid #d1d5db' }}>
-              Browse Courses
+                  style={{ color: colors.browseBtnText, border: `2px solid ${colors.browseBtnBorder}` }}>
+              {t('landing.browseCourses')}
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── Stats (White) ── */}
-      <section style={{ backgroundColor: '#ffffff' }} className="py-16">
+      {/* ── Stats ── */}
+      <section style={{ backgroundColor: colors.heroBg }} className="py-16">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((s) => (
-            <div key={s.label} className="text-center">
-              <p className="text-4xl md:text-5xl font-extrabold mb-2" style={{ color: '#1e3a5f' }}>{s.value}</p>
-              <p className="text-sm font-medium" style={{ color: '#6b7280' }}>{s.label}</p>
+          {[
+            { value: '+10,000', key: 'landing.statStudents' as const },
+            { value: '+150', key: 'landing.statCourses' as const },
+            { value: '98%', key: 'landing.statSatisfaction' as const },
+            { value: '24/7', key: 'landing.statSupport' as const },
+          ].map((s) => (
+            <div key={s.key} className="text-center">
+              <p className="text-4xl md:text-5xl font-extrabold mb-2" style={{ color: colors.statValue }}>{s.value}</p>
+              <p className="text-sm font-medium" style={{ color: colors.statLabel }}>{t(s.key)}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Features (Light Gray) ── */}
-      <section className="py-24" style={{ backgroundColor: '#f8fafc' }}>
+      {/* ── Features ── */}
+      <section className="py-24" style={{ backgroundColor: colors.sectionBg }}>
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-4" style={{ color: '#0f172a' }}>
-            كل ما تحتاجه للنجاح
+          <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-4" style={{ color: colors.sectionTitle }}>
+            {t('landing.featuresTitle')}
           </h2>
-          <p className="text-center mb-16 max-w-xl mx-auto text-lg" style={{ color: '#64748b' }}>
-            منظومة تعليمية متكاملة للطلاب والمعلمين، مصممة للمتعلّم العصري.
+          <p className="text-center mb-16 max-w-xl mx-auto text-lg" style={{ color: colors.sectionDesc }}>
+            {t('landing.featuresDesc')}
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map(({ icon: Icon, title, desc, color }) => {
-              const colors: Record<string, { bg: string; iconColor: string; border: string }> = {
-                blue:    { bg: '#eff6ff', iconColor: '#2563eb', border: '#bfdbfe' },
-                purple:  { bg: '#f5f3ff', iconColor: '#7c3aed', border: '#ddd6fe' },
-                emerald: { bg: '#ecfdf5', iconColor: '#059669', border: '#a7f3d0' },
-                amber:   { bg: '#fffbeb', iconColor: '#d97706', border: '#fde68a' },
-              };
-              const c = colors[color];
+            {featureIcons.map((Icon, i) => {
+              const c = colorMap[featureColors[i]];
               return (
-                <div key={title}
+                <div key={i}
                      className="rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group"
-                     style={{ backgroundColor: '#ffffff', border: `1px solid #e5e7eb` }}>
+                     style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.cardBorder}` }}>
                   <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
                        style={{ backgroundColor: c.bg }}>
                     <Icon className="w-7 h-7" style={{ color: c.iconColor }} />
                   </div>
-                  <h3 className="font-bold text-lg mb-2" style={{ color: '#0f172a' }}>{title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: '#64748b' }}>{desc}</p>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: colors.cardTitle }}>{t(featureTitleKeys[i])}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: colors.cardDesc }}>{t(featureDescKeys[i])}</p>
                 </div>
               );
             })}
@@ -141,8 +214,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Why Knowlytics (Dark Navy) ── */}
-      <section className="py-24 relative overflow-hidden" style={{ backgroundColor: '#0b1426' }}>
+      {/* ── Why Knowlytics (Always Dark) ── */}
+      <section className="py-24 relative overflow-hidden" style={{ backgroundColor: colors.darkSectionBg }}>
         <div className="absolute inset-0 opacity-[0.06]">
           <div className="absolute top-10 right-20 w-80 h-80 bg-blue-500 rounded-full blur-3xl" />
           <div className="absolute bottom-10 left-10 w-96 h-96 bg-indigo-400 rounded-full blur-3xl" />
@@ -150,45 +223,31 @@ export default function LandingPage() {
 
         <div className="relative max-w-7xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-16" style={{ color: '#ffffff' }}>
-            ليه تختار Knowlytics Hub؟
+            {t('landing.whyTitle')}
           </h2>
           <div className="grid md:grid-cols-3 gap-10">
-            <div className="text-center px-4">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
-                   style={{ backgroundColor: 'rgba(59,130,246,0.15)' }}>
-                <GraduationCap className="w-8 h-8" style={{ color: '#60a5fa' }} />
+            {[
+              { icon: GraduationCap, titleKey: 'landing.why1Title' as const, descKey: 'landing.why1Desc' as const, iconColor: '#60a5fa', iconBg: 'rgba(59,130,246,0.15)' },
+              { icon: Globe, titleKey: 'landing.why2Title' as const, descKey: 'landing.why2Desc' as const, iconColor: '#34d399', iconBg: 'rgba(16,185,129,0.15)' },
+              { icon: Clock, titleKey: 'landing.why3Title' as const, descKey: 'landing.why3Desc' as const, iconColor: '#a78bfa', iconBg: 'rgba(139,92,246,0.15)' },
+            ].map(({ icon: WIcon, titleKey, descKey, iconColor, iconBg }) => (
+              <div key={titleKey} className="text-center px-4">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+                     style={{ backgroundColor: iconBg }}>
+                  <WIcon className="w-8 h-8" style={{ color: iconColor }} />
+                </div>
+                <h3 className="font-bold text-xl mb-3" style={{ color: '#ffffff' }}>{t(titleKey)}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  {t(descKey)}
+                </p>
               </div>
-              <h3 className="font-bold text-xl mb-3" style={{ color: '#ffffff' }}>تعلّم بالسرعة اللي تناسبك</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                وصول غير محدود للدورات المسجّلة. اتعلّم في أي وقت ومن أي مكان.
-              </p>
-            </div>
-            <div className="text-center px-4">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
-                   style={{ backgroundColor: 'rgba(16,185,129,0.15)' }}>
-                <Globe className="w-8 h-8" style={{ color: '#34d399' }} />
-              </div>
-              <h3 className="font-bold text-xl mb-3" style={{ color: '#ffffff' }}>محتوى عالمي بجودة عالية</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                دورات من أفضل المدربين في مجالات متنوعة مع شهادات معتمدة.
-              </p>
-            </div>
-            <div className="text-center px-4">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
-                   style={{ backgroundColor: 'rgba(139,92,246,0.15)' }}>
-                <Clock className="w-8 h-8" style={{ color: '#a78bfa' }} />
-              </div>
-              <h3 className="font-bold text-xl mb-3" style={{ color: '#ffffff' }}>دعم فني على مدار الساعة</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                فريق متخصص لمساعدتك في أي وقت. مش هتحس إنك لوحدك أبداً.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── CTA (Gradient) ── */}
-      <section style={{ backgroundColor: '#ffffff' }} className="py-24">
+      {/* ── CTA ── */}
+      <section style={{ backgroundColor: colors.pageBg }} className="py-24">
         <div className="max-w-5xl mx-auto px-6">
           <div className="rounded-3xl p-12 md:p-16 text-center relative overflow-hidden"
                style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 50%, #7c3aed 100%)' }}>
@@ -198,28 +257,28 @@ export default function LandingPage() {
             </div>
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl font-extrabold mb-4" style={{ color: '#ffffff' }}>
-                جاهز تبدأ رحلتك؟
+                {t('landing.ctaTitle')}
               </h2>
               <p className="text-lg mb-10 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                انضم لآلاف الطلاب اللي بيطوّروا مهاراتهم مع Knowlytics Hub.
+                {t('landing.ctaDesc')}
               </p>
               <Link href="/register"
                     className="inline-flex items-center gap-2 font-bold px-10 py-4 rounded-xl text-lg transition-all duration-200 hover:scale-[1.03] shadow-xl"
                     style={{ backgroundColor: '#ffffff', color: '#1e3a5f' }}>
-                أنشئ حساب مجاني <ArrowRight className="w-5 h-5" />
+                {t('landing.ctaButton')} <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Footer (White) ── */}
-      <footer style={{ borderTop: '1px solid #e5e7eb', backgroundColor: '#ffffff' }} className="py-10">
+      {/* ── Footer ── */}
+      <footer style={{ borderTop: `1px solid ${colors.footerBorder}`, backgroundColor: colors.footerBg }} className="py-10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <Image src="/logo-dark.png" alt="Knowlytics Hub" width={44} height={44} className="object-contain opacity-80" />
-            <p className="text-sm" style={{ color: '#9ca3af' }}>
-              © {new Date().getFullYear()} Knowlytics Hub. All rights reserved.
+            <Image src={isDark ? '/logo-white.png' : '/logo-dark.png'} alt="Knowlytics Hub" width={44} height={44} className="object-contain opacity-80" />
+            <p className="text-sm" style={{ color: colors.footerText }}>
+              &copy; {new Date().getFullYear()} Knowlytics Hub. All rights reserved.
             </p>
             <a href="mailto:Sales@knowlyticshub.com"
                className="text-sm font-medium transition-colors"
