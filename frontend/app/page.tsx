@@ -33,24 +33,24 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
 
-      {/* ── Navbar (White) ── */}
-      <nav style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }} className="px-6 py-4 sticky top-0 z-50">
+      {/* ── Navbar (Dark Navy) ── */}
+      <nav style={{ backgroundColor: '#060e1e', borderBottom: '1px solid rgba(255,255,255,0.08)' }} className="px-6 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Image src="/logo-dark.png" alt="Knowlytics Hub" width={170} height={48} className="object-contain" priority />
+          <Image src="/logo-white.png" alt="Knowlytics Hub" width={170} height={48} className="object-contain" priority />
           <div className="flex items-center gap-3">
             <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
                className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium"
-               style={{ color: '#16a34a' }}>
+               style={{ color: '#4ade80' }}>
               💬 واتساب
             </a>
             <Link href="/login"
                   className="text-sm px-5 py-2.5 rounded-xl font-semibold transition-all duration-200"
-                  style={{ color: '#1e293b', border: '1px solid #d1d5db' }}>
+                  style={{ color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)' }}>
               Sign In
             </Link>
             <Link href="/register"
                   className="text-sm px-5 py-2.5 rounded-xl font-semibold transition-all duration-200"
-                  style={{ backgroundColor: '#1e3a5f', color: '#ffffff' }}>
+                  style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}>
               Get Started
             </Link>
           </div>
