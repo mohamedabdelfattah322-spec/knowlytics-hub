@@ -57,28 +57,23 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ── Hero (Dark Navy) ── */}
-      <section className="relative overflow-hidden" style={{ backgroundColor: '#060e1e' }}>
-        <div className="absolute inset-0 opacity-[0.08]">
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-500 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500 rounded-full blur-3xl" />
-        </div>
-
+      {/* ── Hero (White) ── */}
+      <section className="relative overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
         <div className="relative max-w-7xl mx-auto px-6 pt-24 pb-24 text-center">
           <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-8"
-               style={{ backgroundColor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
-            <Star className="w-4 h-4" style={{ color: '#60a5fa' }} />
-            <span className="text-sm font-semibold" style={{ color: '#60a5fa' }}>The Smart Way to Learn</span>
+               style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}>
+            <Star className="w-4 h-4" style={{ color: '#2563eb' }} />
+            <span className="text-sm font-semibold" style={{ color: '#2563eb' }}>The Smart Way to Learn</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight" style={{ color: '#ffffff' }}>
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight" style={{ color: '#0f172a' }}>
             Learn Without<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-500 to-blue-600">
               Limits
             </span>
           </h1>
 
-          <p className="text-xl max-w-2xl mx-auto mb-12 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          <p className="text-xl max-w-2xl mx-auto mb-12 leading-relaxed" style={{ color: '#64748b' }}>
             Knowlytics Hub combines live instruction, on-demand video, and gamified quizzes
             into one powerful learning experience.
           </p>
@@ -86,12 +81,12 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/register"
                   className="text-base px-8 py-4 rounded-xl font-bold inline-flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02]"
-                  style={{ backgroundColor: '#3b82f6', color: '#ffffff', boxShadow: '0 8px 30px rgba(59,130,246,0.3)' }}>
+                  style={{ backgroundColor: '#1e3a5f', color: '#ffffff', boxShadow: '0 8px 30px rgba(30,58,95,0.25)' }}>
               Start Learning Free <ChevronRight className="w-5 h-5" />
             </Link>
             <Link href="/courses"
                   className="text-base px-8 py-4 rounded-xl font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02]"
-                  style={{ color: '#ffffff', border: '2px solid rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                  style={{ color: '#1e293b', border: '2px solid #d1d5db' }}>
               Browse Courses
             </Link>
           </div>
