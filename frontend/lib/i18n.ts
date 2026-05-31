@@ -145,6 +145,7 @@ const translations = {
   'settings.name': { ar: 'الاسم', en: 'Name' },
   'settings.email': { ar: 'البريد الإلكتروني', en: 'Email' },
   'settings.accountType': { ar: 'نوع الحساب', en: 'Account Type' },
+  'settings.role': { ar: 'الصلاحية', en: 'Role' },
 
   // ─── Cart ──────────────────────────────────────────────
   'cart.title': { ar: 'سلة المشتريات', en: 'Shopping Cart' },

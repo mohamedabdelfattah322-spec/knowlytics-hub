@@ -32,6 +32,7 @@ export default function Sidebar() {
     { href: '/dashboard/admin/referrals', icon: Share2, label: t('nav.referrals') },
     { href: '/dashboard/admin/teams', icon: UserCheck, label: t('nav.teams') },
     { href: '/dashboard/admin/sessions', icon: Settings, label: t('nav.sessions') },
+    { href: '/dashboard/admin/settings', icon: Settings, label: t('nav.settings') },
   ];
 
   const studentNav = [
