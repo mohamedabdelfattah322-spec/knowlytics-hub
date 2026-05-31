@@ -222,6 +222,32 @@ const sendPasswordChangedEmail = async (user) => {
   });
 };
 
+const sendWelcomeEmail = async (user) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  await sendMail({
+    to: user.email,
+    subject: '🎉 مرحباً بك في Knowlytics Hub!',
+    html: baseTemplate(`
+      <h2>أهلاً وسهلاً ${user.name}! 🎓</h2>
+      <p>تم إنشاء حسابك بنجاح على <strong>Knowlytics Hub</strong>.</p>
+      <p>يمكنك الآن:</p>
+      <ul style="color:#94a3b8; line-height:2;">
+        <li>📚 تصفّح الدورات المتاحة والتسجيل فيها</li>
+        <li>📊 متابعة تقدّمك ونتائجك</li>
+        <li>🏆 الحصول على شهادات إتمام الدورات</li>
+        <li>💬 التواصل مع المدربين والطلاب</li>
+      </ul>
+      <p style="margin-top:20px;">ابدأ رحلتك التعليمية الآن:</p>
+      <a href="${frontendUrl}/courses" class="btn">تصفّح الدورات</a>
+      <table style="width:100%; border-collapse:collapse; margin:24px 0; background:#0f172a; border-radius:8px;">
+        <tr><td style="padding:12px 16px; color:#94a3b8; font-size:13px;">📧 البريد</td><td style="padding:12px 16px; color:#f8fafc; font-size:13px;">${user.email}</td></tr>
+        <tr><td style="padding:12px 16px; color:#94a3b8; font-size:13px;">👤 الاسم</td><td style="padding:12px 16px; color:#f8fafc; font-size:13px;">${user.name}</td></tr>
+      </table>
+      <p style="color:#64748b; font-size:12px;">إذا لم تقم بإنشاء هذا الحساب، تجاهل هذه الرسالة أو تواصل مع الدعم.</p>
+    `),
+  });
+};
+
 module.exports = {
   sendEnrollmentConfirmation,
   sendCourseCompletionEmail,
@@ -232,4 +258,5 @@ module.exports = {
   sendPasswordResetEmail,
   sendLoginAlertEmail,
   sendPasswordChangedEmail,
+  sendWelcomeEmail,
 };

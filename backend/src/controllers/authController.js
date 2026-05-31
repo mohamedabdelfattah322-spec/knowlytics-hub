@@ -46,6 +46,17 @@ const register = async (req, res, next) => {
 
     await createSession(user.id, token, deviceId, req.ip);
 
+    // Send welcome email + notification
+    emailService.sendWelcomeEmail(user).catch((e) =>
+      console.error('Welcome email failed:', e.message)
+    );
+    createNotification(
+      user.id,
+      '🎉 مرحباً بك في Knowlytics Hub! ابدأ رحلتك التعليمية الآن.',
+      'success',
+      '/courses'
+    ).catch(() => {});
+
     res.status(201).json({ user, token });
   } catch (err) {
     next(err);
