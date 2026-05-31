@@ -67,32 +67,32 @@ export default function LoginPage() {
           </p>
 
           {/* Features */}
-          <div className="flex flex-col gap-5 text-right w-full">
-            <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
+          <div dir="rtl" className="flex flex-col gap-5 w-full">
+            <div className="flex flex-row items-start gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-blue-500/25 rounded-xl flex items-center justify-center shrink-0">
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="flex flex-col items-start">
                 <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">دورات متنوعة</h3>
                 <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">محتوى تعليمي عالي الجودة في مختلف المجالات</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
+            <div className="flex flex-row items-start gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-emerald-500/25 rounded-xl flex items-center justify-center shrink-0">
                 <Award className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="flex flex-col items-start">
                 <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">شهادات معتمدة</h3>
                 <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">احصل على شهادة إتمام لكل دورة تنهيها</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
+            <div className="flex flex-row items-start gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-purple-500/25 rounded-xl flex items-center justify-center shrink-0">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="flex flex-col items-start">
                 <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">تتبّع تقدّمك</h3>
                 <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">لوحة تحكم شاملة لمتابعة إنجازاتك</p>
               </div>

@@ -80,32 +80,32 @@ export default function RegisterPage() {
             أنشئ حسابك وابدأ التعلّم مع آلاف الطلاب حول العالم
           </p>
 
-          <div className="flex flex-col gap-5 text-right w-full">
-            <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
+          <div dir="rtl" className="flex flex-col gap-5 w-full">
+            <div className="flex flex-row items-start gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-blue-500/25 rounded-xl flex items-center justify-center shrink-0">
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="flex flex-col items-start">
                 <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">تعلّم بالسرعة التي تناسبك</h3>
                 <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">وصول غير محدود للدورات المسجّلة</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
+            <div className="flex flex-row items-start gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-emerald-500/25 rounded-xl flex items-center justify-center shrink-0">
                 <Shield className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="flex flex-col items-start">
                 <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">حساب آمن ومحمي</h3>
                 <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">تشفير كامل وإشعارات أمان فورية</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
+            <div className="flex flex-row items-start gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-amber-500/25 rounded-xl flex items-center justify-center shrink-0">
                 <Clock className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="flex flex-col items-start">
                 <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">دعم فني على مدار الساعة</h3>
                 <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">فريق متخصص لمساعدتك في أي وقت</p>
               </div>
