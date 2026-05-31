@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useTheme } from '@/hooks/useTheme';
+import api from '@/lib/api';
 
 const featureIcons = [Video, Zap, Shield, Award];
 const featureColors = ['blue', 'purple', 'emerald', 'amber'];
@@ -89,6 +90,7 @@ export default function LandingPage() {
   const { t, locale, setLocale, dir } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [showGuide, setShowGuide] = useState(false);
+  const [stats, setStats] = useState({ students: 0, courses: 0, satisfaction: 0 });
 
   const isDark = theme === 'dark' || theme === 'ocean' || theme === 'emerald' || theme === 'sunset';
 
@@ -97,6 +99,11 @@ export default function LandingPage() {
       router.replace(user.role === 'admin' ? '/dashboard/admin' : '/dashboard/student');
     }
   }, [user, router]);
+
+  // Fetch real stats from API
+  useEffect(() => {
+    api.get('/public/stats').then(({ data }) => setStats(data)).catch(() => {});
+  }, []);
 
   // Show guide on first visit (if not dismissed)
   useEffect(() => {
@@ -255,13 +262,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stats ── */}
+      {/* ── Stats (Real Data) ── */}
       <section style={{ backgroundColor: colors.heroBg }} className="py-16">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
-            { value: '+10,000', key: 'landing.statStudents' as const },
-            { value: '+150', key: 'landing.statCourses' as const },
-            { value: '98%', key: 'landing.statSatisfaction' as const },
+            { value: stats.students > 0 ? `+${stats.students.toLocaleString()}` : '—', key: 'landing.statStudents' as const },
+            { value: stats.courses > 0 ? `${stats.courses}` : '—', key: 'landing.statCourses' as const },
+            { value: Number(stats.satisfaction) > 0 ? `${stats.satisfaction}/5` : '—', key: 'landing.statSatisfaction' as const },
             { value: '24/7', key: 'landing.statSupport' as const },
           ].map((s) => (
             <div key={s.key} className="text-center">

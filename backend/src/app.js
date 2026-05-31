@@ -109,6 +109,25 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'Knowlytics Hub API', timestamp: new Date().toISOString() });
 });
 
+// ─── Public Landing Stats (no auth needed) ────────────────
+app.get('/api/public/stats', async (_req, res) => {
+  try {
+    const { query: dbQuery } = require('./config/database');
+    const [students, courses, avgRating] = await Promise.all([
+      dbQuery("SELECT COUNT(*)::int AS count FROM users WHERE role = 'student' AND is_active = true"),
+      dbQuery("SELECT COUNT(*)::int AS count FROM courses WHERE is_published = true"),
+      dbQuery("SELECT COALESCE(AVG(rating), 0)::numeric(3,1) AS avg FROM course_reviews WHERE is_visible = true"),
+    ]);
+    res.json({
+      students: students.rows[0].count,
+      courses: courses.rows[0].count,
+      satisfaction: avgRating.rows[0].avg,
+    });
+  } catch {
+    res.json({ students: 0, courses: 0, satisfaction: 0 });
+  }
+});
+
 // ─── API Routes ───────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
