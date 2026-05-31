@@ -59,10 +59,10 @@ export default function LoginPage() {
               <BookOpen className="w-10 h-10 text-blue-400" />
             </div>
           </div>
-          <h1 className="text-4xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg">
+          <h1 style={{ color: '#ffffff' }} className="text-4xl font-extrabold mb-4 leading-tight drop-shadow-lg">
             ابدأ رحلتك التعليمية
           </h1>
-          <p className="text-white text-lg mb-12 leading-relaxed">
+          <p style={{ color: '#ffffff' }} className="text-lg mb-12 leading-relaxed">
             منصة تعليمية متكاملة لتطوير مهاراتك والحصول على شهادات معتمدة
           </p>
 
@@ -73,8 +73,8 @@ export default function LoginPage() {
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">دورات متنوعة</h3>
-                <p className="text-white/80 text-sm mt-1">محتوى تعليمي عالي الجودة في مختلف المجالات</p>
+                <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">دورات متنوعة</h3>
+                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">محتوى تعليمي عالي الجودة في مختلف المجالات</p>
               </div>
             </div>
 
@@ -83,8 +83,8 @@ export default function LoginPage() {
                 <Award className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">شهادات معتمدة</h3>
-                <p className="text-white/80 text-sm mt-1">احصل على شهادة إتمام لكل دورة تنهيها</p>
+                <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">شهادات معتمدة</h3>
+                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">احصل على شهادة إتمام لكل دورة تنهيها</p>
               </div>
             </div>
 
@@ -93,8 +93,8 @@ export default function LoginPage() {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">تتبّع تقدّمك</h3>
-                <p className="text-white/80 text-sm mt-1">لوحة تحكم شاملة لمتابعة إنجازاتك</p>
+                <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">تتبّع تقدّمك</h3>
+                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">لوحة تحكم شاملة لمتابعة إنجازاتك</p>
               </div>
             </div>
           </div>

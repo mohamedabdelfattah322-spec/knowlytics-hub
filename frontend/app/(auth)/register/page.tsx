@@ -73,10 +73,10 @@ export default function RegisterPage() {
               <Sparkles className="w-10 h-10 text-blue-400" />
             </div>
           </div>
-          <h1 className="text-4xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg">
+          <h1 style={{ color: '#ffffff' }} className="text-4xl font-extrabold mb-4 leading-tight drop-shadow-lg">
             انضم إلينا اليوم
           </h1>
-          <p className="text-white text-lg mb-12 leading-relaxed">
+          <p style={{ color: '#ffffff' }} className="text-lg mb-12 leading-relaxed">
             أنشئ حسابك وابدأ التعلّم مع آلاف الطلاب حول العالم
           </p>
 
@@ -86,8 +86,8 @@ export default function RegisterPage() {
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">تعلّم بالسرعة التي تناسبك</h3>
-                <p className="text-white/80 text-sm mt-1">وصول غير محدود للدورات المسجّلة</p>
+                <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">تعلّم بالسرعة التي تناسبك</h3>
+                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">وصول غير محدود للدورات المسجّلة</p>
               </div>
             </div>
 
@@ -96,8 +96,8 @@ export default function RegisterPage() {
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">حساب آمن ومحمي</h3>
-                <p className="text-white/80 text-sm mt-1">تشفير كامل وإشعارات أمان فورية</p>
+                <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">حساب آمن ومحمي</h3>
+                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">تشفير كامل وإشعارات أمان فورية</p>
               </div>
             </div>
 
@@ -106,8 +106,8 @@ export default function RegisterPage() {
                 <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-base">دعم فني على مدار الساعة</h3>
-                <p className="text-white/80 text-sm mt-1">فريق متخصص لمساعدتك في أي وقت</p>
+                <h3 style={{ color: '#ffffff' }} className="font-bold text-lg">دعم فني على مدار الساعة</h3>
+                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm mt-1">فريق متخصص لمساعدتك في أي وقت</p>
               </div>
             </div>
           </div>
