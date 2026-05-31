@@ -118,86 +118,86 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* ── Right: Register Form (dark navy) ── */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-[#0b1426]">
+      {/* ── Right: Register Form (white) ── */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <Image src="/logo-white.png" alt="Knowlytics Hub" width={200} height={60} className="object-contain" priority />
+              <Image src="/logo-dark.png" alt="Knowlytics Hub" width={200} height={60} className="object-contain" priority />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-1">إنشاء حساب جديد</h2>
-            <p className="text-blue-300/60 text-sm">ابدأ رحلتك التعليمية اليوم</p>
+            <h2 className="text-2xl font-bold text-gray-800 mb-1">إنشاء حساب جديد</h2>
+            <p className="text-gray-500 text-sm">ابدأ رحلتك التعليمية اليوم</p>
           </div>
 
           {refCode && (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 mb-5 text-center">
-              <p className="text-emerald-400 text-sm font-medium">🎁 لديك كود إحالة! ستحصل على خصم على أول عملية شراء</p>
+            <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-3 mb-5 text-center">
+              <p className="text-emerald-700 text-sm font-medium">🎁 لديك كود إحالة! ستحصل على خصم على أول عملية شراء</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-blue-100/80 mb-2">الاسم بالكامل</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">الاسم بالكامل</label>
               <input
                 {...register('name')}
                 type="text"
                 placeholder="مثال: محمد أحمد"
-                className="w-full px-4 py-3 rounded-xl border border-[#1e3555] bg-[#101e36] text-white placeholder-blue-300/30 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all duration-200"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-200"
               />
-              {errors.name && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.name.message}</p>}
+              {errors.name && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.name.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-blue-100/80 mb-2">البريد الإلكتروني</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">البريد الإلكتروني</label>
               <input
                 {...register('email')}
                 type="email"
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-xl border border-[#1e3555] bg-[#101e36] text-white placeholder-blue-300/30 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all duration-200"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-200"
               />
-              {errors.email && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.email.message}</p>}
+              {errors.email && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.email.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-blue-100/80 mb-2">كلمة المرور</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">كلمة المرور</label>
               <div className="relative">
                 <input
                   {...register('password')}
                   type={showPass ? 'text' : 'password'}
                   placeholder="8 أحرف على الأقل، حرف كبير، رقم"
-                  className="w-full px-4 py-3 rounded-xl border border-[#1e3555] bg-[#101e36] text-white placeholder-blue-300/30 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all duration-200 pr-12"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-200 pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-300/40 hover:text-blue-300 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.password.message}</p>}
+              {errors.password && <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.password.message}</p>}
             </div>
 
-            <div className="bg-blue-500/10 border border-blue-500/15 rounded-xl p-3 text-xs text-blue-300/70">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
               💡 الكورسات المسجلة تُشترى مباشرة بعد إنشاء الحساب. الكورسات المباشرة (Live) يقوم الأدمن بتسجيلك فيها بعد التواصل.
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full py-3.5 bg-[#0b1426] hover:bg-[#101e36] text-white font-semibold rounded-xl shadow-lg shadow-gray-900/10 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> جارِ إنشاء الحساب...</> : 'إنشاء حساب'}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-blue-300/50 text-sm">
+          <p className="mt-8 text-center text-gray-500 text-sm">
             لديك حساب بالفعل؟{' '}
-            <Link href="/login" className="text-blue-400 hover:text-blue-300 font-semibold">سجّل دخول</Link>
+            <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">سجّل دخول</Link>
           </p>
 
           <div className="mt-8 lg:hidden text-center">
-            <p className="text-blue-400/30 text-xs">&copy; {new Date().getFullYear()} Knowlytics Hub</p>
+            <p className="text-gray-400 text-xs">&copy; {new Date().getFullYear()} Knowlytics Hub</p>
           </div>
         </div>
       </div>
