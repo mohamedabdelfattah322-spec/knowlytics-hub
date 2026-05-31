@@ -260,7 +260,7 @@ const detectNewLoginAndNotify = async (user, ip, deviceId, userAgent) => {
     const isNewDevice = knownDevices.size > 0 && !knownDevices.has(deviceId);
 
     if (isNewIP || isNewDevice) {
-      // ⚠️ New device/IP — warning notification + email alert
+      // ⚠️ New device/IP — warning notification + warning email
       const msg = `🔐 تم تسجيل دخول جديد${isNewIP ? ' من عنوان IP مختلف' : ''}${isNewDevice ? ' من جهاز جديد' : ''} — ${deviceInfo} (${timeStr})`;
       await createNotification(user.id, msg, 'warning', '/dashboard/student');
 
@@ -269,9 +269,13 @@ const detectNewLoginAndNotify = async (user, ip, deviceId, userAgent) => {
         isNewIP, isNewDevice,
       }).catch((e) => console.error('Login alert email failed:', e.message));
     } else {
-      // ✅ Normal login — info notification
+      // ✅ Normal login — info notification + info email
       const msg = `✅ تم تسجيل الدخول بنجاح — ${deviceInfo} (${timeStr})`;
       await createNotification(user.id, msg, 'info', '/dashboard/student');
+
+      emailService.sendLoginInfoEmail(user, {
+        ip, deviceInfo, time: timeStr,
+      }).catch((e) => console.error('Login info email failed:', e.message));
     }
   } catch (err) {
     console.error('detectNewLoginAndNotify error:', err.message);

@@ -222,6 +222,26 @@ const sendPasswordChangedEmail = async (user) => {
   });
 };
 
+const sendLoginInfoEmail = async (user, { ip, deviceInfo, time }) => {
+  await sendMail({
+    to: user.email,
+    subject: '✅ تم تسجيل الدخول لحسابك — Knowlytics Hub',
+    html: baseTemplate(`
+      <h2>تسجيل دخول ناجح</h2>
+      <p>مرحباً ${user.name}،</p>
+      <p>تم تسجيل الدخول إلى حسابك بنجاح. إليك التفاصيل:</p>
+      <table style="width:100%; border-collapse:collapse; margin:16px 0; background:#0f172a; border-radius:8px;">
+        <tr><td style="padding:10px 16px; color:#94a3b8; font-size:13px;">📱 الجهاز</td><td style="padding:10px 16px; color:#f8fafc; font-size:13px;">${deviceInfo}</td></tr>
+        <tr><td style="padding:10px 16px; color:#94a3b8; font-size:13px;">🌐 عنوان IP</td><td style="padding:10px 16px; color:#f8fafc; font-size:13px;">${ip}</td></tr>
+        <tr><td style="padding:10px 16px; color:#94a3b8; font-size:13px;">🕐 الوقت</td><td style="padding:10px 16px; color:#f8fafc; font-size:13px;">${time}</td></tr>
+      </table>
+      <p style="color:#94a3b8; font-size:13px;">إذا لم تكن أنت من سجّل الدخول، غيّر كلمة المرور فوراً:</p>
+      <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/forgot-password" class="btn" style="background:#ef4444;">تغيير كلمة المرور</a>
+      <p style="margin-top:16px; color:#64748b; font-size:12px;">هذا إشعار أمان تلقائي يُرسل مع كل تسجيل دخول لحماية حسابك.</p>
+    `),
+  });
+};
+
 const sendWelcomeEmail = async (user) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   await sendMail({
@@ -257,6 +277,7 @@ module.exports = {
   sendBroadcastEmail,
   sendPasswordResetEmail,
   sendLoginAlertEmail,
+  sendLoginInfoEmail,
   sendPasswordChangedEmail,
   sendWelcomeEmail,
 };
