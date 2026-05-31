@@ -118,16 +118,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-
-          {/* Demo credentials */}
-          <div className="mt-6 p-4 bg-dark-700 rounded-lg border border-dark-600">
-            <p className="text-xs text-slate-400 font-medium mb-2">Demo Credentials:</p>
-            <div className="space-y-1 text-xs text-slate-400">
-              <p>👑 Admin: <span className="text-slate-300">admin@knowlytics.com</span></p>
-              <p>🎓 Student: <span className="text-slate-300">sara@example.com</span></p>
-              <p>🔑 Password: <span className="text-slate-300">Password123!</span></p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
