@@ -246,9 +246,12 @@ const detectNewLoginAndNotify = async (user, ip, deviceId, userAgent) => {
 
     // Check if this IP or device was used before by this user
     const prevSessions = await query(
-      `SELECT DISTINCT ip_address, device_id FROM sessions
-       WHERE user_id = $1 AND is_active = false
-       ORDER BY created_at DESC LIMIT 50`,
+      `SELECT ip_address, device_id FROM (
+         SELECT DISTINCT ON (ip_address, device_id) ip_address, device_id, created_at
+         FROM sessions
+         WHERE user_id = $1 AND is_active = false
+         ORDER BY ip_address, device_id, created_at DESC
+       ) sub ORDER BY created_at DESC LIMIT 50`,
       [user.id]
     );
 
