@@ -59,42 +59,42 @@ export default function LoginPage() {
               <BookOpen className="w-10 h-10 text-blue-400" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
+          <h1 className="text-4xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg">
             ابدأ رحلتك التعليمية
           </h1>
-          <p className="text-blue-300/80 text-lg mb-12 leading-relaxed">
+          <p className="text-blue-100 text-lg mb-12 leading-relaxed">
             منصة تعليمية متكاملة لتطوير مهاراتك والحصول على شهادات معتمدة
           </p>
 
           {/* Features */}
-          <div className="space-y-4 text-right">
-            <div className="flex items-center gap-4 bg-white/5 rounded-xl p-4 border border-white/5">
-              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center shrink-0">
-                <BookOpen className="w-5 h-5 text-blue-400" />
+          <div className="flex flex-col gap-5 text-right w-full">
+            <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
+              <div className="w-12 h-12 bg-blue-500/25 rounded-xl flex items-center justify-center shrink-0">
+                <BookOpen className="w-6 h-6 text-blue-300" />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-sm">دورات متنوعة</h3>
-                <p className="text-blue-300/60 text-xs mt-0.5">محتوى تعليمي عالي الجودة في مختلف المجالات</p>
+                <h3 className="text-white font-bold text-base">دورات متنوعة</h3>
+                <p className="text-blue-100/70 text-sm mt-1">محتوى تعليمي عالي الجودة في مختلف المجالات</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/5 rounded-xl p-4 border border-white/5">
-              <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center shrink-0">
-                <Award className="w-5 h-5 text-emerald-400" />
+            <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
+              <div className="w-12 h-12 bg-emerald-500/25 rounded-xl flex items-center justify-center shrink-0">
+                <Award className="w-6 h-6 text-emerald-300" />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-sm">شهادات معتمدة</h3>
-                <p className="text-blue-300/60 text-xs mt-0.5">احصل على شهادة إتمام لكل دورة تنهيها</p>
+                <h3 className="text-white font-bold text-base">شهادات معتمدة</h3>
+                <p className="text-blue-100/70 text-sm mt-1">احصل على شهادة إتمام لكل دورة تنهيها</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/5 rounded-xl p-4 border border-white/5">
-              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center shrink-0">
-                <TrendingUp className="w-5 h-5 text-purple-400" />
+            <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
+              <div className="w-12 h-12 bg-purple-500/25 rounded-xl flex items-center justify-center shrink-0">
+                <TrendingUp className="w-6 h-6 text-purple-300" />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-sm">تتبّع تقدّمك</h3>
-                <p className="text-blue-300/60 text-xs mt-0.5">لوحة تحكم شاملة لمتابعة إنجازاتك</p>
+                <h3 className="text-white font-bold text-base">تتبّع تقدّمك</h3>
+                <p className="text-blue-100/70 text-sm mt-1">لوحة تحكم شاملة لمتابعة إنجازاتك</p>
               </div>
             </div>
           </div>
