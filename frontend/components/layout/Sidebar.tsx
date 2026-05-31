@@ -51,22 +51,22 @@ export default function Sidebar() {
   const nav = user?.role === 'admin' ? adminNav : studentNav;
 
   return (
-    <aside className="w-64 bg-dark-800 border-r border-dark-700 flex flex-col h-screen sticky top-0">
+    <aside className="w-64 bg-[#0c1a30] border-r border-[#1a3050] flex flex-col h-screen sticky top-0">
       {/* Logo */}
       <Link href={user?.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'}
-            className="px-5 py-4 border-b border-dark-700 flex items-center justify-center hover:bg-dark-700/30 transition-colors">
+            className="px-5 py-4 border-b border-[#1a3050] flex items-center justify-center hover:bg-[#142640] transition-colors">
         <ThemeLogo width={180} height={50} priority />
       </Link>
 
       {/* User info */}
-      <div className="p-4 border-b border-dark-700">
+      <div className="p-4 border-b border-[#1a3050]">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center text-white font-semibold text-sm">
+          <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
             {user?.name?.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-            <p className="text-xs text-slate-400 capitalize">
+            <p className="text-xs text-blue-300/70 capitalize">
               {user?.role === 'admin' ? '👑 Admin' : `🎓 ${user?.student_type}`}
             </p>
           </div>
@@ -84,8 +84,8 @@ export default function Sidebar() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                 active
-                  ? 'bg-brand-500/15 text-brand-400 border border-brand-500/30'
-                  : 'text-slate-400 hover:text-white hover:bg-dark-700'
+                  ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+                  : 'text-blue-100/70 hover:text-white hover:bg-[#142640]'
               )}
             >
               <Icon className="w-4 h-4" />
@@ -96,12 +96,12 @@ export default function Sidebar() {
       </nav>
 
       {/* Theme + Language + Logout */}
-      <div className="p-4 border-t border-dark-700 space-y-1">
+      <div className="p-4 border-t border-[#1a3050] space-y-1">
         <ThemeSwitcher />
         <LanguageSwitcher />
         <button
           onClick={() => logout()}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-900/20 w-full transition-all duration-200"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-100/70 hover:text-red-400 hover:bg-red-900/20 w-full transition-all duration-200"
         >
           <LogOut className="w-4 h-4" />
           {t('common.signOut')}

@@ -8,29 +8,29 @@
   /*  THEME DEFINITIONS                                     */
   /* ═══════════════════════════════════════════════════════ */
 
-  /* ─── Dark (Default) ─────────────────────────────────── */
+  /* ─── Dark (Default — Navy Blue) ─────────────────────── */
   :root,
   [data-theme="dark"] {
-    --color-bg-900: #0a1628;
-    --color-bg-800: #0d1f3c;
-    --color-bg-700: #152847;
-    --color-bg-600: #1e3a5f;
-    --color-brand-50:  #eef2ff;
-    --color-brand-100: #e0e7ff;
-    --color-brand-400: #818cf8;
-    --color-brand-500: #6366f1;
-    --color-brand-600: #4f46e5;
-    --color-brand-700: #4338ca;
-    --color-brand-900: #312e81;
-    --color-text-primary:   #f8fafc;
-    --color-text-secondary: #94a3b8;
-    --color-text-muted:     #64748b;
-    --color-text-inverse:   #0f172a;
-    --color-border:  #334155;
-    --color-scrollbar-track: #1e293b;
-    --color-scrollbar-thumb: #475569;
-    --toast-bg: #1e293b;
-    --toast-border: #334155;
+    --color-bg-900: #0b1426;
+    --color-bg-800: #101e36;
+    --color-bg-700: #182c4a;
+    --color-bg-600: #213d63;
+    --color-brand-50:  #e0ecff;
+    --color-brand-100: #c7dbff;
+    --color-brand-400: #60a5fa;
+    --color-brand-500: #3b82f6;
+    --color-brand-600: #2563eb;
+    --color-brand-700: #1d4ed8;
+    --color-brand-900: #1e3a6e;
+    --color-text-primary:   #f0f6ff;
+    --color-text-secondary: #93b4d4;
+    --color-text-muted:     #5e8bb5;
+    --color-text-inverse:   #0b1426;
+    --color-border:  #1e3555;
+    --color-scrollbar-track: #101e36;
+    --color-scrollbar-thumb: #2a4a72;
+    --toast-bg: #101e36;
+    --toast-border: #1e3555;
   }
 
   /* ─── Light ──────────────────────────────────────────── */
@@ -59,10 +59,10 @@
 
   /* ─── Ocean (Deep Blue) ─────────────────────────────── */
   [data-theme="ocean"] {
-    --color-bg-900: #0c1222;
-    --color-bg-800: #101b33;
-    --color-bg-700: #162544;
-    --color-bg-600: #1d3156;
+    --color-bg-900: #091726;
+    --color-bg-800: #0e2240;
+    --color-bg-700: #163158;
+    --color-bg-600: #1f4170;
     --color-brand-50:  #e0f2fe;
     --color-brand-100: #bae6fd;
     --color-brand-400: #38bdf8;
@@ -74,11 +74,11 @@
     --color-text-secondary: #7dd3fc;
     --color-text-muted:     #38bdf8;
     --color-text-inverse:   #082f49;
-    --color-border:  #1e3a5f;
-    --color-scrollbar-track: #101b33;
-    --color-scrollbar-thumb: #1d3156;
-    --toast-bg: #101b33;
-    --toast-border: #1e3a5f;
+    --color-border:  #1a3d66;
+    --color-scrollbar-track: #0e2240;
+    --color-scrollbar-thumb: #1f4170;
+    --toast-bg: #0e2240;
+    --toast-border: #1a3d66;
   }
 
   /* ─── Emerald (Green) ───────────────────────────────── */
