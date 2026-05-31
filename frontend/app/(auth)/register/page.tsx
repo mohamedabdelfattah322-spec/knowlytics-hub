@@ -185,7 +185,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 bg-[#0b1426] hover:bg-[#101e36] text-white font-semibold rounded-xl shadow-lg shadow-gray-900/10 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> جارِ إنشاء الحساب...</> : 'إنشاء حساب'}
             </button>
