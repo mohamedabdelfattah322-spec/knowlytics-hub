@@ -36,7 +36,7 @@ export default function LandingPage() {
       {/* ── Navbar (Dark Navy) ── */}
       <nav style={{ backgroundColor: '#060e1e', borderBottom: '1px solid rgba(255,255,255,0.08)' }} className="px-6 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Image src="/logo-white.png" alt="Knowlytics Hub" width={170} height={48} className="object-contain" priority />
+          <Image src="/logo-white.png" alt="Knowlytics Hub" width={50} height={50} className="object-contain" priority />
           <div className="flex items-center gap-3">
             <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
                className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium"
@@ -217,7 +217,7 @@ export default function LandingPage() {
       <footer style={{ borderTop: '1px solid #e5e7eb', backgroundColor: '#ffffff' }} className="py-10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <Image src="/logo-dark.png" alt="Knowlytics Hub" width={140} height={38} className="object-contain opacity-80" />
+            <Image src="/logo-dark.png" alt="Knowlytics Hub" width={44} height={44} className="object-contain opacity-80" />
             <p className="text-sm" style={{ color: '#9ca3af' }}>
               © {new Date().getFullYear()} Knowlytics Hub. All rights reserved.
             </p>
