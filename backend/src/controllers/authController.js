@@ -226,9 +226,13 @@ const resetPassword = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-// ─── Helper: detect new device/IP login & notify ────────
+// ─── Helper: notify on every login + alert on new device/IP ────────
 const detectNewLoginAndNotify = async (user, ip, deviceId, userAgent) => {
   try {
+    const deviceInfo = parseDeviceInfo(userAgent);
+    const now = new Date();
+    const timeStr = now.toLocaleString('ar-EG', { timeZone: 'Africa/Cairo', hour12: true });
+
     // Check if this IP or device was used before by this user
     const prevSessions = await query(
       `SELECT DISTINCT ip_address, device_id FROM sessions
@@ -244,21 +248,19 @@ const detectNewLoginAndNotify = async (user, ip, deviceId, userAgent) => {
     const isNewIP = !isLocal && knownIPs.size > 0 && !knownIPs.has(ip);
     const isNewDevice = knownDevices.size > 0 && !knownDevices.has(deviceId);
 
-    // Parse basic device info from user-agent
-    const deviceInfo = parseDeviceInfo(userAgent);
-    const now = new Date();
-    const timeStr = now.toLocaleString('ar-EG', { timeZone: 'Africa/Cairo', hour12: true });
-
     if (isNewIP || isNewDevice) {
-      // In-app notification
+      // ⚠️ New device/IP — warning notification + email alert
       const msg = `🔐 تم تسجيل دخول جديد${isNewIP ? ' من عنوان IP مختلف' : ''}${isNewDevice ? ' من جهاز جديد' : ''} — ${deviceInfo} (${timeStr})`;
       await createNotification(user.id, msg, 'warning', '/dashboard/student');
 
-      // Email alert
       emailService.sendLoginAlertEmail(user, {
         ip, deviceInfo, time: timeStr,
         isNewIP, isNewDevice,
       }).catch((e) => console.error('Login alert email failed:', e.message));
+    } else {
+      // ✅ Normal login — info notification
+      const msg = `✅ تم تسجيل الدخول بنجاح — ${deviceInfo} (${timeStr})`;
+      await createNotification(user.id, msg, 'info', '/dashboard/student');
     }
   } catch (err) {
     console.error('detectNewLoginAndNotify error:', err.message);
