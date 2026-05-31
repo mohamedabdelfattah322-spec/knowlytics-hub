@@ -62,7 +62,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg">
             ابدأ رحلتك التعليمية
           </h1>
-          <p className="text-blue-100 text-lg mb-12 leading-relaxed">
+          <p className="text-white text-lg mb-12 leading-relaxed">
             منصة تعليمية متكاملة لتطوير مهاراتك والحصول على شهادات معتمدة
           </p>
 
@@ -70,31 +70,31 @@ export default function LoginPage() {
           <div className="flex flex-col gap-5 text-right w-full">
             <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-blue-500/25 rounded-xl flex items-center justify-center shrink-0">
-                <BookOpen className="w-6 h-6 text-blue-300" />
+                <BookOpen className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-bold text-base">دورات متنوعة</h3>
-                <p className="text-blue-100/70 text-sm mt-1">محتوى تعليمي عالي الجودة في مختلف المجالات</p>
+                <p className="text-white/80 text-sm mt-1">محتوى تعليمي عالي الجودة في مختلف المجالات</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-emerald-500/25 rounded-xl flex items-center justify-center shrink-0">
-                <Award className="w-6 h-6 text-emerald-300" />
+                <Award className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-bold text-base">شهادات معتمدة</h3>
-                <p className="text-blue-100/70 text-sm mt-1">احصل على شهادة إتمام لكل دورة تنهيها</p>
+                <p className="text-white/80 text-sm mt-1">احصل على شهادة إتمام لكل دورة تنهيها</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-purple-500/25 rounded-xl flex items-center justify-center shrink-0">
-                <TrendingUp className="w-6 h-6 text-purple-300" />
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-bold text-base">تتبّع تقدّمك</h3>
-                <p className="text-blue-100/70 text-sm mt-1">لوحة تحكم شاملة لمتابعة إنجازاتك</p>
+                <p className="text-white/80 text-sm mt-1">لوحة تحكم شاملة لمتابعة إنجازاتك</p>
               </div>
             </div>
           </div>

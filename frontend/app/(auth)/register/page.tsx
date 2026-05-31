@@ -76,38 +76,38 @@ export default function RegisterPage() {
           <h1 className="text-4xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg">
             انضم إلينا اليوم
           </h1>
-          <p className="text-blue-100 text-lg mb-12 leading-relaxed">
+          <p className="text-white text-lg mb-12 leading-relaxed">
             أنشئ حسابك وابدأ التعلّم مع آلاف الطلاب حول العالم
           </p>
 
           <div className="flex flex-col gap-5 text-right w-full">
             <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-blue-500/25 rounded-xl flex items-center justify-center shrink-0">
-                <GraduationCap className="w-6 h-6 text-blue-300" />
+                <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-bold text-base">تعلّم بالسرعة التي تناسبك</h3>
-                <p className="text-blue-100/70 text-sm mt-1">وصول غير محدود للدورات المسجّلة</p>
+                <p className="text-white/80 text-sm mt-1">وصول غير محدود للدورات المسجّلة</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-emerald-500/25 rounded-xl flex items-center justify-center shrink-0">
-                <Shield className="w-6 h-6 text-emerald-300" />
+                <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-bold text-base">حساب آمن ومحمي</h3>
-                <p className="text-blue-100/70 text-sm mt-1">تشفير كامل وإشعارات أمان فورية</p>
+                <p className="text-white/80 text-sm mt-1">تشفير كامل وإشعارات أمان فورية</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 bg-white/10 rounded-xl p-5 border border-white/10">
               <div className="w-12 h-12 bg-amber-500/25 rounded-xl flex items-center justify-center shrink-0">
-                <Clock className="w-6 h-6 text-amber-300" />
+                <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-white font-bold text-base">دعم فني على مدار الساعة</h3>
-                <p className="text-blue-100/70 text-sm mt-1">فريق متخصص لمساعدتك في أي وقت</p>
+                <p className="text-white/80 text-sm mt-1">فريق متخصص لمساعدتك في أي وقت</p>
               </div>
             </div>
           </div>
