@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, BookOpen, Users, BarChart2, Video,
@@ -55,7 +56,7 @@ export default function Sidebar() {
       {/* Logo */}
       <Link href={user?.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'}
             className="px-5 py-4 border-b border-[#1a3050] flex items-center justify-center hover:bg-[#142640] transition-colors">
-        <ThemeLogo width={180} height={50} priority />
+        <Image src="/logo-white.png" alt="Knowlytics Hub" width={180} height={50} className="object-contain" priority />
       </Link>
 
       {/* User info */}
