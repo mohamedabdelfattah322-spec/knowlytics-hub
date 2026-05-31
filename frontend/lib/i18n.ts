@@ -264,6 +264,31 @@ const translations = {
   'landing.whatsapp': { ar: '💬 واتساب', en: '💬 WhatsApp' },
   'landing.signIn': { ar: 'تسجيل الدخول', en: 'Sign In' },
   'landing.getStarted': { ar: 'ابدأ الآن', en: 'Get Started' },
+
+  // ─── How It Works (dark strip) ────────────────────────
+  'landing.howTitle': { ar: 'ازاي تبدأ؟', en: 'How It Works' },
+  'landing.howStep1Title': { ar: 'أنشئ حساب', en: 'Create Account' },
+  'landing.howStep1Desc': { ar: 'سجّل مجاناً في ثوانٍ', en: 'Sign up for free in seconds' },
+  'landing.howStep2Title': { ar: 'اختار كورسك', en: 'Choose a Course' },
+  'landing.howStep2Desc': { ar: 'تصفّح الكورسات واشترِ اللي يناسبك', en: 'Browse courses and pick what fits you' },
+  'landing.howStep3Title': { ar: 'ابدأ التعلّم', en: 'Start Learning' },
+  'landing.howStep3Desc': { ar: 'شاهد الفيديوهات وحلّ الاختبارات', en: 'Watch videos and take quizzes' },
+  'landing.howStep4Title': { ar: 'احصل على شهادتك', en: 'Get Certified' },
+  'landing.howStep4Desc': { ar: 'أكمل الكورس واحصل على الشهادة', en: 'Complete the course and earn your certificate' },
+
+  // ─── Onboarding Guide ─────────────────────────────────
+  'guide.title': { ar: 'مرحباً بك في Knowlytics Hub! 👋', en: 'Welcome to Knowlytics Hub! 👋' },
+  'guide.subtitle': { ar: 'خطوات بسيطة عشان تبدأ رحلتك', en: 'Simple steps to start your journey' },
+  'guide.step1Title': { ar: '1. أنشئ حسابك', en: '1. Create Your Account' },
+  'guide.step1Desc': { ar: 'اضغط على "ابدأ الآن" وسجّل ببياناتك. الحساب مجاني!', en: 'Click "Get Started" and register with your details. It\'s free!' },
+  'guide.step2Title': { ar: '2. تصفّح الكورسات', en: '2. Browse Courses' },
+  'guide.step2Desc': { ar: 'استكشف مكتبة الكورسات واختار اللي يناسب مستواك وأهدافك.', en: 'Explore our course library and pick what matches your level and goals.' },
+  'guide.step3Title': { ar: '3. اشترِ أو سجّل', en: '3. Buy or Enroll' },
+  'guide.step3Desc': { ar: 'الكورسات المسجّلة تُشترى مباشرة. كورسات Live يسجّلك فيها الأدمن بعد التواصل.', en: 'Recorded courses can be bought directly. Live courses require admin enrollment after contact.' },
+  'guide.step4Title': { ar: '4. تابع تقدّمك', en: '4. Track Progress' },
+  'guide.step4Desc': { ar: 'لوحة التحكم تعرض كل كورساتك ونتائجك وإنجازاتك.', en: 'Your dashboard shows all courses, results, and achievements.' },
+  'guide.gotIt': { ar: 'فهمت، يلا نبدأ! 🚀', en: 'Got it, let\'s go! 🚀' },
+  'guide.dontShowAgain': { ar: 'لا تعرض مرة تانية', en: 'Don\'t show again' },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
