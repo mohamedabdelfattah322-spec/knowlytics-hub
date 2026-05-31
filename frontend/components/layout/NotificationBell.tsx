@@ -94,7 +94,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-80 bg-dark-800 border border-dark-600 rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-dark-800 border border-dark-600 rounded-xl shadow-2xl z-50 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-dark-700">
             <h3 className="text-sm font-semibold text-white">الإشعارات</h3>
@@ -123,7 +123,7 @@ export default function NotificationBell() {
                   key={n.id}
                   onClick={() => { if (!n.is_read) markOne(n.id); }}
                   className={cn(
-                    'flex items-start gap-3 px-4 py-3 border-b border-dark-700/60 cursor-pointer hover:bg-dark-700/50 transition-colors',
+                    'group flex items-start gap-3 px-4 py-3 border-b border-dark-700/60 cursor-pointer hover:bg-dark-700/50 transition-colors',
                     !n.is_read && 'bg-brand-500/5'
                   )}
                 >
