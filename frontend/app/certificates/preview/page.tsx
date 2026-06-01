@@ -46,7 +46,7 @@ export default function CertificatePreviewPage() {
 
           {/* ─── Course title — above "Certificate" ─── */}
           <div className="absolute" style={{
-            top: '24%', left: '10%', width: '48%', height: '4%',
+            top: '24%', left: '5%', width: '50%', height: '4%',
             color: '#1a4b7a', fontWeight: 800, fontSize: titleFontSize,
             fontStyle: 'italic',
             letterSpacing: '0.18em', lineHeight: 1,
