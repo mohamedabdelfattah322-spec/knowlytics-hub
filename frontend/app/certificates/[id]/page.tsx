@@ -105,7 +105,7 @@ export default function CertificatePage() {
           {/* ─── 4. "THIS CERTIFICATE IS PRESENTED TO" ─── */}
           <div className="absolute" style={{
             top: '47%', left: '8%',
-            color: '#64748b', fontWeight: 500, fontSize: '0.8cqw',
+            color: '#64748b', fontWeight: 500, fontSize: '1.0cqw',
             letterSpacing: '0.1em', lineHeight: 1,
           }}>
             THIS CERTIFICATE IS PRESENTED TO
@@ -129,13 +129,13 @@ export default function CertificatePage() {
             lineHeight: 1,
           }}>
             <span style={{
-              color: '#475569', fontWeight: 600, fontSize: '0.9cqw',
+              color: '#475569', fontWeight: 600, fontSize: '1.1cqw',
               fontStyle: 'italic', whiteSpace: 'nowrap',
             }}>
               For the succesful completion of the course
             </span>
             <span style={{
-              color: '#1a4b7a', fontWeight: 800, fontSize: '0.9cqw',
+              color: '#1a4b7a', fontWeight: 800, fontSize: '1.1cqw',
               letterSpacing: '0.05em', whiteSpace: 'nowrap',
             }}>
               {courseTitle}
@@ -176,7 +176,7 @@ export default function CertificatePage() {
               {founderName}
             </p>
             <div style={{ width: '80%', height: '1.5px', backgroundColor: '#1e293b', margin: '0 auto 0.3cqw' }} />
-            <p style={{ fontSize: '0.85cqw', color: '#2e86ab', fontWeight: 700 }}>
+            <p style={{ fontSize: '1.0cqw', color: '#2e86ab', fontWeight: 700 }}>
               Founder
             </p>
           </div>
@@ -194,14 +194,14 @@ export default function CertificatePage() {
               {instructorName}
             </p>
             <div style={{ width: '80%', height: '1.5px', backgroundColor: '#1e293b', margin: '0 auto 0.3cqw' }} />
-            <p style={{ fontSize: '0.85cqw', color: '#2e86ab', fontWeight: 700 }}>
+            <p style={{ fontSize: '1.0cqw', color: '#2e86ab', fontWeight: 700 }}>
               Instructor
             </p>
           </div>
 
           {/* ─── 10. Serial ─── */}
           <div className="absolute" style={{
-            bottom: '1.5%', right: '1.5%', color: '#94a3b8', fontSize: '0.5cqw',
+            bottom: '1.5%', right: '1.5%', color: '#94a3b8', fontSize: '0.65cqw',
           }}>
             Serial: {cert.serial_no}
           </div>
