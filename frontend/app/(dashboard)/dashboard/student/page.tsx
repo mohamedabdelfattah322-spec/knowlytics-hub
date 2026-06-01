@@ -7,6 +7,34 @@ import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { cn } from '@/lib/utils';
+import PageGuide, { GuideButton, type GuideStep } from '@/components/ui/PageGuide';
+
+const dashboardGuide: GuideStep[] = [
+  {
+    titleAr: 'مرحباً بك في لوحة التحكم!', titleEn: 'Welcome to your Dashboard!',
+    descAr: 'هنا هتلاقي كل حاجة عن كورساتك وتقدّمك. يلا نتعرف على كل جزء.', descEn: 'Here you\'ll find everything about your courses and progress. Let\'s explore each section.',
+  },
+  {
+    target: '[data-guide="stats"]',
+    titleAr: 'إحصائياتك', titleEn: 'Your Stats',
+    descAr: 'هنا بتشوف عدد الكورسات اللي مسجل فيها، واللي بتدرسها دلوقتي، واللي خلصتها.', descEn: 'See how many courses you\'re enrolled in, currently studying, and completed.',
+  },
+  {
+    target: '[data-guide="courses"]',
+    titleAr: 'كورساتك', titleEn: 'Your Courses',
+    descAr: 'هنا بتظهر كل الكورسات اللي مسجل فيها. اضغط على أي كورس عشان تكمل التعلم أو تبدأ من جديد.', descEn: 'All your enrolled courses appear here. Click any course to continue learning or start fresh.',
+  },
+  {
+    target: '[data-guide="sidebar"]',
+    titleAr: 'القائمة الجانبية', titleEn: 'Sidebar Navigation',
+    descAr: 'من هنا تقدر تتنقل بين الصفحات: كورساتي، التقدم، الملاحظات، الإنجازات، السلة، والإعدادات.', descEn: 'Navigate between pages: My Courses, Progress, Notes, Achievements, Cart, and Settings.',
+  },
+  {
+    target: '[data-guide="notifications"]',
+    titleAr: 'الإشعارات', titleEn: 'Notifications',
+    descAr: 'هنا بتوصلك إشعارات مهمة عن الكورسات، الدفعات، وتنبيهات الأمان.', descEn: 'Get important notifications about courses, payments, and security alerts.',
+  },
+];
 
 interface Enrollment {
   course_id: string; course_title: string; type: string;
@@ -52,8 +80,13 @@ export default function StudentDashboard() {
 
   const isLive = user?.student_type === 'live';
 
+  const [guideOpen, setGuideOpen] = useState(false);
+
   return (
     <div className="space-y-8 animate-slide-up">
+      <PageGuide pageId="student-dashboard" steps={dashboardGuide} forceOpen={guideOpen} onClose={() => setGuideOpen(false)} />
+      <GuideButton onClick={() => setGuideOpen(true)} />
+
       {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -73,7 +106,7 @@ export default function StudentDashboard() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4" data-guide="stats">
         {[
           { icon: BookOpen, label: t('student.enrolled'), value: enrollments.length, color: 'text-blue-400' },
           { icon: TrendingUp, label: t('student.inProgress'), value: inProgress.length, color: 'text-yellow-400' },
@@ -139,7 +172,7 @@ export default function StudentDashboard() {
 
       {/* Continue learning */}
       {inProgress.length > 0 && (
-        <div>
+        <div data-guide="courses">
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Play className="w-5 h-5 text-brand-400" /> {t('student.continueLearning')}
           </h2>

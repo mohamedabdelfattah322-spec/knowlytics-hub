@@ -7,6 +7,29 @@ import { formatPrice, levelColor, cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import ThemeLogo from '@/components/ThemeLogo';
+import PageGuide, { GuideButton, type GuideStep } from '@/components/ui/PageGuide';
+
+const coursesGuide: GuideStep[] = [
+  {
+    titleAr: 'كتالوج الكورسات', titleEn: 'Course Catalog',
+    descAr: 'هنا بتلاقي كل الكورسات المتاحة. تقدر تبحث وتفلتر وتلاقي اللي يناسبك.', descEn: 'Find all available courses here. Search, filter, and find what suits you.',
+  },
+  {
+    target: '[data-guide="search"]',
+    titleAr: 'البحث', titleEn: 'Search',
+    descAr: 'ابحث عن أي كورس بالاسم أو الوصف.', descEn: 'Search for any course by name or description.',
+  },
+  {
+    target: '[data-guide="filters"]',
+    titleAr: 'الفلاتر', titleEn: 'Filters',
+    descAr: 'فلتر حسب النوع (أونلاين/لايف)، القسم، أو رتّب حسب السعر أو التقييم.', descEn: 'Filter by type (Online/Live), category, or sort by price or rating.',
+  },
+  {
+    target: '[data-guide="course-grid"]',
+    titleAr: 'الكورسات', titleEn: 'Courses',
+    descAr: 'اضغط على أي كورس عشان تشوف التفاصيل والسعر وتسجّل فيه.', descEn: 'Click any course to see details, pricing, and enroll.',
+  },
+];
 
 interface Course {
   id: string; title: string; description: string; type: string;
@@ -29,6 +52,7 @@ export default function CoursesPage() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [loading, setLoading] = useState(true);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
     api.get('/categories').then(({ data }) => setCategories(data)).catch(() => {});
@@ -43,6 +67,8 @@ export default function CoursesPage() {
 
   return (
     <div className="min-h-screen bg-dark-900">
+      <PageGuide pageId="courses-catalog" steps={coursesGuide} forceOpen={guideOpen} onClose={() => setGuideOpen(false)} />
+      <GuideButton onClick={() => setGuideOpen(true)} />
       {/* Header */}
       <div className="border-b border-dark-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -70,11 +96,11 @@ export default function CoursesPage() {
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
-          <div className="relative flex-1">
+          <div className="relative flex-1" data-guide="search">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input type="text" placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="input pl-10" />
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap" data-guide="filters">
             <Filter className="w-4 h-4 text-slate-400" />
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="input w-auto">
               <option value="">{t('courses.allTypes')}</option>
@@ -99,7 +125,7 @@ export default function CoursesPage() {
         </div>
 
         {/* Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" data-guide="course-grid">
           {loading
             ? [...Array(8)].map((_, i) => (
               <div key={i} className="card animate-pulse">

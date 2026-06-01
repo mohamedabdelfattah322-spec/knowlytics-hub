@@ -52,7 +52,7 @@ export default function Sidebar() {
   const nav = user?.role === 'admin' ? adminNav : studentNav;
 
   return (
-    <aside className="w-64 bg-[#0c1a30] border-r border-[#1a3050] flex flex-col h-screen sticky top-0">
+    <aside className="w-64 bg-[#0c1a30] border-r border-[#1a3050] flex flex-col h-screen sticky top-0" data-guide="sidebar">
       {/* Logo */}
       <Link href={user?.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'}
             className="px-5 py-4 border-b border-[#1a3050] flex items-center justify-center hover:bg-[#142640] transition-colors">

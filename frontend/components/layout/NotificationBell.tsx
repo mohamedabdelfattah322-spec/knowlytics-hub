@@ -79,7 +79,7 @@ export default function NotificationBell() {
   };
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={ref} data-guide="notifications">
       <button
         onClick={() => setOpen(!open)}
         className="relative p-2 text-slate-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
