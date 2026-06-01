@@ -75,7 +75,7 @@ export default function CertificatePage() {
 
           {/* ─── Course title — above "Certificate" ─── */}
           <div className="absolute" style={{
-            top: '19%', left: '10%', width: '48%', height: '4%',
+            top: '24%', left: '10%', width: '48%', height: '4%',
             color: '#1a4b7a', fontWeight: 800, fontSize: titleFontSize,
             fontStyle: 'italic',
             letterSpacing: '0.18em', lineHeight: 1,
@@ -97,24 +97,15 @@ export default function CertificatePage() {
             {cert.student_name}
           </div>
 
-          {/* ─── "For the succesful completion of the course" + course name ─── */}
+          {/* ─── Course name — right after template's "completion of the course" text ─── */}
           <div className="absolute" style={{
-            top: '53.5%', left: '5%', width: '70%', height: '4%',
-            display: 'flex', alignItems: 'center', gap: '0.4cqw',
-            lineHeight: 1,
+            top: '53%', left: '41%', width: '35%', height: '3%',
+            color: '#1a4b7a', fontWeight: 800, fontSize: '0.95cqw',
+            letterSpacing: '0.05em', lineHeight: 1,
+            whiteSpace: 'nowrap', overflow: 'hidden',
+            display: 'flex', alignItems: 'center',
           }}>
-            <span style={{
-              color: '#334155', fontWeight: 600, fontSize: '0.95cqw',
-              fontStyle: 'italic', whiteSpace: 'nowrap',
-            }}>
-              For the succesful completion of the course
-            </span>
-            <span style={{
-              color: '#1a4b7a', fontWeight: 800, fontSize: '0.95cqw',
-              letterSpacing: '0.05em', whiteSpace: 'nowrap',
-            }}>
-              {courseTitle}
-            </span>
+            {courseTitle}
           </div>
 
           {/* ─── Duration + Date row ─── */}
