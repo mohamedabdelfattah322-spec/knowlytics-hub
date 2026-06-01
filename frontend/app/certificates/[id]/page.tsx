@@ -99,7 +99,7 @@ export default function CertificatePage() {
 
           {/* ─── Course name — right after template's "completion of the course" text ─── */}
           <div className="absolute" style={{
-            top: '53%', left: '41%', width: '35%', height: '3%',
+            top: '54.2%', left: '42%', width: '35%', height: '3%',
             color: '#1a4b7a', fontWeight: 800, fontSize: '0.95cqw',
             letterSpacing: '0.05em', lineHeight: 1,
             whiteSpace: 'nowrap', overflow: 'hidden',
