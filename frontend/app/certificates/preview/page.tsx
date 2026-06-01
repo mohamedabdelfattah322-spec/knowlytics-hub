@@ -7,6 +7,9 @@ export default function CertificatePreviewPage() {
   const courseTitle = 'DATA ANALYSIS USING EXCEL-POWER BI-AI';
   const monthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).replace(' ', '-');
   const serial = 'KH-PREVIEW';
+  const founderName = 'Mohamed Abdelfattah';
+  const instructorName = 'Ahmed Hassan'; // Preview with different instructor
+  const isSameAsFounder = instructorName === founderName;
 
   // Auto-shrink course title font if too long
   const titleFontSize = courseTitle.length > 30 ? '0.85cqw'
@@ -101,6 +104,47 @@ export default function CertificatePreviewPage() {
             {monthYear}
           </div>
 
+          {/* ── Signatures Area ── */}
+          {!isSameAsFounder && (
+            <>
+              {/* Founder signature — LEFT side */}
+              <div className="absolute" style={{
+                bottom: '10%', left: '10%', width: '30%',
+                textAlign: 'center',
+              }}>
+                <p style={{
+                  fontFamily: '"Playfair Display", "Georgia", serif',
+                  fontStyle: 'italic', fontWeight: 600, fontSize: '1.3cqw',
+                  color: '#1e293b', marginBottom: '0.3cqw',
+                }}>
+                  {founderName}
+                </p>
+                <div style={{ width: '60%', height: '1px', backgroundColor: '#cbd5e1', margin: '0 auto 0.3cqw' }} />
+                <p style={{ fontSize: '0.75cqw', color: '#64748b', fontWeight: 600 }}>
+                  Founder & CEO
+                </p>
+              </div>
+
+              {/* Instructor signature — RIGHT side */}
+              <div className="absolute" style={{
+                bottom: '10%', right: '10%', width: '30%',
+                textAlign: 'center',
+              }}>
+                <p style={{
+                  fontFamily: '"Playfair Display", "Georgia", serif',
+                  fontStyle: 'italic', fontWeight: 600, fontSize: '1.3cqw',
+                  color: '#1e293b', marginBottom: '0.3cqw',
+                }}>
+                  {instructorName}
+                </p>
+                <div style={{ width: '60%', height: '1px', backgroundColor: '#cbd5e1', margin: '0 auto 0.3cqw' }} />
+                <p style={{ fontSize: '0.75cqw', color: '#64748b', fontWeight: 600 }}>
+                  Instructor
+                </p>
+              </div>
+            </>
+          )}
+
           {/* Serial */}
           <div className="absolute" style={{
             bottom: '0.5%', right: '0.7%', color: '#94a3b8',
@@ -115,7 +159,7 @@ export default function CertificatePreviewPage() {
             <Award className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-yellow-800">
               <p className="font-semibold mb-1">📄 معاينة تجريبية</p>
-              <p>اسم الطالب وعنوان الكورس والتاريخ بيتغيروا تلقائياً لكل شهادة.</p>
+              <p>اسم الطالب وعنوان الكورس والتاريخ بيتغيروا تلقائياً لكل شهادة. لو المدرب حد غير الـ Founder بيظهر توقيعين: Founder & CEO على اليسار والـ Instructor على اليمين.</p>
             </div>
           </div>
         </div>

@@ -12,6 +12,7 @@ interface Certificate {
   final_grade: number | null;
   course_title: string;
   student_name: string;
+  instructor_name: string | null;
   batch_name: string | null;
   duration_hours: number;
   course_end_date: string | null;
@@ -36,7 +37,6 @@ export default function CertificatePage() {
 
   if (!cert) return <div className="min-h-screen bg-dark-900 flex items-center justify-center text-slate-400">Certificate not found</div>;
 
-  // Use course end date if available, else issue date
   const dateForCert = cert.course_end_date ? new Date(cert.course_end_date) : new Date(cert.issued_at);
   const issueDate = new Date(cert.issued_at);
   const monthYear = dateForCert.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).replace(' ', '-');
@@ -45,15 +45,19 @@ export default function CertificatePage() {
                        : courseTitle.length > 20 ? '1.0cqw'
                        : '1.3cqw';
 
+  const founderName = 'Mohamed Abdelfattah';
+  const instructorName = cert.instructor_name || founderName;
+  const isSameAsFounder = instructorName === founderName;
+
   return (
     <div className="min-h-screen bg-slate-200 p-4 print:p-0 print:bg-white">
       <div className="max-w-5xl mx-auto mb-4 flex items-center justify-between print:hidden">
         <Link href="/dashboard/student" className="text-slate-700 hover:text-slate-900 flex items-center gap-1 text-sm font-medium">
-          <ArrowLeft className="w-4 h-4" /> رجوع
+          <ArrowLeft className="w-4 h-4" /> Back
         </Link>
         <button onClick={() => window.print()}
           className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
-          <Printer className="w-4 h-4" /> طباعة / حفظ PDF
+          <Printer className="w-4 h-4" /> Print / Save PDF
         </button>
       </div>
 
@@ -66,6 +70,7 @@ export default function CertificatePage() {
             className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
           />
 
+          {/* Course title */}
           <div
             className="absolute"
             style={{
@@ -79,6 +84,7 @@ export default function CertificatePage() {
             {courseTitle}
           </div>
 
+          {/* Student name */}
           <div
             className="absolute"
             style={{
@@ -93,6 +99,7 @@ export default function CertificatePage() {
             {cert.student_name}
           </div>
 
+          {/* Date */}
           <div
             className="absolute"
             style={{
@@ -105,6 +112,48 @@ export default function CertificatePage() {
             {monthYear}
           </div>
 
+          {/* ── Signatures Area (overlaying the bottom of template) ── */}
+          {!isSameAsFounder && (
+            <>
+              {/* Founder signature — LEFT side */}
+              <div className="absolute" style={{
+                bottom: '10%', left: '10%', width: '30%',
+                textAlign: 'center',
+              }}>
+                <p style={{
+                  fontFamily: '"Playfair Display", "Georgia", serif',
+                  fontStyle: 'italic', fontWeight: 600, fontSize: '1.3cqw',
+                  color: '#1e293b', marginBottom: '0.3cqw',
+                }}>
+                  {founderName}
+                </p>
+                <div style={{ width: '60%', height: '1px', backgroundColor: '#cbd5e1', margin: '0 auto 0.3cqw' }} />
+                <p style={{ fontSize: '0.75cqw', color: '#64748b', fontWeight: 600 }}>
+                  Founder & CEO
+                </p>
+              </div>
+
+              {/* Instructor signature — RIGHT side */}
+              <div className="absolute" style={{
+                bottom: '10%', right: '10%', width: '30%',
+                textAlign: 'center',
+              }}>
+                <p style={{
+                  fontFamily: '"Playfair Display", "Georgia", serif',
+                  fontStyle: 'italic', fontWeight: 600, fontSize: '1.3cqw',
+                  color: '#1e293b', marginBottom: '0.3cqw',
+                }}>
+                  {instructorName}
+                </p>
+                <div style={{ width: '60%', height: '1px', backgroundColor: '#cbd5e1', margin: '0 auto 0.3cqw' }} />
+                <p style={{ fontSize: '0.75cqw', color: '#64748b', fontWeight: 600 }}>
+                  Instructor
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* Serial */}
           <div className="absolute" style={{
             bottom: '0.5%', right: '0.7%', color: '#94a3b8', fontSize: '0.55cqw',
           }}>
@@ -112,15 +161,17 @@ export default function CertificatePage() {
           </div>
         </div>
 
+        {/* Info card below certificate */}
         <div className="mt-4 bg-white rounded-xl p-4 shadow-md print:hidden">
           <div className="flex items-center gap-3">
             <Award className="w-6 h-6 text-yellow-500" />
             <div className="flex-1">
               <p className="text-slate-900 font-semibold">{cert.course_title}</p>
               <p className="text-sm text-slate-500">
-                صدرت في {issueDate.toLocaleDateString('ar-EG')} ·
+                Issued: {issueDate.toLocaleDateString('en-US')} &middot;
                 Serial: <span className="font-mono">{cert.serial_no}</span>
-                {cert.final_grade !== null && ` · التقدير: ${cert.final_grade}/100`}
+                {cert.instructor_name && ` · Instructor: ${cert.instructor_name}`}
+                {cert.final_grade !== null && ` · Grade: ${cert.final_grade}/100`}
               </p>
             </div>
           </div>

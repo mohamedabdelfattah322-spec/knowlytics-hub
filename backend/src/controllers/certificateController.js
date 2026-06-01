@@ -131,6 +131,7 @@ const getCertificate = async (req, res, next) => {
     const result = await query(
       `SELECT cert.*, c.title AS course_title, c.duration_hours,
               u.name AS student_name, u.email AS student_email,
+              ins.name AS instructor_name,
               b.name AS batch_name, b.end_date AS batch_end_date,
               -- Course completion = max(enrollment.completed_at, last recording date, batch end)
               GREATEST(
@@ -141,6 +142,7 @@ const getCertificate = async (req, res, next) => {
        FROM certificates cert
        JOIN courses c ON c.id = cert.course_id
        JOIN users u ON u.id = cert.user_id
+       LEFT JOIN users ins ON ins.id = c.instructor_id
        LEFT JOIN course_batches b ON b.id = cert.batch_id
        LEFT JOIN enrollments e ON e.user_id = cert.user_id AND e.course_id = cert.course_id
        WHERE cert.id = $1`,
@@ -161,10 +163,12 @@ const verifyBySerial = async (req, res, next) => {
   try {
     const result = await query(
       `SELECT cert.serial_no, cert.issued_at, cert.final_grade,
-              c.title AS course_title, u.name AS student_name
+              c.title AS course_title, u.name AS student_name,
+              ins.name AS instructor_name
        FROM certificates cert
        JOIN courses c ON c.id = cert.course_id
        JOIN users u ON u.id = cert.user_id
+       LEFT JOIN users ins ON ins.id = c.instructor_id
        WHERE cert.serial_no = $1`,
       [req.params.serial]
     );
