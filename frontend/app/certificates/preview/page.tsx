@@ -19,9 +19,9 @@ export default function CertificatePreviewPage() {
                        : courseTitle.length > 25 ? '1.4cqw'
                        : '1.7cqw';
 
-  const nameFontSize = studentName.length > 30 ? '1.8cqw'
-                     : studentName.length > 20 ? '2.2cqw'
-                     : '2.6cqw';
+  const nameFontSize = studentName.length > 30 ? '2cqw'
+                     : studentName.length > 20 ? '2.5cqw'
+                     : '3cqw';
 
   return (
     <div className="min-h-screen bg-slate-200 p-4 print:p-0 print:bg-white">
@@ -44,53 +44,80 @@ export default function CertificatePreviewPage() {
             className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
           />
 
-          {/* ─── Course title — above "Certificate" ─── */}
+          {/* All text starts at left: 8% for consistent alignment */}
+
+          {/* ─── 1. Course title ─── */}
           <div className="absolute" style={{
-            top: '24%', left: '5%', width: '50%', height: '4%',
+            top: '18%', left: '8%',
             color: '#1a4b7a', fontWeight: 800, fontSize: titleFontSize,
-            fontStyle: 'italic',
-            letterSpacing: '0.18em', lineHeight: 1,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            display: 'flex', alignItems: 'center',
+            fontStyle: 'italic', letterSpacing: '0.18em',
+            lineHeight: 1, whiteSpace: 'nowrap',
           }}>
             {courseTitle}
           </div>
 
-          {/* ─── Student name ─── */}
+          {/* ─── 2. "Certificate" ─── */}
           <div className="absolute" style={{
-            top: '48%', left: '5%', width: '58%', height: '6%',
-            color: '#1e293b',
+            top: '25%', left: '8%',
+            fontFamily: '"Playfair Display", "Georgia", serif',
+            fontStyle: 'italic', fontWeight: 900, fontSize: '6.5cqw',
+            color: '#1a3353', lineHeight: 1,
+          }}>
+            Certificate
+          </div>
+
+          {/* ─── 3. "OF ACHIEVEMENT" ─── */}
+          <div className="absolute" style={{
+            top: '40%', left: '8%',
+            color: '#1a4b7a', fontWeight: 800, fontSize: '1.1cqw',
+            letterSpacing: '0.15em', lineHeight: 1,
+          }}>
+            OF ACHIEVEMENT
+          </div>
+
+          {/* ─── 4. "THIS CERTIFICATE IS PRESENTED TO" ─── */}
+          <div className="absolute" style={{
+            top: '44%', left: '8%',
+            color: '#64748b', fontWeight: 500, fontSize: '0.8cqw',
+            letterSpacing: '0.1em', lineHeight: 1,
+          }}>
+            THIS CERTIFICATE IS PRESENTED TO
+          </div>
+
+          {/* ─── 5. Student name ─── */}
+          <div className="absolute" style={{
+            top: '48%', left: '8%', width: '55%',
+            color: '#1a3353',
             fontFamily: '"Playfair Display", "Georgia", serif',
             fontWeight: 700, fontSize: nameFontSize,
             lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden',
-            display: 'flex', alignItems: 'center',
           }}>
             {studentName}
           </div>
 
-          {/* ─── "For the succesful completion of the course DATA ANALYSIS TOOLS" ─── */}
+          {/* ─── 6. "For the succesful completion of the course COURSE_NAME" ─── */}
           <div className="absolute" style={{
-            top: '55%', left: '5%', width: '70%', height: '3.5%',
-            display: 'flex', alignItems: 'center', gap: '0.3cqw',
+            top: '56%', left: '8%', width: '75%',
+            display: 'flex', alignItems: 'baseline', gap: '0.3cqw',
             lineHeight: 1,
           }}>
             <span style={{
-              color: '#334155', fontWeight: 600, fontSize: '0.95cqw',
+              color: '#475569', fontWeight: 600, fontSize: '0.9cqw',
               fontStyle: 'italic', whiteSpace: 'nowrap',
             }}>
               For the succesful completion of the course
             </span>
             <span style={{
-              color: '#1a4b7a', fontWeight: 800, fontSize: '0.95cqw',
+              color: '#1a4b7a', fontWeight: 800, fontSize: '0.9cqw',
               letterSpacing: '0.05em', whiteSpace: 'nowrap',
             }}>
               {courseName}
             </span>
           </div>
 
-          {/* ─── Skills + Date row ─── */}
+          {/* ─── 7. Skills + Date row ─── */}
           <div className="absolute" style={{
-            top: '65%', left: '5%', width: '80%', height: '5%',
+            top: '66%', left: '8%', width: '78%',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <span style={{
@@ -112,43 +139,43 @@ export default function CertificatePreviewPage() {
             </span>
           </div>
 
-          {/* ─── Founder signature — LEFT ─── */}
+          {/* ─── 8. Founder signature — LEFT ─── */}
           <div className="absolute" style={{
-            bottom: '8%', left: '10%', width: '22%',
+            bottom: '7%', left: '10%', width: '22%',
             textAlign: 'center',
           }}>
             <p style={{
-              fontFamily: '"Dancing Script", "Playfair Display", cursive, serif',
-              fontStyle: 'italic', fontWeight: 700, fontSize: '1.5cqw',
+              fontFamily: '"Dancing Script", cursive',
+              fontWeight: 700, fontSize: '1.5cqw',
               color: '#1e293b', marginBottom: '0.2cqw',
             }}>
               {founderName}
             </p>
-            <div style={{ width: '80%', height: '1px', backgroundColor: '#1e293b', margin: '0 auto 0.3cqw' }} />
+            <div style={{ width: '80%', height: '1.5px', backgroundColor: '#1e293b', margin: '0 auto 0.3cqw' }} />
             <p style={{ fontSize: '0.85cqw', color: '#2e86ab', fontWeight: 700 }}>
               Founder
             </p>
           </div>
 
-          {/* ─── Instructor signature — RIGHT ─── */}
+          {/* ─── 9. Instructor signature — RIGHT ─── */}
           <div className="absolute" style={{
-            bottom: '8%', left: '52%', width: '22%',
+            bottom: '7%', left: '52%', width: '22%',
             textAlign: 'center',
           }}>
             <p style={{
-              fontFamily: '"Dancing Script", "Playfair Display", cursive, serif',
-              fontStyle: 'italic', fontWeight: 700, fontSize: '1.5cqw',
+              fontFamily: '"Dancing Script", cursive',
+              fontWeight: 700, fontSize: '1.5cqw',
               color: '#1e293b', marginBottom: '0.2cqw',
             }}>
               {instructorName}
             </p>
-            <div style={{ width: '80%', height: '1px', backgroundColor: '#1e293b', margin: '0 auto 0.3cqw' }} />
+            <div style={{ width: '80%', height: '1.5px', backgroundColor: '#1e293b', margin: '0 auto 0.3cqw' }} />
             <p style={{ fontSize: '0.85cqw', color: '#2e86ab', fontWeight: 700 }}>
               Instructor
             </p>
           </div>
 
-          {/* Serial */}
+          {/* ─── 10. Serial ─── */}
           <div className="absolute" style={{
             bottom: '1.5%', right: '1.5%', color: '#94a3b8', fontSize: '0.5cqw',
           }}>
@@ -161,14 +188,14 @@ export default function CertificatePreviewPage() {
             <Award className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-yellow-800">
               <p className="font-semibold mb-1">📄 معاينة تجريبية</p>
-              <p>اسم الطالب وعنوان الكورس والتاريخ والساعات بيتغيروا تلقائياً لكل شهادة.</p>
+              <p>كل النصوص ديناميكية: اسم الطالب، الكورس، التاريخ، الساعات، والتوقيعات بتتغير تلقائياً.</p>
             </div>
           </div>
         </div>
       </div>
 
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600;1,700;1,800;1,900&display=swap');
         .cert-canvas { container-type: inline-size; }
         @media print {
           @page { size: A4 landscape; margin: 0; }
