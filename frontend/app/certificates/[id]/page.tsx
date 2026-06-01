@@ -97,15 +97,25 @@ export default function CertificatePage() {
             {cert.student_name}
           </div>
 
-          {/* ─── Course name — right after template's "completion of the course" text ─── */}
+          {/* ─── Course name — inline after "completion of the course" ─── */}
           <div className="absolute" style={{
-            top: '54.2%', left: '42%', width: '35%', height: '3%',
-            color: '#1a4b7a', fontWeight: 800, fontSize: '0.95cqw',
-            letterSpacing: '0.05em', lineHeight: 1,
-            whiteSpace: 'nowrap', overflow: 'hidden',
-            display: 'flex', alignItems: 'center',
+            top: '54.5%', left: '5%', width: '70%', height: '3%',
+            display: 'flex', alignItems: 'center', gap: '0.4cqw',
+            lineHeight: 1,
           }}>
-            {courseTitle}
+            <span style={{
+              color: '#334155', fontWeight: 600, fontSize: '0.95cqw',
+              fontStyle: 'italic', whiteSpace: 'nowrap',
+              visibility: 'hidden',
+            }}>
+              For the succesful completion of the course
+            </span>
+            <span style={{
+              color: '#1a4b7a', fontWeight: 800, fontSize: '0.95cqw',
+              letterSpacing: '0.05em', whiteSpace: 'nowrap',
+            }}>
+              {courseTitle}
+            </span>
           </div>
 
           {/* ─── Duration + Date row ─── */}
