@@ -45,7 +45,7 @@ export default function CertificatePreviewPage() {
           <div
             className="absolute"
             style={{
-              top: '16.5%', left: '5%', width: '50%', height: '4%',
+              top: '21%', left: '14%', width: '45%', height: '4%',
               color: '#1e3a5f', fontWeight: 700, fontSize: titleFontSize,
               letterSpacing: '0.15em', lineHeight: 1,
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -59,7 +59,7 @@ export default function CertificatePreviewPage() {
           <div
             className="absolute"
             style={{
-              top: '46%', left: '5%', width: '55%', height: '6%',
+              top: '48%', left: '5%', width: '55%', height: '5%',
               color: '#1e293b',
               fontFamily: '"Playfair Display", "Georgia", serif',
               fontWeight: 700, fontSize: nameFontSize,
@@ -74,7 +74,7 @@ export default function CertificatePreviewPage() {
           <div
             className="absolute"
             style={{
-              top: '55%', left: '5%', width: '55%', height: '3.5%',
+              top: '58%', left: '5%', width: '55%', height: '3.5%',
               color: '#1e3a5f', fontWeight: 700, fontSize: '1.2cqw',
               letterSpacing: '0.08em', lineHeight: 1,
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -84,30 +84,20 @@ export default function CertificatePreviewPage() {
             {courseTitleUpper}
           </div>
 
-          {/* Duration hours */}
+          {/* Duration + Date row */}
           <div
             className="absolute"
             style={{
-              top: '64%', left: '5%', width: '55%', height: '4%',
-              color: '#1e3a5f', fontWeight: 600, fontSize: '1.3cqw',
-              lineHeight: 1,
-              display: 'flex', alignItems: 'center',
+              top: '67%', left: '5%', width: '60%', height: '4%',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}
           >
-            {durationHours}H
-          </div>
-
-          {/* Date — center */}
-          <div
-            className="absolute"
-            style={{
-              top: '64%', left: '30%', width: '20%', height: '4%',
-              color: '#475569', fontWeight: 600, fontSize: '1.3cqw',
-              lineHeight: 1, whiteSpace: 'nowrap',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            {monthYear}
+            <span style={{ color: '#1e3a5f', fontWeight: 600, fontSize: '1.2cqw' }}>
+              « {durationHours}H »
+            </span>
+            <span style={{ color: '#475569', fontWeight: 600, fontSize: '1.3cqw' }}>
+              {monthYear}
+            </span>
           </div>
 
           {/* ── Founder signature — LEFT side ── */}
