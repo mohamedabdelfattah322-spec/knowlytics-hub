@@ -4,16 +4,19 @@ import { Printer, ArrowLeft, Award } from 'lucide-react';
 
 export default function CertificatePreviewPage() {
   const studentName = 'Muhammed Hesham Elrawashdy';
-  const courseTitle = 'DATA ANALYSIS TOOLS';
-  const courseTitleUpper = courseTitle.toUpperCase();
+  const courseTitle = 'DATA ANALYSIS COURSE';
+  const courseName = 'DATA ANALYSIS TOOLS';
   const monthYear = 'April-2026';
   const serial = 'KH-PREVIEW';
   const founderName = 'Mohamed Abdelfattah';
   const instructorName = 'Ahmed Hassan';
-  const durationHours = 39;
+  const skills = [
+    { name: 'Excel', hours: 24 },
+    { name: 'Power Bi', hours: 15 },
+  ];
 
-  const titleFontSize = courseTitleUpper.length > 40 ? '1.1cqw'
-                       : courseTitleUpper.length > 25 ? '1.4cqw'
+  const titleFontSize = courseTitle.length > 40 ? '1.1cqw'
+                       : courseTitle.length > 25 ? '1.4cqw'
                        : '1.7cqw';
 
   const nameFontSize = studentName.length > 30 ? '1.8cqw'
@@ -41,103 +44,118 @@ export default function CertificatePreviewPage() {
             className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
           />
 
-          {/* Course title — above "Certificate" */}
-          <div
-            className="absolute"
-            style={{
-              top: '24%', left: '5%', width: '50%', height: '4%',
-              color: '#1e3a5f', fontWeight: 700, fontSize: titleFontSize,
-              letterSpacing: '0.15em', lineHeight: 1,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              display: 'flex', alignItems: 'center',
-            }}
-          >
-            {courseTitleUpper}
+          {/* ─── Course title — above "Certificate" ─── */}
+          <div className="absolute" style={{
+            top: '19%', left: '10%', width: '48%', height: '4%',
+            color: '#1a4b7a', fontWeight: 800, fontSize: titleFontSize,
+            fontStyle: 'italic',
+            letterSpacing: '0.18em', lineHeight: 1,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            display: 'flex', alignItems: 'center',
+          }}>
+            {courseTitle}
           </div>
 
-          {/* Student name — after "THIS CERTIFICATE IS PRESENTED TO" */}
-          <div
-            className="absolute"
-            style={{
-              top: '49%', left: '5%', width: '55%', height: '5%',
-              color: '#1e293b',
-              fontFamily: '"Playfair Display", "Georgia", serif',
-              fontWeight: 700, fontSize: nameFontSize,
-              lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden',
-              display: 'flex', alignItems: 'center',
-            }}
-          >
+          {/* ─── Student name — after "PRESENTED TO" ─── */}
+          <div className="absolute" style={{
+            top: '46%', left: '5%', width: '58%', height: '6%',
+            color: '#1e293b',
+            fontFamily: '"Playfair Display", "Georgia", serif',
+            fontWeight: 700, fontSize: nameFontSize,
+            lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden',
+            display: 'flex', alignItems: 'center',
+          }}>
             {studentName}
           </div>
 
-          {/* Course name — after "For the successful completion of the course" */}
-          <div
-            className="absolute"
-            style={{
-              top: '60%', left: '5%', width: '55%', height: '3.5%',
-              color: '#1e3a5f', fontWeight: 700, fontSize: '1.2cqw',
-              letterSpacing: '0.08em', lineHeight: 1,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              display: 'flex', alignItems: 'center',
-            }}
-          >
-            {courseTitleUpper}
+          {/* ─── "For the succesful completion of the course" + course name ─── */}
+          <div className="absolute" style={{
+            top: '53.5%', left: '5%', width: '70%', height: '4%',
+            display: 'flex', alignItems: 'center', gap: '0.4cqw',
+            lineHeight: 1,
+          }}>
+            <span style={{
+              color: '#334155', fontWeight: 600, fontSize: '0.95cqw',
+              fontStyle: 'italic', whiteSpace: 'nowrap',
+            }}>
+              For the succesful completion of the course
+            </span>
+            <span style={{
+              color: '#1a4b7a', fontWeight: 800, fontSize: '0.95cqw',
+              letterSpacing: '0.05em', whiteSpace: 'nowrap',
+            }}>
+              {courseName}
+            </span>
           </div>
 
-          {/* Duration + Date + Duration row */}
-          <div
-            className="absolute"
-            style={{
-              top: '69%', left: '5%', width: '65%', height: '4%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: '4cqw',
-            }}
-          >
-            <span style={{ color: '#1e3a5f', fontWeight: 600, fontSize: '1.2cqw' }}>
-              « {durationHours}H »
+          {/* ─── Skills + Date row ─── */}
+          <div className="absolute" style={{
+            top: '64%', left: '5%', width: '80%', height: '5%',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            {/* Left skill */}
+            <span style={{
+              color: '#1a4b7a', fontWeight: 700, fontSize: '1.3cqw',
+              fontStyle: 'italic',
+            }}>
+              - {skills[0].name} « {skills[0].hours}H »
             </span>
-            <span style={{ color: '#475569', fontWeight: 600, fontSize: '1.3cqw' }}>
+
+            {/* Date center */}
+            <span style={{
+              color: '#2e86ab', fontWeight: 600, fontSize: '1.4cqw',
+            }}>
               {monthYear}
             </span>
+
+            {/* Right skill */}
+            <span style={{
+              color: '#1a4b7a', fontWeight: 700, fontSize: '1.3cqw',
+              fontStyle: 'italic',
+            }}>
+              - {skills[1].name} « {skills[1].hours}H »
+            </span>
           </div>
 
-          {/* ── Founder signature — LEFT side ── */}
+          {/* ─── Founder signature — LEFT ─── */}
           <div className="absolute" style={{
-            bottom: '6%', left: '8%', width: '25%',
+            bottom: '8%', left: '10%', width: '22%',
             textAlign: 'center',
           }}>
             <p style={{
-              fontFamily: '"Dancing Script", "Playfair Display", "Georgia", cursive, serif',
-              fontStyle: 'italic', fontWeight: 700, fontSize: '1.4cqw',
-              color: '#1e293b', marginBottom: '0.5cqw',
+              fontFamily: '"Dancing Script", "Playfair Display", cursive, serif',
+              fontStyle: 'italic', fontWeight: 700, fontSize: '1.5cqw',
+              color: '#1e293b', marginBottom: '0.2cqw',
             }}>
               {founderName}
             </p>
-            <p style={{ fontSize: '0.8cqw', color: '#64748b', fontWeight: 600 }}>
+            <div style={{ width: '80%', height: '1px', backgroundColor: '#1e293b', margin: '0 auto 0.3cqw' }} />
+            <p style={{ fontSize: '0.85cqw', color: '#2e86ab', fontWeight: 700 }}>
               Founder
             </p>
           </div>
 
-          {/* ── Instructor signature — RIGHT side ── */}
+          {/* ─── Instructor signature — RIGHT ─── */}
           <div className="absolute" style={{
-            bottom: '6%', right: '8%', width: '25%',
+            bottom: '8%', left: '52%', width: '22%',
             textAlign: 'center',
           }}>
             <p style={{
-              fontFamily: '"Dancing Script", "Playfair Display", "Georgia", cursive, serif',
-              fontStyle: 'italic', fontWeight: 700, fontSize: '1.4cqw',
-              color: '#1e293b', marginBottom: '0.5cqw',
+              fontFamily: '"Dancing Script", "Playfair Display", cursive, serif',
+              fontStyle: 'italic', fontWeight: 700, fontSize: '1.5cqw',
+              color: '#1e293b', marginBottom: '0.2cqw',
             }}>
               {instructorName}
             </p>
-            <p style={{ fontSize: '0.8cqw', color: '#64748b', fontWeight: 600 }}>
+            <div style={{ width: '80%', height: '1px', backgroundColor: '#1e293b', margin: '0 auto 0.3cqw' }} />
+            <p style={{ fontSize: '0.85cqw', color: '#2e86ab', fontWeight: 700 }}>
               Instructor
             </p>
           </div>
 
           {/* Serial */}
           <div className="absolute" style={{
-            bottom: '1%', right: '1%', color: '#94a3b8', fontSize: '0.55cqw',
+            bottom: '1.5%', right: '1.5%', color: '#94a3b8', fontSize: '0.5cqw',
           }}>
             Serial: {serial}
           </div>
@@ -155,7 +173,7 @@ export default function CertificatePreviewPage() {
       </div>
 
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap');
         .cert-canvas { container-type: inline-size; }
         @media print {
           @page { size: A4 landscape; margin: 0; }
