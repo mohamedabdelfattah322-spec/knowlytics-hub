@@ -56,9 +56,9 @@ export default function CertificatePreviewPage() {
             {courseTitle}
           </div>
 
-          {/* ─── Student name — after "PRESENTED TO" ─── */}
+          {/* ─── Student name ─── */}
           <div className="absolute" style={{
-            top: '46%', left: '5%', width: '58%', height: '6%',
+            top: '48%', left: '5%', width: '58%', height: '6%',
             color: '#1e293b',
             fontFamily: '"Playfair Display", "Georgia", serif',
             fontWeight: 700, fontSize: nameFontSize,
@@ -68,16 +68,15 @@ export default function CertificatePreviewPage() {
             {studentName}
           </div>
 
-          {/* ─── Course name — inline after "completion of the course" ─── */}
+          {/* ─── "For the succesful completion of the course DATA ANALYSIS TOOLS" ─── */}
           <div className="absolute" style={{
-            top: '54.5%', left: '5%', width: '70%', height: '3%',
-            display: 'flex', alignItems: 'center', gap: '0.4cqw',
+            top: '55%', left: '5%', width: '70%', height: '3.5%',
+            display: 'flex', alignItems: 'center', gap: '0.3cqw',
             lineHeight: 1,
           }}>
             <span style={{
               color: '#334155', fontWeight: 600, fontSize: '0.95cqw',
               fontStyle: 'italic', whiteSpace: 'nowrap',
-              visibility: 'hidden',
             }}>
               For the succesful completion of the course
             </span>
@@ -91,25 +90,20 @@ export default function CertificatePreviewPage() {
 
           {/* ─── Skills + Date row ─── */}
           <div className="absolute" style={{
-            top: '64%', left: '5%', width: '80%', height: '5%',
+            top: '65%', left: '5%', width: '80%', height: '5%',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
-            {/* Left skill */}
             <span style={{
               color: '#1a4b7a', fontWeight: 700, fontSize: '1.3cqw',
               fontStyle: 'italic',
             }}>
               - {skills[0].name} « {skills[0].hours}H »
             </span>
-
-            {/* Date center */}
             <span style={{
               color: '#2e86ab', fontWeight: 600, fontSize: '1.4cqw',
             }}>
               {monthYear}
             </span>
-
-            {/* Right skill */}
             <span style={{
               color: '#1a4b7a', fontWeight: 700, fontSize: '1.3cqw',
               fontStyle: 'italic',
@@ -167,7 +161,7 @@ export default function CertificatePreviewPage() {
             <Award className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-yellow-800">
               <p className="font-semibold mb-1">📄 معاينة تجريبية</p>
-              <p>اسم الطالب وعنوان الكورس والتاريخ بيتغيروا تلقائياً لكل شهادة. لو المدرب حد غير الـ Founder بيظهر توقيعين: Founder على اليسار والـ Instructor على اليمين.</p>
+              <p>اسم الطالب وعنوان الكورس والتاريخ والساعات بيتغيروا تلقائياً لكل شهادة.</p>
             </div>
           </div>
         </div>

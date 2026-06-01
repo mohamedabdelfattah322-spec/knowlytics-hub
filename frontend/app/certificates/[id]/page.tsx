@@ -85,9 +85,9 @@ export default function CertificatePage() {
             {courseTitle}
           </div>
 
-          {/* ─── Student name — after "PRESENTED TO" ─── */}
+          {/* ─── Student name ─── */}
           <div className="absolute" style={{
-            top: '46%', left: '5%', width: '58%', height: '6%',
+            top: '48%', left: '5%', width: '58%', height: '6%',
             color: '#1e293b',
             fontFamily: '"Playfair Display", "Georgia", serif',
             fontWeight: 700, fontSize: nameFontSize,
@@ -97,16 +97,15 @@ export default function CertificatePage() {
             {cert.student_name}
           </div>
 
-          {/* ─── Course name — inline after "completion of the course" ─── */}
+          {/* ─── "For the succesful completion of the course COURSE_NAME" ─── */}
           <div className="absolute" style={{
-            top: '54.5%', left: '5%', width: '70%', height: '3%',
-            display: 'flex', alignItems: 'center', gap: '0.4cqw',
+            top: '55%', left: '5%', width: '70%', height: '3.5%',
+            display: 'flex', alignItems: 'center', gap: '0.3cqw',
             lineHeight: 1,
           }}>
             <span style={{
               color: '#334155', fontWeight: 600, fontSize: '0.95cqw',
               fontStyle: 'italic', whiteSpace: 'nowrap',
-              visibility: 'hidden',
             }}>
               For the succesful completion of the course
             </span>
@@ -120,7 +119,7 @@ export default function CertificatePage() {
 
           {/* ─── Duration + Date row ─── */}
           <div className="absolute" style={{
-            top: '64%', left: '5%', width: '80%', height: '5%',
+            top: '65%', left: '5%', width: '80%', height: '5%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: '6cqw',
           }}>
