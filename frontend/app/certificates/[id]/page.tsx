@@ -75,7 +75,7 @@ export default function CertificatePage() {
 
           {/* ─── 1. Course title ─── */}
           <div className="absolute" style={{
-            top: '18%', left: '8%',
+            top: '23%', left: '8%',
             color: '#1a4b7a', fontWeight: 800, fontSize: titleFontSize,
             fontStyle: 'italic', letterSpacing: '0.18em',
             lineHeight: 1, whiteSpace: 'nowrap',
@@ -85,7 +85,7 @@ export default function CertificatePage() {
 
           {/* ─── 2. "Certificate" ─── */}
           <div className="absolute" style={{
-            top: '25%', left: '8%',
+            top: '29%', left: '8%',
             fontFamily: '"Playfair Display", "Georgia", serif',
             fontStyle: 'italic', fontWeight: 900, fontSize: '6.5cqw',
             color: '#1a3353', lineHeight: 1,
@@ -95,7 +95,7 @@ export default function CertificatePage() {
 
           {/* ─── 3. "OF ACHIEVEMENT" ─── */}
           <div className="absolute" style={{
-            top: '40%', left: '8%',
+            top: '43%', left: '8%',
             color: '#1a4b7a', fontWeight: 800, fontSize: '1.1cqw',
             letterSpacing: '0.15em', lineHeight: 1,
           }}>
@@ -104,7 +104,7 @@ export default function CertificatePage() {
 
           {/* ─── 4. "THIS CERTIFICATE IS PRESENTED TO" ─── */}
           <div className="absolute" style={{
-            top: '44%', left: '8%',
+            top: '47%', left: '8%',
             color: '#64748b', fontWeight: 500, fontSize: '0.8cqw',
             letterSpacing: '0.1em', lineHeight: 1,
           }}>
@@ -113,7 +113,7 @@ export default function CertificatePage() {
 
           {/* ─── 5. Student name ─── */}
           <div className="absolute" style={{
-            top: '48%', left: '8%', width: '55%',
+            top: '51%', left: '8%', width: '55%',
             color: '#1a3353',
             fontFamily: '"Playfair Display", "Georgia", serif',
             fontWeight: 700, fontSize: nameFontSize,
@@ -124,7 +124,7 @@ export default function CertificatePage() {
 
           {/* ─── 6. "For the succesful completion of the course COURSE_NAME" ─── */}
           <div className="absolute" style={{
-            top: '56%', left: '8%', width: '75%',
+            top: '59%', left: '8%', width: '75%',
             display: 'flex', alignItems: 'baseline', gap: '0.3cqw',
             lineHeight: 1,
           }}>
@@ -144,7 +144,7 @@ export default function CertificatePage() {
 
           {/* ─── 7. Duration + Date row ─── */}
           <div className="absolute" style={{
-            top: '66%', left: '8%', width: '78%',
+            top: '68%', left: '8%', width: '78%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: '6cqw',
           }}>
