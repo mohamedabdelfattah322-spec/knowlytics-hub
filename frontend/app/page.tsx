@@ -96,7 +96,7 @@ export default function LandingPage() {
           <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
             {t('landing.heroDesc')}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-14">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/register" className="text-base px-8 py-4 rounded-xl font-bold inline-flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
                   style={{ backgroundColor: '#3b82f6', color: '#ffffff', boxShadow: '0 8px 30px rgba(59,130,246,0.3)' }}>
               {t('landing.startFree')} <ChevronRight className="w-5 h-5" />
@@ -106,37 +106,42 @@ export default function LandingPage() {
               {t('landing.browseCourses')}
             </Link>
           </div>
-
-          {/* Platform Promo Video */}
-          <div className="max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="aspect-video">
-              <iframe
-                src="https://www.youtube.com/embed/xRp7_p7shhk"
-                title="Knowlytics Hub"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              />
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* ══════════════════ STATS ══════════════════ */}
+      {/* ══════════════════ VIDEO + STATS (Side by Side) ══════════════════ */}
       <section style={{ backgroundColor: '#0b1426' }} className="py-14">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {[
-            { value: '7,000+', label: isAr ? 'متدرب' : 'Trainees', icon: Users },
-            { value: stats.courses > 0 ? `${stats.courses}+` : '9+', label: isAr ? 'كورس' : 'Courses', icon: BookOpen },
-            { value: '100K+', label: isAr ? 'مشترك يوتيوب' : 'YouTube Subs', icon: PlayCircle },
-            { value: '5.0', label: isAr ? 'تقييم' : 'Rating', icon: Star },
-          ].map((s, i) => (
-            <div key={i} className="text-center">
-              <s.icon className="w-6 h-6 mx-auto mb-2" style={{ color: '#3b82f6' }} />
-              <p className="text-3xl md:text-4xl font-extrabold mb-1" style={{ color: '#60a5fa' }}>{s.value}</p>
-              <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.label}</p>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-5 gap-8 items-center">
+            {/* Video — 3 cols */}
+            <div className="lg:col-span-3 rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div className="aspect-video">
+                <iframe
+                  src="https://www.youtube.com/embed/xRp7_p7shhk"
+                  title="Knowlytics Hub"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
             </div>
-          ))}
+
+            {/* Stats — 2 cols */}
+            <div className="lg:col-span-2 grid grid-cols-2 gap-6">
+              {[
+                { value: '7,000+', label: isAr ? 'متدرب' : 'Trainees', icon: Users },
+                { value: stats.courses > 0 ? `${stats.courses}+` : '9+', label: isAr ? 'كورس' : 'Courses', icon: BookOpen },
+                { value: '100K+', label: isAr ? 'مشترك يوتيوب' : 'YouTube Subs', icon: PlayCircle },
+                { value: '5.0', label: isAr ? 'تقييم' : 'Rating', icon: Star },
+              ].map((s, i) => (
+                <div key={i} className="text-center p-5 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <s.icon className="w-6 h-6 mx-auto mb-2" style={{ color: '#3b82f6' }} />
+                  <p className="text-2xl md:text-3xl font-extrabold mb-1" style={{ color: '#60a5fa' }}>{s.value}</p>
+                  <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
