@@ -142,7 +142,7 @@ export default function LandingPage() {
           <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
             {t('landing.heroDesc')}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-14">
             <Link href="/register" className="text-base px-8 py-4 rounded-xl font-bold inline-flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
                   style={{ backgroundColor: '#3b82f6', color: '#ffffff', boxShadow: '0 8px 30px rgba(59,130,246,0.3)' }}>
               {t('landing.startFree')} <ChevronRight className="w-5 h-5" />
@@ -151,6 +151,19 @@ export default function LandingPage() {
                   style={{ color: '#ffffff', border: '2px solid rgba(255,255,255,0.2)' }}>
               {t('landing.browseCourses')}
             </Link>
+          </div>
+
+          {/* Platform Promo Video */}
+          <div className="max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="aspect-video">
+              <iframe
+                src="https://www.youtube.com/embed/xRp7_p7shhk"
+                title="Knowlytics Hub"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
           </div>
         </div>
       </section>
