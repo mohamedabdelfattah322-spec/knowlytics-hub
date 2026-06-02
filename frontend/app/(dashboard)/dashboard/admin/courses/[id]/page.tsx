@@ -52,6 +52,7 @@ export default function AdminCourseEditorPage() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [expanded, setExpanded]   = useState<Record<string, boolean>>({});
   const [saving, setSaving]       = useState(false);
+  const [instructorsList, setInstructorsList] = useState<{id: string; name: string}[]>([]);
   const [loading, setLoading]     = useState(true);
 
   // New-section form
@@ -94,6 +95,9 @@ export default function AdminCourseEditorPage() {
       if (secs.length) setExpanded({ [secs[0].id]: true });
     }).catch(() => toast.error('فشل تحميل بيانات الكورس'))
       .finally(() => setLoading(false));
+
+    // Load instructors list for dropdown
+    api.get('/instructors').then(({ data }) => setInstructorsList(data)).catch(() => {});
   }, [id]);
 
   // Load enrollments when students tab is active
@@ -1007,6 +1011,19 @@ export default function AdminCourseEditorPage() {
               <p className="text-xs text-slate-500 mt-1">
                 الصق رابط مباشر (مثلاً من Drive — لازم يكون "Anyone with the link") أو ارفع صورة من جهازك
               </p>
+            </div>
+
+            {/* Instructor Profile */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">المدرب</label>
+              <select className="input" value={(course as any).instructor_profile_id || ''}
+                onChange={(e) => setCourse({ ...course, instructor_profile_id: e.target.value || null } as any)}>
+                <option value="">— اختر مدرب —</option>
+                {instructorsList.map((inst: any) => (
+                  <option key={inst.id} value={inst.id}>{inst.name} {inst.name_ar ? `(${inst.name_ar})` : ''}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-1">بيانات المدرب هتظهر تلقائياً في صفحة الكورس</p>
             </div>
 
             {/* Promo Video URL */}

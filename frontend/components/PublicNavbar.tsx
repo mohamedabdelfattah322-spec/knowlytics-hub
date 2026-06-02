@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Languages, Menu, X, Sun, Moon } from 'lucide-react';
+import { Languages, Menu, X, Sun, Moon, SunMoon } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -19,10 +19,17 @@ const NAV_LINKS = [
 
 export function usePublicTheme() {
   const { theme, setTheme } = useTheme();
-  const isDark = theme === 'dark' || theme === 'ocean' || theme === 'emerald' || theme === 'sunset';
-  const toggle = () => setTheme(isDark ? 'light' : 'dark');
+  const isDark = theme === 'dark' || theme === 'ocean';
+  const isMixed = theme === 'emerald'; // reuse emerald as "mixed" mode
+  const isLight = !isDark && !isMixed;
+  const toggle = () => {
+    if (isDark) setTheme('light');
+    else if (isLight) setTheme('emerald'); // mixed
+    else setTheme('dark');
+  };
 
-  const c = isDark ? {
+  // Dark theme
+  const dark = {
     pageBg: '#0a1628', navBg: '#0b1426', navBorder: 'rgba(255,255,255,0.08)',
     heroBg: '#0f1d32', sectionBg: '#111d33', sectionAltBg: '#0b1426', darkStripBg: '#060e1e',
     cardBg: '#162038', cardBorder: 'rgba(255,255,255,0.08)',
@@ -37,7 +44,9 @@ export function usePublicTheme() {
     avatarBg: 'rgba(59,130,246,0.2)',
     statCardBg: 'rgba(255,255,255,0.03)', statCardBorder: 'rgba(255,255,255,0.06)',
     imgFilter: 'brightness(0) invert(0.8)',
-  } : {
+  };
+  // Light theme
+  const light = {
     pageBg: '#ffffff', navBg: '#ffffff', navBorder: '#e5e7eb',
     heroBg: '#f8fafc', sectionBg: '#f1f5f9', sectionAltBg: '#ffffff', darkStripBg: '#0b1426',
     cardBg: '#ffffff', cardBorder: '#e5e7eb',
@@ -53,8 +62,22 @@ export function usePublicTheme() {
     statCardBg: '#f8fafc', statCardBorder: '#e5e7eb',
     imgFilter: 'none',
   };
+  // Mixed theme: dark hero/nav + light content
+  const mixed = {
+    ...light,
+    navBg: '#0b1426', navBorder: 'rgba(255,255,255,0.08)',
+    heroBg: '#0f1d32',
+    darkStripBg: '#060e1e',
+    logoSrc: '/logo-nav-w.png',
+    linkColor: 'rgba(255,255,255,0.7)', linkActive: '#3b82f6', linkActiveBg: 'rgba(59,130,246,0.1)',
+    btnOutline: 'rgba(255,255,255,0.2)', btnOutlineText: '#ffffff',
+    menuIcon: '#ffffff',
+    // Hero text stays white
+  };
 
-  return { isDark, toggle, c };
+  const c = isDark ? dark : isMixed ? mixed : light;
+
+  return { isDark, isMixed, isLight, toggle, c };
 }
 
 export default function PublicNavbar() {
@@ -85,12 +108,12 @@ export default function PublicNavbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Theme toggle */}
+          {/* Theme toggle: dark → light → mixed → dark */}
           <button onClick={toggle}
             className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors"
             style={{ color: c.linkColor }}
-            title={isDark ? 'Light mode' : 'Dark mode'}>
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            title={isDark ? 'Light mode' : isLight ? 'Mixed mode' : 'Dark mode'}>
+            {isDark ? <Sun className="w-4 h-4" /> : isLight ? <SunMoon className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           <button onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}

@@ -57,7 +57,10 @@ export default function LandingPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { t, locale, setLocale, dir, isAr } = useLanguage();
-  const { c } = usePublicTheme();
+  const { c, isDark, isMixed } = usePublicTheme();
+  // In mixed mode, hero text should be white (dark bg), content text uses light colors
+  const heroText = (isDark || isMixed) ? '#ffffff' : c.text;
+  const heroSub = (isDark || isMixed) ? 'rgba(255,255,255,0.7)' : c.textSub;
   const [stats, setStats] = useState({ students: 0, courses: 0, satisfaction: 0 });
   const [courses, setCourses] = useState<FeaturedCourse[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -86,13 +89,13 @@ export default function LandingPage() {
             <Star className="w-4 h-4" style={{ color: c.accent }} />
             <span className="text-sm font-semibold" style={{ color: c.accent }}>{t('landing.badge')}</span>
           </div>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight" style={{ color: c.text }}>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight" style={{ color: heroText }}>
             {t('landing.heroTitle1')}<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400">
               {t('landing.heroTitle2')}
             </span>
           </h1>
-          <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: c.textSub }}>
+          <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: heroSub }}>
             {t('landing.heroDesc')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

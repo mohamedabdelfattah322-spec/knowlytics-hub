@@ -37,6 +37,7 @@ const analyticsRoutes = require('./routes/analytics');
 const referralRoutes = require('./routes/referrals');
 const discussionRoutes = require('./routes/discussions');
 const aiRoutes = require('./routes/ai');
+const instructorRoutes = require('./routes/instructors');
 const { sendBroadcast, getBroadcastHistory } = require('./controllers/broadcastController');
 
 const app = express();
@@ -136,12 +137,14 @@ app.get('/api/public/featured-courses', async (_req, res) => {
       `SELECT c.id, c.title, c.description, c.type, c.level, c.price,
               c.thumbnail_url, c.promo_video_url, c.duration_hours, c.avg_rating, c.review_count,
               COUNT(DISTINCT e.id)::int AS enrollment_count,
-              u.name AS instructor_name
+              COALESCE(i.name, u.name) AS instructor_name,
+              i.photo_url AS instructor_photo
        FROM courses c
        LEFT JOIN users u ON u.id = c.instructor_id
+       LEFT JOIN instructors i ON i.id = c.instructor_profile_id
        LEFT JOIN enrollments e ON e.course_id = c.id
        WHERE c.is_published = true
-       GROUP BY c.id, u.name
+       GROUP BY c.id, u.name, i.name, i.photo_url
        ORDER BY c.created_at DESC
        LIMIT 6`
     );
@@ -200,6 +203,7 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/discussions', discussionRoutes);
+app.use('/api/instructors', instructorRoutes);
 app.use('/api/ai', aiRoutes);
 
 // ─── Admin broadcast ──────────────────────────────────────

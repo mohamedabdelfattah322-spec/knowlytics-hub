@@ -17,7 +17,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, isAr } = useLanguage();
 
   const adminNav = [
     { href: '/dashboard/admin', icon: LayoutDashboard, label: t('nav.dashboard') },
@@ -29,6 +29,7 @@ export default function Sidebar() {
     { href: '/dashboard/admin/analytics', icon: BarChart2, label: t('nav.analytics') },
     { href: '/dashboard/admin/newsletter', icon: Mail, label: t('nav.newsletter') },
     { href: '/dashboard/admin/categories', icon: FolderOpen, label: t('nav.categories') },
+    { href: '/dashboard/admin/instructors', icon: Users, label: isAr ? 'المدربين' : 'Instructors' },
     { href: '/dashboard/admin/subscriptions', icon: CreditCard, label: t('nav.subscriptions') },
     { href: '/dashboard/admin/referrals', icon: Share2, label: t('nav.referrals') },
     { href: '/dashboard/admin/teams', icon: UserCheck, label: t('nav.teams') },

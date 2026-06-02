@@ -122,7 +122,7 @@ const updateCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
     const fields = req.body;
-    const allowed = ['title', 'description', 'type', 'level', 'price', 'duration_hours', 'thumbnail_url', 'is_published', 'default_access_days', 'category_id', 'language', 'short_description', 'promo_video_url'];
+    const allowed = ['title', 'description', 'type', 'level', 'price', 'duration_hours', 'thumbnail_url', 'is_published', 'default_access_days', 'category_id', 'language', 'short_description', 'promo_video_url', 'instructor_profile_id'];
     const updates = [];
     const values = [];
 
