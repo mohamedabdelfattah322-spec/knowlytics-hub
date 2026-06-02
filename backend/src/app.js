@@ -128,6 +128,48 @@ app.get('/api/public/stats', async (_req, res) => {
   }
 });
 
+// ─── Public Featured Courses (no auth needed) ──────────────
+app.get('/api/public/featured-courses', async (_req, res) => {
+  try {
+    const { query: dbQuery } = require('./config/database');
+    const result = await dbQuery(
+      `SELECT c.id, c.title, c.description, c.type, c.level, c.price,
+              c.thumbnail_url, c.duration_hours, c.avg_rating, c.review_count,
+              COALESCE(c.enrollment_count, 0)::int AS enrollment_count,
+              u.name AS instructor_name
+       FROM courses c
+       LEFT JOIN users u ON u.id = c.instructor_id
+       WHERE c.is_published = true
+       ORDER BY c.created_at DESC
+       LIMIT 6`
+    );
+    res.json(result.rows);
+  } catch {
+    res.json([]);
+  }
+});
+
+// ─── Public Reviews for Landing Page (no auth needed) ───────
+app.get('/api/public/reviews', async (_req, res) => {
+  try {
+    const { query: dbQuery } = require('./config/database');
+    const result = await dbQuery(
+      `SELECT r.rating, r.comment, r.created_at,
+              u.name AS user_name, u.avatar_url,
+              c.title AS course_title
+       FROM course_reviews r
+       JOIN users u ON u.id = r.user_id
+       JOIN courses c ON c.id = r.course_id
+       WHERE r.is_visible = true AND r.comment IS NOT NULL AND r.comment != ''
+       ORDER BY r.rating DESC, r.created_at DESC
+       LIMIT 8`
+    );
+    res.json(result.rows);
+  } catch {
+    res.json([]);
+  }
+});
+
 // ─── API Routes ───────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);

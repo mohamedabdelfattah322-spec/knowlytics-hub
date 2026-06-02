@@ -276,6 +276,42 @@ const translations = {
   'landing.howStep4Title': { ar: 'احصل على شهادتك', en: 'Get Certified' },
   'landing.howStep4Desc': { ar: 'أكمل الكورس واحصل على الشهادة', en: 'Complete the course and earn your certificate' },
 
+  // ─── Landing — Courses Section ─────────────────────────
+  'landing.coursesTitle': { ar: 'أحدث الكورسات', en: 'Latest Courses' },
+  'landing.coursesDesc': { ar: 'ابدأ رحلتك مع أقوى الكورسات المتاحة', en: 'Start your journey with our top courses' },
+  'landing.viewAll': { ar: 'عرض الكل', en: 'View All' },
+  'landing.enrollNow': { ar: 'سجّل الآن', en: 'Enroll Now' },
+  'landing.hours': { ar: 'ساعة', en: 'hours' },
+  'landing.students': { ar: 'طالب', en: 'students' },
+
+  // ─── Landing — Reviews Section ────────────────────────
+  'landing.reviewsTitle': { ar: 'ماذا يقول طلابنا', en: 'What Our Students Say' },
+  'landing.reviewsDesc': { ar: 'آراء حقيقية من طلاب حقيقيين', en: 'Real reviews from real students' },
+
+  // ─── Landing — Founder Section ────────────────────────
+  'landing.founderTitle': { ar: 'قصة المؤسس', en: 'Our Founder Story' },
+  'landing.founderName': { ar: 'محمد عبدالفتاح', en: 'Mohamed Abdelfattah' },
+  'landing.founderRole': { ar: 'المؤسس والمدرب الرئيسي', en: 'Founder & Lead Instructor' },
+  'landing.founderStory': { ar: 'بدأت Knowlytics Hub من شغف حقيقي بتحليل البيانات وتبسيط المفاهيم المعقدة. هدفنا إن كل متعلّم يلاقي المحتوى اللي يناسبه ويوصل لأهدافه المهنية بأسرع طريقة.', en: 'Knowlytics Hub started from a genuine passion for data analysis and simplifying complex concepts. Our goal is to help every learner find the right content and reach their career goals faster.' },
+  'landing.founderQuote': { ar: 'التعليم مش بس معلومات، التعليم هو إنك تغيّر حياة حد.', en: 'Education isn\'t just information — it\'s changing someone\'s life.' },
+
+  // ─── Landing — Lead Popup ─────────────────────────────
+  'landing.popupTitle': { ar: 'احصل على محتوى مجاني!', en: 'Get Free Content!' },
+  'landing.popupDesc': { ar: 'سجّل إيميلك واحصل على نصائح وكورسات مجانية', en: 'Enter your email for free tips and courses' },
+  'landing.popupEmail': { ar: 'البريد الإلكتروني', en: 'Email address' },
+  'landing.popupButton': { ar: 'أرسل', en: 'Subscribe' },
+  'landing.popupSuccess': { ar: 'تم التسجيل بنجاح! 🎉', en: 'Successfully subscribed! 🎉' },
+
+  // ─── Landing — Footer Enhanced ────────────────────────
+  'landing.footerQuickLinks': { ar: 'روابط سريعة', en: 'Quick Links' },
+  'landing.footerAbout': { ar: 'عن المنصة', en: 'About' },
+  'landing.footerContact': { ar: 'تواصل معنا', en: 'Contact' },
+  'landing.footerPrivacy': { ar: 'سياسة الخصوصية', en: 'Privacy Policy' },
+  'landing.footerTerms': { ar: 'الشروط والأحكام', en: 'Terms & Conditions' },
+  'landing.footerRefund': { ar: 'سياسة الاسترداد', en: 'Refund Policy' },
+  'landing.footerSocial': { ar: 'تابعنا', en: 'Follow Us' },
+  'landing.footerRights': { ar: 'جميع الحقوق محفوظة', en: 'All rights reserved' },
+
   // ─── Onboarding Guide ─────────────────────────────────
   'guide.title': { ar: 'مرحباً بك في Knowlytics Hub! 👋', en: 'Welcome to Knowlytics Hub! 👋' },
   'guide.subtitle': { ar: 'خطوات بسيطة عشان تبدأ رحلتك', en: 'Simple steps to start your journey' },
