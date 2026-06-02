@@ -19,9 +19,9 @@ const NAV_LINKS = [
 
 export function usePublicTheme() {
   const { theme, setTheme } = useTheme();
-  const isDark = theme === 'dark' || theme === 'ocean';
-  const isMixed = theme === 'emerald'; // reuse emerald as "mixed" mode
-  const isLight = !isDark && !isMixed;
+  const isDark = theme === 'dark' || theme === 'ocean' || theme === 'sunset';
+  const isMixed = theme === 'emerald';
+  const isLight = theme === 'light';
   const toggle = () => {
     if (isDark) setTheme('light');
     else if (isLight) setTheme('emerald'); // mixed
