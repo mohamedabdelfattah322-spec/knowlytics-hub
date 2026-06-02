@@ -10,6 +10,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 const NAV_LINKS = [
   { href: '/', labelAr: 'الرئيسية', labelEn: 'Home' },
   { href: '/courses', labelAr: 'الكورسات', labelEn: 'Courses' },
+  { href: '/companies', labelAr: 'شركات تم تدريبها', labelEn: 'Companies Trained' },
   { href: '/reviews', labelAr: 'آراء العملاء', labelEn: 'Reviews' },
   { href: '/about', labelAr: 'تعرّف على مدربنا', labelEn: 'Our Instructor' },
   { href: '/contact', labelAr: 'تواصل معنا', labelEn: 'Contact' },

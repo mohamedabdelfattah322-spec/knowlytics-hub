@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ChevronRight, Star, ArrowRight,
-  X, Users, Quote, Clock, BookOpen, GraduationCap, ChevronDown,
-  PlayCircle, Building2,
+  Users, Clock, BookOpen, ChevronDown,
+  PlayCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -23,32 +23,8 @@ interface FeaturedCourse {
   duration_hours: number; avg_rating: number; review_count: number;
   enrollment_count: number; instructor_name: string;
 }
-interface Review {
-  rating: number; comment: string; created_at: string;
-  user_name: string; avatar_url: string | null; course_title: string;
-}
 
 /* ─── Static Data ────────────────────────────────────── */
-const COMPANIES = [
-  { name: 'Saint-Gobain', logo: '/company-logos/Saint-Gobain.png' },
-  { name: 'Cinnabon', logo: '/company-logos/Cinnabon.png' },
-  { name: 'AFRAS', logo: '/company-logos/AFRAS KSA.jfif' },
-  { name: 'Alyoum', logo: '/company-logos/Alyoum.png' },
-  { name: 'EFS', logo: '/company-logos/EFS.jfif' },
-  { name: 'Asfour', logo: '/company-logos/Asfour.jfif' },
-  { name: 'Apleona', logo: '/company-logos/Apleona.png' },
-  { name: 'Symphony', logo: '/company-logos/Symphony Development.webp' },
-];
-
-const PROJECTS = [
-  { title: { ar: 'لوحة الإيرادات', en: 'Revenue Dashboard' }, student: 'Fatma Ibrahim', image: '/student-work/Sales Dashboard.jpeg', tools: 'Power BI' },
-  { title: { ar: 'لوحة أداء المبيعات', en: 'Sales Performance' }, student: 'Mazen Sabry', image: '/student-work/Sales2.jpeg', tools: 'Power BI' },
-  { title: { ar: 'لوحة HR', en: 'HR Dashboard' }, student: '', image: '/student-work/HR Dashboard.jpeg', tools: 'Power BI' },
-  { title: { ar: 'تحليل التجارة الإلكترونية', en: 'E-Commerce Analytics' }, student: 'Fatma Ibrahim', image: '/student-work/E-commerce.jpeg', tools: 'Power BI' },
-  { title: { ar: 'لوحة القوى العاملة', en: 'Workforce Dashboard' }, student: '', image: '/student-work/HR Dashboard2.jpeg', tools: 'Power BI' },
-  { title: { ar: 'تقرير مبيعات المقهى', en: 'Coffee Shop Report' }, student: '', image: '/student-work/Food and Beverage.jpeg', tools: 'Power BI' },
-];
-
 const FAQ_DATA = [
   { q: { ar: 'هل أحتاج خبرة مسبقة؟', en: 'Do I need prior experience?' }, a: { ar: 'لا! معظم دوراتنا تبدأ من الصفر تمامًا. مصممة لأي شخص يريد الدخول لمجال تحليل البيانات.', en: 'No! Most courses start from absolute zero. Designed for anyone wanting to break into data analytics.' } },
   { q: { ar: 'هل سأحصل على شهادة؟', en: 'Will I get a certificate?' }, a: { ar: 'بالتأكيد! شهادة رقمية معتمدة من Knowlytics Hub عند إتمام كل كورس.', en: 'Absolutely! A verified digital certificate from Knowlytics Hub upon completing each course.' } },
@@ -57,17 +33,6 @@ const FAQ_DATA = [
   { q: { ar: 'هل هناك ضمان استرداد؟', en: 'Is there a refund guarantee?' }, a: { ar: 'نعم! ضمان استرداد خلال 14 يوم لو مش راضي — بدون أسئلة.', en: 'Yes! 14-day money-back guarantee if not satisfied — no questions asked.' } },
   { q: { ar: 'هل AI هيلغي محللي البيانات؟', en: 'Will AI replace data analysts?' }, a: { ar: 'لا! AI بيحوّل الدور مش بيلغيه. المحلل اللي بيستخدم AI هيكون أقوى 10 أضعاف.', en: 'No! AI transforms the role, not eliminates it. Analysts using AI are 10x more powerful.' } },
 ];
-
-/* ─── Star Rating ─────────────────────────────────────── */
-function Stars({ rating }: { rating: number }) {
-  return (
-    <div className="flex gap-0.5">
-      {[1,2,3,4,5].map(i => (
-        <Star key={i} className="w-4 h-4" style={{ color: i <= rating ? '#f59e0b' : '#d1d5db', fill: i <= rating ? '#f59e0b' : 'none' }} />
-      ))}
-    </div>
-  );
-}
 
 /* ─── FAQ Accordion Item ─────────────────────────────── */
 function FAQItem({ q, a, isOpen, toggle }: { q: string; a: string; isOpen: boolean; toggle: () => void }) {
@@ -96,29 +61,18 @@ export default function LandingPage() {
   const { t, locale, setLocale, dir, isAr } = useLanguage();
   const [stats, setStats] = useState({ students: 0, courses: 0, satisfaction: 0 });
   const [courses, setCourses] = useState<FeaturedCourse[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => { if (user) router.replace(user.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'); }, [user, router]);
 
   useEffect(() => {
     api.get('/public/stats').then(({ data }) => setStats(data)).catch(() => {});
     api.get('/public/featured-courses').then(({ data }) => setCourses(data)).catch(() => {});
-    api.get('/public/reviews').then(({ data }) => setReviews(data)).catch(() => {});
   }, []);
 
 
   return (
     <div className="min-h-screen" dir={dir} style={{ backgroundColor: '#0a1628' }}>
-
-      {/* Lightbox */}
-      {lightbox && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 cursor-pointer" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={() => setLightbox(null)}>
-          <button className="absolute top-4 right-4 p-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}><X className="w-6 h-6" style={{ color: '#ffffff' }} /></button>
-          <img src={lightbox} alt="" className="max-w-full max-h-[85vh] rounded-xl object-contain" />
-        </div>
-      )}
 
       <PublicNavbar />
 
@@ -235,115 +189,6 @@ export default function LandingPage() {
           </div>
         </section>
       )}
-
-      {/* ══════════════════ COMPANIES TRAINED ══════════════════ */}
-      <section className="py-16" style={{ backgroundColor: '#0b1426' }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-center mb-3" style={{ color: '#ffffff' }}>{t('landing.companiesTitle')}</h2>
-          <p className="text-center mb-10 text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{t('landing.companiesDesc')}</p>
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
-            {COMPANIES.map((c) => (
-              <div key={c.name} className="rounded-xl p-3 flex items-center justify-center aspect-square hover:scale-105 transition-transform"
-                   style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <img src={c.logo} alt={c.name} className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(0.8)' }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════ STUDENT PROJECTS ══════════════════ */}
-      <section className="py-20" style={{ backgroundColor: '#111d33' }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-3" style={{ color: '#ffffff' }}>{t('landing.projectsTitle')}</h2>
-          <p className="text-center mb-12 text-base" style={{ color: 'rgba(255,255,255,0.5)' }}>{t('landing.projectsDesc')}</p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {PROJECTS.map((p, i) => (
-              <div key={i} className="rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform group"
-                   style={{ backgroundColor: '#162038', border: '1px solid rgba(255,255,255,0.08)' }}
-                   onClick={() => setLightbox(p.image)}>
-                <div className="w-full h-48 overflow-hidden">
-                  <img src={p.image} alt={isAr ? p.title.ar : p.title.en} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                </div>
-                <div className="p-4">
-                  <h4 className="font-bold text-sm mb-1" style={{ color: '#ffffff' }}>{isAr ? p.title.ar : p.title.en}</h4>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{p.student || (isAr ? 'طالب Knowlytics' : 'Knowlytics Student')}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>{p.tools}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════ REVIEWS ══════════════════ */}
-      {reviews.length > 0 && (
-        <section className="py-20" style={{ backgroundColor: '#0d1829' }}>
-          <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-3" style={{ color: '#ffffff' }}>{t('landing.reviewsTitle')}</h2>
-            <p className="text-center mb-12 text-base" style={{ color: 'rgba(255,255,255,0.5)' }}>{t('landing.reviewsDesc')}</p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {reviews.slice(0, 6).map((review, i) => (
-                <div key={i} className="rounded-2xl p-6 hover:scale-[1.01] transition-transform"
-                     style={{ backgroundColor: '#162038', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <Quote className="w-7 h-7 mb-3 opacity-20" style={{ color: '#3b82f6' }} />
-                  <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.6)' }}>&ldquo;{review.comment}&rdquo;</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: 'rgba(59,130,246,0.2)', color: '#60a5fa' }}>
-                      {review.user_name?.charAt(0)?.toUpperCase() || '?'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate" style={{ color: '#ffffff' }}>{review.user_name}</p>
-                      <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{review.course_title}</p>
-                    </div>
-                    <Stars rating={review.rating} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ══════════════════ FOUNDER / INSTRUCTOR ══════════════════ */}
-      <section className="py-20" style={{ backgroundColor: '#111d33' }}>
-        <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-12" style={{ color: '#ffffff' }}>{t('landing.founderTitle')}</h2>
-          <div className="flex flex-col md:flex-row items-center gap-10">
-            <div className="w-48 h-48 md:w-56 md:h-56 rounded-2xl shrink-0 overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%)' }}>
-              <div className="w-full h-full flex items-center justify-center">
-                <GraduationCap className="w-20 h-20" style={{ color: 'rgba(255,255,255,0.25)' }} />
-              </div>
-            </div>
-            <div className="text-center md:text-start flex-1">
-              <h3 className="text-2xl font-extrabold mb-1" style={{ color: '#ffffff' }}>{t('landing.founderName')}</h3>
-              <p className="text-sm font-medium mb-5" style={{ color: '#3b82f6' }}>{t('landing.founderRole')}</p>
-
-              {/* Stats chips */}
-              <div className="flex flex-wrap gap-3 mb-6 justify-center md:justify-start">
-                {[
-                  { icon: Users, label: t('landing.founderTrainees') },
-                  { icon: PlayCircle, label: t('landing.founderYoutube') },
-                  { icon: Building2, label: t('landing.founderCompanies') },
-                  { icon: Star, label: t('landing.founderRating') },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-                       style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}>
-                    <s.icon className="w-3.5 h-3.5" /> {s.label}
-                  </div>
-                ))}
-              </div>
-
-              <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.6)' }}>{t('landing.founderStory')}</p>
-              <blockquote className="px-5 py-4 rounded-xl" style={{ backgroundColor: 'rgba(59,130,246,0.08)', borderLeft: '3px solid #3b82f6' }}>
-                <p className="text-sm font-medium italic" style={{ color: 'rgba(255,255,255,0.8)' }}>&ldquo;{t('landing.founderQuote')}&rdquo;</p>
-              </blockquote>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ══════════════════ FAQ ══════════════════ */}
       <section className="py-20 relative overflow-hidden" style={{ backgroundColor: '#060e1e' }}>
