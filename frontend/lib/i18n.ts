@@ -284,16 +284,32 @@ const translations = {
   'landing.hours': { ar: 'ساعة', en: 'hours' },
   'landing.students': { ar: 'طالب', en: 'students' },
 
+  // ─── Landing — Companies Section ──────────────────────
+  'landing.companiesTitle': { ar: 'شركات تم تدريبها', en: 'Companies We\'ve Trained' },
+  'landing.companiesDesc': { ar: 'نفتخر بثقة أكبر الشركات في العالم العربي', en: 'Trusted by leading companies across the Arab world' },
+
+  // ─── Landing — Student Work Section ───────────────────
+  'landing.projectsTitle': { ar: 'مشاريع طلابنا', en: 'Student Projects' },
+  'landing.projectsDesc': { ar: 'داشبوردات حقيقية صممها طلابنا أثناء الكورسات', en: 'Real dashboards built by our students during courses' },
+
   // ─── Landing — Reviews Section ────────────────────────
   'landing.reviewsTitle': { ar: 'ماذا يقول طلابنا', en: 'What Our Students Say' },
   'landing.reviewsDesc': { ar: 'آراء حقيقية من طلاب حقيقيين', en: 'Real reviews from real students' },
 
+  // ─── Landing — FAQ Section ────────────────────────────
+  'landing.faqTitle': { ar: 'أسئلة شائعة', en: 'Frequently Asked Questions' },
+  'landing.faqDesc': { ar: 'كل اللي محتاج تعرفه قبل ما تبدأ', en: 'Everything you need to know before you start' },
+
   // ─── Landing — Founder Section ────────────────────────
-  'landing.founderTitle': { ar: 'قصة المؤسس', en: 'Our Founder Story' },
+  'landing.founderTitle': { ar: 'تعرّف على مدربنا', en: 'Meet Our Instructor' },
   'landing.founderName': { ar: 'محمد عبدالفتاح', en: 'Mohamed Abdelfattah' },
-  'landing.founderRole': { ar: 'المؤسس والمدرب الرئيسي', en: 'Founder & Lead Instructor' },
-  'landing.founderStory': { ar: 'بدأت Knowlytics Hub من شغف حقيقي بتحليل البيانات وتبسيط المفاهيم المعقدة. هدفنا إن كل متعلّم يلاقي المحتوى اللي يناسبه ويوصل لأهدافه المهنية بأسرع طريقة.', en: 'Knowlytics Hub started from a genuine passion for data analysis and simplifying complex concepts. Our goal is to help every learner find the right content and reach their career goals faster.' },
+  'landing.founderRole': { ar: 'خبير تحليل البيانات — مؤسس Knowlytics Hub', en: 'Data Analysis Expert — Founder of Knowlytics Hub' },
+  'landing.founderStory': { ar: 'خبرة +5 سنوات في تحليل البيانات. درّبت أكتر من 7,000 متدرب وشركات زي Saint-Gobain و Cinnabon و AFRAS. بقدّم كورسات عملية من الصفر للاحتراف في Excel و Power BI و SQL و Python.', en: 'Over 5 years of data analysis experience. Trained 7,000+ professionals and companies like Saint-Gobain, Cinnabon & AFRAS. I deliver hands-on courses from zero to mastery in Excel, Power BI, SQL & Python.' },
   'landing.founderQuote': { ar: 'التعليم مش بس معلومات، التعليم هو إنك تغيّر حياة حد.', en: 'Education isn\'t just information — it\'s changing someone\'s life.' },
+  'landing.founderTrainees': { ar: '+7,000 متدرب', en: '7,000+ Trainees' },
+  'landing.founderYoutube': { ar: '+100,000 مشترك يوتيوب', en: '100,000+ YouTube Subscribers' },
+  'landing.founderCompanies': { ar: '+8 شركات تم تدريبها', en: '8+ Companies Trained' },
+  'landing.founderRating': { ar: '5.0 تقييم', en: '5.0 Rating' },
 
   // ─── Landing — Lead Popup ─────────────────────────────
   'landing.popupTitle': { ar: 'احصل على محتوى مجاني!', en: 'Get Free Content!' },
@@ -311,6 +327,7 @@ const translations = {
   'landing.footerRefund': { ar: 'سياسة الاسترداد', en: 'Refund Policy' },
   'landing.footerSocial': { ar: 'تابعنا', en: 'Follow Us' },
   'landing.footerRights': { ar: 'جميع الحقوق محفوظة', en: 'All rights reserved' },
+  'landing.footerMainSite': { ar: 'الموقع الرئيسي', en: 'Main Website' },
 
   // ─── Onboarding Guide ─────────────────────────────────
   'guide.title': { ar: 'مرحباً بك في Knowlytics Hub! 👋', en: 'Welcome to Knowlytics Hub! 👋' },
