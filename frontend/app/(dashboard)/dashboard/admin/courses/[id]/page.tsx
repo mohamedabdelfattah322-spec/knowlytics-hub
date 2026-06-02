@@ -25,6 +25,7 @@ interface Course {
   id: string; title: string; description: string; type: string;
   level: string; price: number; duration_hours: number; is_published: boolean;
   thumbnail_url?: string | null;
+  promo_video_url?: string | null;
   default_access_days?: number;
 }
 interface CourseFile { id: string; name: string; file_type: string; file_size: number; lesson_id: string | null; }
@@ -1006,6 +1007,16 @@ export default function AdminCourseEditorPage() {
               <p className="text-xs text-slate-500 mt-1">
                 الصق رابط مباشر (مثلاً من Drive — لازم يكون "Anyone with the link") أو ارفع صورة من جهازك
               </p>
+            </div>
+
+            {/* Promo Video URL */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">رابط الفيديو الدعائي (YouTube)</label>
+              <input type="url" value={course.promo_video_url || ''}
+                onChange={(e) => setCourse({ ...course, promo_video_url: e.target.value })}
+                placeholder="https://youtube.com/watch?v=... أو https://youtu.be/..."
+                className="input" />
+              <p className="text-xs text-slate-500 mt-1">الفيديو ده هيظهر في صفحة الكورس للزائرين قبل ما يسجلوا</p>
             </div>
 
             <div>

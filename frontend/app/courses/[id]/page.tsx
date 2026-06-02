@@ -22,7 +22,7 @@ interface Section {
 interface Course {
   id: string; title: string; description: string; type: string; level: string;
   price: number; duration_hours: number; thumbnail_url: string;
-  instructor_name: string; enrollment_count: string;
+  instructor_name: string; enrollment_count: string; promo_video_url?: string;
 }
 
 export default function CourseDetailPage() {
@@ -91,6 +91,20 @@ export default function CourseDetailPage() {
             <span className={levelColor(course.level)}>{course.level}</span>
           </div>
           <h1 className="text-3xl font-bold text-white leading-snug">{course.title}</h1>
+
+          {/* Promo Video */}
+          {course.promo_video_url && (
+            <div className="rounded-xl overflow-hidden aspect-video bg-dark-800">
+              <iframe
+                src={course.promo_video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/').replace('youtube.com/shorts/', 'youtube.com/embed/')}
+                title="Promo Video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          )}
+
           <p className="text-slate-400 leading-relaxed whitespace-pre-line md:columns-2 md:gap-8 md:[column-rule:1px_solid_rgb(51_65_85_/_0.5)]">
             {course.description}
           </p>

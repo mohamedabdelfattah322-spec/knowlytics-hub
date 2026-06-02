@@ -4,15 +4,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
-  ChevronRight, Star, ArrowRight, Sun, Moon, Languages,
-  X, HelpCircle, Users, Quote, Mail, Facebook, Instagram, Linkedin, Youtube,
-  CheckCircle2, Sparkles, Clock, BookOpen, GraduationCap, ChevronDown,
-  UserPlus, PlayCircle, BadgeCheck, Building2, BarChart3, Award,
+  ChevronRight, Star, ArrowRight,
+  X, Users, Quote, Clock, BookOpen, GraduationCap, ChevronDown,
+  PlayCircle, Building2,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
-import { useTheme } from '@/hooks/useTheme';
 import { formatPrice } from '@/lib/utils';
+import PublicNavbar from '@/components/PublicNavbar';
+import PublicFooter from '@/components/PublicFooter';
 import api from '@/lib/api';
 
 /* ─── Types ──────────────────────────────────────────── */
@@ -85,49 +85,6 @@ function FAQItem({ q, a, isOpen, toggle }: { q: string; a: string; isOpen: boole
   );
 }
 
-/* ─── Lead Popup ─────────────────────────────────────── */
-function LeadPopup({ onClose, t }: { onClose: () => void; t: (k: any) => string }) {
-  const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const handleSubmit = async () => {
-    if (!email) return;
-    setLoading(true);
-    try { await api.post('/newsletter/subscribe', { email }).catch(() => {}); setSent(true); localStorage.setItem('kh_lead_captured', 'true'); }
-    finally { setLoading(false); }
-  };
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-      <div className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
-        <button onClick={onClose} className="absolute top-4 right-4 z-10 p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" style={{ color: '#64748b' }} /></button>
-        <div className="p-8 text-center" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%)' }}>
-          <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: '#ffffff' }} />
-          <h3 className="text-2xl font-extrabold mb-2" style={{ color: '#ffffff' }}>{t('landing.popupTitle')}</h3>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>{t('landing.popupDesc')}</p>
-        </div>
-        <div className="p-6">
-          {sent ? (
-            <div className="text-center py-4">
-              <CheckCircle2 className="w-12 h-12 mx-auto mb-3" style={{ color: '#10b981' }} />
-              <p className="font-bold text-lg" style={{ color: '#0f172a' }}>{t('landing.popupSuccess')}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('landing.popupEmail')}
-                className="w-full px-4 py-3 rounded-xl text-sm border" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()} />
-              <button onClick={handleSubmit} disabled={loading || !email}
-                className="w-full py-3 rounded-xl font-bold transition-all hover:scale-[1.02] disabled:opacity-50"
-                style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}>
-                {loading ? '...' : t('landing.popupButton')}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ═══════════════════════════════════════════════════════════
    MAIN LANDING PAGE — Course Sales Focus (like Excel Masters)
@@ -137,7 +94,6 @@ export default function LandingPage() {
   const router = useRouter();
   const { t, locale, setLocale, dir, isAr } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const [showLeadPopup, setShowLeadPopup] = useState(false);
   const [stats, setStats] = useState({ students: 0, courses: 0, satisfaction: 0 });
   const [courses, setCourses] = useState<FeaturedCourse[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -152,15 +108,9 @@ export default function LandingPage() {
     api.get('/public/reviews').then(({ data }) => setReviews(data)).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    const captured = localStorage.getItem('kh_lead_captured');
-    if (!captured) { const t = setTimeout(() => setShowLeadPopup(true), 15000); return () => clearTimeout(t); }
-  }, []);
 
   return (
     <div className="min-h-screen" dir={dir} style={{ backgroundColor: '#0a1628' }}>
-
-      {showLeadPopup && <LeadPopup onClose={() => { setShowLeadPopup(false); localStorage.setItem('kh_lead_captured', 'true'); }} t={t} />}
 
       {/* Lightbox */}
       {lightbox && (
@@ -170,29 +120,7 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* ══════════════════ NAVBAR ══════════════════ */}
-      <nav style={{ backgroundColor: '#0b1426', borderBottom: '1px solid rgba(255,255,255,0.08)' }} className="px-6 py-4 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Image src="/logo-nav-w.png" alt="Knowlytics Hub" width={140} height={56} className="object-contain" priority />
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10" style={{ color: 'rgba(255,255,255,0.8)' }}>
-              <Languages className="w-4 h-4" /><span className="hidden sm:inline">{locale === 'ar' ? 'EN' : 'عربي'}</span>
-            </button>
-            <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: '#4ade80' }}>
-              {t('landing.whatsapp')}
-            </a>
-            <Link href="/courses" className="hidden md:inline-flex text-sm px-4 py-2.5 rounded-xl font-semibold" style={{ color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)' }}>
-              {t('landing.browseCourses')}
-            </Link>
-            <Link href="/login" className="text-sm px-4 py-2.5 rounded-xl font-semibold" style={{ color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)' }}>
-              {t('landing.signIn')}
-            </Link>
-            <Link href="/register" className="text-sm px-4 sm:px-5 py-2.5 rounded-xl font-semibold" style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}>
-              {t('landing.getStarted')}
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNavbar />
 
       {/* ══════════════════ HERO ══════════════════ */}
       <section className="relative overflow-hidden" style={{ backgroundColor: '#0f1d32' }}>
@@ -450,57 +378,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════════════ FOOTER ══════════════════ */}
-      <footer style={{ backgroundColor: '#060e1e', borderTop: '1px solid rgba(255,255,255,0.06)' }} className="pt-14 pb-8">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
-            <div>
-              <Image src="/logo-nav-w.png" alt="Knowlytics Hub" width={130} height={52} className="object-contain mb-4" />
-              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                {isAr ? 'منصة تحليل البيانات الرائدة في العالم العربي. كورسات عملية من الصفر للاحتراف.' : 'The leading data analysis platform in the Arab world. Practical courses from zero to mastery.'}
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold text-sm mb-4" style={{ color: '#ffffff' }}>{t('landing.footerQuickLinks')}</h4>
-              <div className="space-y-2">
-                {[
-                  { href: '/courses', label: t('nav.courses') },
-                  { href: '/register', label: t('auth.signUp') },
-                  { href: '/login', label: t('auth.signIn') },
-                ].map(link => (
-                  <Link key={link.href} href={link.href} className="block text-sm hover:text-white transition-colors" style={{ color: 'rgba(255,255,255,0.4)' }}>{link.label}</Link>
-                ))}
-                <a href="https://knowlyticshub.com" target="_blank" rel="noreferrer" className="block text-sm hover:text-white transition-colors" style={{ color: '#3b82f6' }}>
-                  {t('landing.footerMainSite')} ↗
-                </a>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-bold text-sm mb-4" style={{ color: '#ffffff' }}>{t('landing.footerAbout')}</h4>
-              <div className="space-y-2">
-                {[t('landing.footerPrivacy'), t('landing.footerTerms'), t('landing.footerRefund')].map(l => (
-                  <p key={l} className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>{l}</p>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h4 className="font-bold text-sm mb-4" style={{ color: '#ffffff' }}>{t('landing.footerContact')}</h4>
-              <a href="mailto:Sales@knowlyticshub.com" className="block text-sm mb-3" style={{ color: '#3b82f6' }}>Sales@knowlyticshub.com</a>
-              <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer" className="block text-sm mb-5" style={{ color: '#4ade80' }}>+20 122 692 9392</a>
-              <div className="flex gap-3">
-                {[Facebook, Instagram, Linkedin, Youtube].map((SIcon, i) => (
-                  <a key={i} href="#" target="_blank" rel="noreferrer" className="w-9 h-9 rounded-lg flex items-center justify-center hover:scale-110 transition-transform" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                    <SIcon className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="pt-6 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>&copy; {new Date().getFullYear()} Knowlytics Hub. {t('landing.footerRights')}.</p>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

@@ -104,12 +104,12 @@ const getCourse = async (req, res, next) => {
 // POST /api/courses  (admin only)
 const createCourse = async (req, res, next) => {
   try {
-    const { title, description, type, level, price, duration_hours, thumbnail_url } = req.body;
+    const { title, description, type, level, price, duration_hours, thumbnail_url, promo_video_url } = req.body;
     const result = await query(
-      `INSERT INTO courses (title, description, type, level, price, duration_hours, thumbnail_url, instructor_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO courses (title, description, type, level, price, duration_hours, thumbnail_url, instructor_id, promo_video_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [title, description, type, level, price || 0, duration_hours || 0, thumbnail_url, req.user.user_id]
+      [title, description, type, level, price || 0, duration_hours || 0, thumbnail_url, req.user.user_id, promo_video_url || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -122,7 +122,7 @@ const updateCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
     const fields = req.body;
-    const allowed = ['title', 'description', 'type', 'level', 'price', 'duration_hours', 'thumbnail_url', 'is_published', 'default_access_days', 'category_id', 'language', 'short_description'];
+    const allowed = ['title', 'description', 'type', 'level', 'price', 'duration_hours', 'thumbnail_url', 'is_published', 'default_access_days', 'category_id', 'language', 'short_description', 'promo_video_url'];
     const updates = [];
     const values = [];
 

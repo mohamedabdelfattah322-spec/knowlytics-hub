@@ -7,6 +7,8 @@ import { formatPrice, levelColor, cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import ThemeLogo from '@/components/ThemeLogo';
+import PublicNavbar from '@/components/PublicNavbar';
+import PublicFooter from '@/components/PublicFooter';
 import PageGuide, { GuideButton, type GuideStep } from '@/components/ui/PageGuide';
 
 const coursesGuide: GuideStep[] = [
@@ -69,24 +71,7 @@ export default function CoursesPage() {
     <div className="min-h-screen bg-dark-900">
       <PageGuide pageId="courses-catalog" steps={coursesGuide} forceOpen={guideOpen} onClose={() => setGuideOpen(false)} />
       <GuideButton onClick={() => setGuideOpen(true)} />
-      {/* Header */}
-      <div className="border-b border-dark-700 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
-            <ThemeLogo width={150} height={42} priority />
-          </Link>
-          <div className="flex items-center gap-3">
-            <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
-               className="hidden sm:inline-flex items-center gap-1.5 text-sm text-green-400 hover:text-green-300 font-medium">
-              💬 {t('courses.whatsapp')}
-            </a>
-            {user
-              ? <Link href={user.role === 'admin' ? '/dashboard/admin' : '/dashboard/student'} className="btn-primary text-sm">{t('nav.dashboard')}</Link>
-              : <><Link href="/login" className="btn-secondary text-sm">{t('auth.signIn')}</Link><Link href="/register" className="btn-primary text-sm">{t('auth.signUp')}</Link></>
-            }
-          </div>
-        </div>
-      </div>
+      <PublicNavbar />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
@@ -174,6 +159,7 @@ export default function CoursesPage() {
           </div>
         )}
       </div>
+      <PublicFooter />
     </div>
   );
 }

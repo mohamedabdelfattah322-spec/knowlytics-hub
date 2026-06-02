@@ -134,7 +134,7 @@ app.get('/api/public/featured-courses', async (_req, res) => {
     const { query: dbQuery } = require('./config/database');
     const result = await dbQuery(
       `SELECT c.id, c.title, c.description, c.type, c.level, c.price,
-              c.thumbnail_url, c.duration_hours, c.avg_rating, c.review_count,
+              c.thumbnail_url, c.promo_video_url, c.duration_hours, c.avg_rating, c.review_count,
               COALESCE(c.enrollment_count, 0)::int AS enrollment_count,
               u.name AS instructor_name
        FROM courses c
