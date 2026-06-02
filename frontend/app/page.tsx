@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ChevronRight, Star, ArrowRight,
@@ -13,6 +12,8 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { formatPrice } from '@/lib/utils';
 import PublicNavbar from '@/components/PublicNavbar';
 import PublicFooter from '@/components/PublicFooter';
+
+// Remove unused import that was causing build error
 import api from '@/lib/api';
 
 /* ─── Types ──────────────────────────────────────────── */
@@ -93,7 +94,6 @@ export default function LandingPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { t, locale, setLocale, dir, isAr } = useLanguage();
-  const { theme, setTheme } = useTheme();
   const [stats, setStats] = useState({ students: 0, courses: 0, satisfaction: 0 });
   const [courses, setCourses] = useState<FeaturedCourse[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
