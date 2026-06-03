@@ -5,14 +5,14 @@ import PublicFooter from '@/components/PublicFooter';
 import { useLanguage } from '@/hooks/useLanguage';
 
 const COMPANIES = [
-  { name: 'Saint-Gobain', logo: '/company-logos/Saint-Gobain.png', industry: { ar: 'تصنيع', en: 'Manufacturing' }, country: { ar: 'فرنسا / مصر', en: 'France / Egypt' } },
-  { name: 'Cinnabon', logo: '/company-logos/Cinnabon.png', industry: { ar: 'أغذية ومشروبات', en: 'F&B' }, country: { ar: 'مصر', en: 'Egypt' } },
-  { name: 'AFRAS', logo: '/company-logos/AFRAS KSA.jfif', industry: { ar: 'استشارات', en: 'Consulting' }, country: { ar: 'السعودية', en: 'KSA' } },
-  { name: 'Alyoum', logo: '/company-logos/Alyoum.png', industry: { ar: 'إعلام', en: 'Media' }, country: { ar: 'السعودية', en: 'KSA' } },
-  { name: 'EFS', logo: '/company-logos/EFS.jfif', industry: { ar: 'إدارة مرافق', en: 'Facilities' }, country: { ar: 'مصر', en: 'Egypt' } },
-  { name: 'Asfour Crystal', logo: '/company-logos/Asfour.jfif', industry: { ar: 'كريستال', en: 'Crystal' }, country: { ar: 'مصر', en: 'Egypt' } },
-  { name: 'Apleona', logo: '/company-logos/Apleona.png', industry: { ar: 'عقارات', en: 'Real Estate' }, country: { ar: 'مصر', en: 'Egypt' } },
-  { name: 'Symphony Development', logo: '/company-logos/Symphony Development.webp', industry: { ar: 'عقارات', en: 'Real Estate' }, country: { ar: 'مصر', en: 'Egypt' } },
+  { name: 'Saint-Gobain', logo: '/company-logos/saint-gobain.png', industry: { ar: 'تصنيع', en: 'Manufacturing' }, country: { ar: 'فرنسا / مصر', en: 'France / Egypt' } },
+  { name: 'Cinnabon', logo: '/company-logos/cinnabon.png', industry: { ar: 'أغذية ومشروبات', en: 'F&B' }, country: { ar: 'مصر', en: 'Egypt' } },
+  { name: 'AFRAS', logo: '/company-logos/afras.jfif', industry: { ar: 'استشارات', en: 'Consulting' }, country: { ar: 'السعودية', en: 'KSA' } },
+  { name: 'Alyoum', logo: '/company-logos/alyoum.png', industry: { ar: 'إعلام', en: 'Media' }, country: { ar: 'السعودية', en: 'KSA' } },
+  { name: 'EFS', logo: '/company-logos/efs.jfif', industry: { ar: 'إدارة مرافق', en: 'Facilities' }, country: { ar: 'مصر', en: 'Egypt' } },
+  { name: 'Asfour Crystal', logo: '/company-logos/asfour.jfif', industry: { ar: 'كريستال', en: 'Crystal' }, country: { ar: 'مصر', en: 'Egypt' } },
+  { name: 'Apleona', logo: '/company-logos/apleona.png', industry: { ar: 'عقارات', en: 'Real Estate' }, country: { ar: 'مصر', en: 'Egypt' } },
+  { name: 'Symphony Development', logo: '/company-logos/symphony.webp', industry: { ar: 'عقارات', en: 'Real Estate' }, country: { ar: 'مصر', en: 'Egypt' } },
 ];
 
 export default function CompaniesPage() {
@@ -43,7 +43,7 @@ export default function CompaniesPage() {
               <div key={c.name} className="rounded-2xl p-6 flex flex-col items-center gap-4 hover:scale-[1.03] transition-transform"
                    style={{ backgroundColor: '#162038', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="w-20 h-20 rounded-xl flex items-center justify-center p-3" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                  <img src={c.logo} alt={c.name} className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(0.85)' }} />
+                  <img src={c.logo} alt={c.name} className="w-full h-full object-contain" />
                 </div>
                 <div className="text-center">
                   <h3 className="font-bold text-base mb-1" style={{ color: '#ffffff' }}>{c.name}</h3>
