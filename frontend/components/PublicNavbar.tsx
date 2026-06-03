@@ -26,7 +26,7 @@ export default function PublicNavbar() {
   const isDark = theme !== 'light';
 
   return (
-    <nav style={{ backgroundColor: '#0b1426', borderBottom: '1px solid rgba(255,255,255,0.08)' }} className="px-6 py-3 sticky top-0 z-50">
+    <nav className="pub-nav px-6 py-3 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link href="/" className="shrink-0">
           <Image src="/logo-nav-w.png" alt="Knowlytics Hub" width={130} height={52} className="object-contain" priority />
