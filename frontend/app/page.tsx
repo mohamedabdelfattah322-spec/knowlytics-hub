@@ -100,7 +100,7 @@ export default function LandingPage() {
               {t('landing.startFree')} <ChevronRight className="w-5 h-5" />
             </Link>
             <Link href="/courses" className="text-base px-8 py-4 rounded-xl font-semibold inline-flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
-                  style={{ color: '#ffffff', border: `2px solid ${'rgba(255,255,255,0.2)'}` }}>
+                  style={{ color: '#ffffff', border: `2px solid rgba(255,255,255,0.2)` }}>
               {t('landing.browseCourses')}
             </Link>
           </div>
@@ -112,7 +112,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-5 gap-8 items-center">
             {/* Video — 3 cols */}
-            <div className="lg:col-span-3 rounded-2xl overflow-hidden shadow-2xl" style={{ border: `1px solid ${'rgba(255,255,255,0.08)'}` }}>
+            <div className="lg:col-span-3 rounded-2xl overflow-hidden shadow-2xl" style={{ border: `1px solid rgba(255,255,255,0.08)` }}>
               <div className="aspect-video">
                 <iframe
                   src="https://www.youtube.com/embed/xRp7_p7shhk"
@@ -132,7 +132,7 @@ export default function LandingPage() {
                 { value: '100K+', label: isAr ? 'مشترك يوتيوب' : 'YouTube Subs', icon: PlayCircle },
                 { value: '5.0', label: isAr ? 'تقييم' : 'Rating', icon: Star },
               ].map((s, i) => (
-                <div key={i} className="text-center p-5 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid ${'rgba(255,255,255,0.06)'}` }}>
+                <div key={i} className="text-center p-5 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid rgba(255,255,255,0.06)` }}>
                   <s.icon className="w-6 h-6 mx-auto mb-2" style={{ color: '#3b82f6' }} />
                   <p className="text-2xl md:text-3xl font-extrabold mb-1" style={{ color: '#3b82f6'Light }}>{s.value}</p>
                   <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.label}</p>
@@ -160,7 +160,7 @@ export default function LandingPage() {
               {courses.map((course) => (
                 <Link key={course.id} href={`/courses/${course.id}`}
                       className="rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform group flex flex-col"
-                      style={{ backgroundColor: '#162038', border: `1px solid ${'rgba(255,255,255,0.08)'}` }}>
+                      style={{ backgroundColor: '#162038', border: `1px solid rgba(255,255,255,0.08)` }}>
                   <div className="w-full h-44 relative" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 50%, #7c3aed 100%)' }}>
                     <div className="absolute inset-0 flex items-center justify-center"><BookOpen className="w-12 h-12" style={{ color: 'rgba(255,255,255,0.2)' }} /></div>
                     <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: course.type === 'live' ? '#7c3aed' : '#2563eb', color: '#fff' }}>
@@ -173,13 +173,13 @@ export default function LandingPage() {
                   <div className="p-5 flex flex-col flex-1">
                     <h3 className="font-bold text-base mb-2 line-clamp-2" style={{ color: '#ffffff' }}>{course.title}</h3>
                     <p className="text-sm line-clamp-2 mb-4 flex-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{course.description}</p>
-                    <div className="flex items-center justify-between text-xs mb-3" style={{ color: '#ffffff'Faint }}>
+                    <div className="flex items-center justify-between text-xs mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>
                       <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {course.duration_hours}h</span>
                       <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {course.enrollment_count}</span>
                       {course.avg_rating > 0 && <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" style={{ color: '#f59e0b', fill: '#f59e0b' }} />{parseFloat(String(course.avg_rating)).toFixed(1)}</span>}
                     </div>
-                    <div className="pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${'rgba(255,255,255,0.08)'}` }}>
-                      <span className="text-xs" style={{ color: '#ffffff'Faint }}>{course.instructor_name}</span>
+                    <div className="pt-3 flex items-center justify-between" style={{ borderTop: `1px solid rgba(255,255,255,0.08)` }}>
+                      <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{course.instructor_name}</span>
                       <span className="text-sm font-bold px-4 py-1.5 rounded-lg" style={{ backgroundColor: '#3b82f6', color: '#fff' }}>{t('landing.enrollNow')}</span>
                     </div>
                   </div>
