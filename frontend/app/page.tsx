@@ -10,7 +10,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatPrice } from '@/lib/utils';
-import PublicNavbar, { usePublicTheme } from '@/components/PublicNavbar';
+import PublicNavbar from '@/components/PublicNavbar';
 import PublicFooter from '@/components/PublicFooter';
 import api from '@/lib/api';
 
@@ -57,10 +57,6 @@ export default function LandingPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { t, locale, setLocale, dir, isAr } = useLanguage();
-  const { c, isDark, isMixed } = usePublicTheme();
-  // In mixed mode, hero text should be white (dark bg), content text uses light colors
-  const heroText = (isDark || isMixed) ? '#ffffff' : c.text;
-  const heroSub = (isDark || isMixed) ? 'rgba(255,255,255,0.7)' : c.textSub;
   const [stats, setStats] = useState({ students: 0, courses: 0, satisfaction: 0 });
   const [courses, setCourses] = useState<FeaturedCourse[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -74,37 +70,37 @@ export default function LandingPage() {
 
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ backgroundColor: c.pageBg }}>
+    <div className="min-h-screen" dir={dir} style={{ backgroundColor: '#0a1628' }}>
 
       <PublicNavbar />
 
       {/* ══════════════════ HERO ══════════════════ */}
-      <section className="relative overflow-hidden" style={{ backgroundColor: c.heroBg }}>
+      <section className="relative overflow-hidden" style={{ backgroundColor: '#0f1d32' }}>
         <div className="absolute inset-0 opacity-[0.08]">
           <div className="absolute top-20 left-10 w-96 h-96 bg-blue-500 rounded-full blur-3xl" />
           <div className="absolute bottom-10 right-20 w-80 h-80 bg-purple-500 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-20 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-8" style={{ backgroundColor: c.accentBg, border: `1px solid ${c.accentBorder}` }}>
-            <Star className="w-4 h-4" style={{ color: c.accent }} />
-            <span className="text-sm font-semibold" style={{ color: c.accent }}>{t('landing.badge')}</span>
+          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-8" style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: `1px solid ${'rgba(59,130,246,0.2)'}` }}>
+            <Star className="w-4 h-4" style={{ color: '#3b82f6' }} />
+            <span className="text-sm font-semibold" style={{ color: '#3b82f6' }}>{t('landing.badge')}</span>
           </div>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight" style={{ color: heroText }}>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight" style={{ color: '#ffffff' }}>
             {t('landing.heroTitle1')}<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400">
               {t('landing.heroTitle2')}
             </span>
           </h1>
-          <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: heroSub }}>
+          <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
             {t('landing.heroDesc')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/register" className="text-base px-8 py-4 rounded-xl font-bold inline-flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
-                  style={{ backgroundColor: c.accent, color: '#ffffff', boxShadow: '0 8px 30px rgba(59,130,246,0.3)' }}>
+                  style={{ backgroundColor: '#3b82f6', color: '#ffffff', boxShadow: '0 8px 30px rgba(59,130,246,0.3)' }}>
               {t('landing.startFree')} <ChevronRight className="w-5 h-5" />
             </Link>
             <Link href="/courses" className="text-base px-8 py-4 rounded-xl font-semibold inline-flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
-                  style={{ color: c.btnOutlineText, border: `2px solid ${c.btnOutline}` }}>
+                  style={{ color: '#ffffff', border: `2px solid ${'rgba(255,255,255,0.2)'}` }}>
               {t('landing.browseCourses')}
             </Link>
           </div>
@@ -112,11 +108,11 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════ VIDEO + STATS (Side by Side) ══════════════════ */}
-      <section style={{ backgroundColor: c.sectionAltBg }} className="py-14">
+      <section style={{ backgroundColor: '#0b1426' }} className="py-14">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-5 gap-8 items-center">
             {/* Video — 3 cols */}
-            <div className="lg:col-span-3 rounded-2xl overflow-hidden shadow-2xl" style={{ border: `1px solid ${c.cardBorder}` }}>
+            <div className="lg:col-span-3 rounded-2xl overflow-hidden shadow-2xl" style={{ border: `1px solid ${'rgba(255,255,255,0.08)'}` }}>
               <div className="aspect-video">
                 <iframe
                   src="https://www.youtube.com/embed/xRp7_p7shhk"
@@ -136,10 +132,10 @@ export default function LandingPage() {
                 { value: '100K+', label: isAr ? 'مشترك يوتيوب' : 'YouTube Subs', icon: PlayCircle },
                 { value: '5.0', label: isAr ? 'تقييم' : 'Rating', icon: Star },
               ].map((s, i) => (
-                <div key={i} className="text-center p-5 rounded-2xl" style={{ backgroundColor: c.statCardBg, border: `1px solid ${c.statCardBorder}` }}>
-                  <s.icon className="w-6 h-6 mx-auto mb-2" style={{ color: c.accent }} />
-                  <p className="text-2xl md:text-3xl font-extrabold mb-1" style={{ color: c.accentLight }}>{s.value}</p>
-                  <p className="text-xs font-medium" style={{ color: c.textMuted }}>{s.label}</p>
+                <div key={i} className="text-center p-5 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid ${'rgba(255,255,255,0.06)'}` }}>
+                  <s.icon className="w-6 h-6 mx-auto mb-2" style={{ color: '#3b82f6' }} />
+                  <p className="text-2xl md:text-3xl font-extrabold mb-1" style={{ color: '#3b82f6'Light }}>{s.value}</p>
+                  <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.label}</p>
                 </div>
               ))}
             </div>
@@ -149,14 +145,14 @@ export default function LandingPage() {
 
       {/* ══════════════════ COURSES ══════════════════ */}
       {courses.length > 0 && (
-        <section className="py-20" style={{ backgroundColor: c.sectionBg }}>
+        <section className="py-20" style={{ backgroundColor: '#111d33' }}>
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-end justify-between mb-10">
               <div>
-                <h2 className="text-3xl md:text-4xl font-extrabold mb-2" style={{ color: c.text }}>{t('landing.coursesTitle')}</h2>
-                <p className="text-base" style={{ color: c.textMuted }}>{t('landing.coursesDesc')}</p>
+                <h2 className="text-3xl md:text-4xl font-extrabold mb-2" style={{ color: '#ffffff' }}>{t('landing.coursesTitle')}</h2>
+                <p className="text-base" style={{ color: 'rgba(255,255,255,0.5)' }}>{t('landing.coursesDesc')}</p>
               </div>
-              <Link href="/courses" className="hidden md:inline-flex items-center gap-1 text-sm font-semibold" style={{ color: c.accent }}>
+              <Link href="/courses" className="hidden md:inline-flex items-center gap-1 text-sm font-semibold" style={{ color: '#3b82f6' }}>
                 {t('landing.viewAll')} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -164,7 +160,7 @@ export default function LandingPage() {
               {courses.map((course) => (
                 <Link key={course.id} href={`/courses/${course.id}`}
                       className="rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform group flex flex-col"
-                      style={{ backgroundColor: c.cardBg, border: `1px solid ${c.cardBorder}` }}>
+                      style={{ backgroundColor: '#162038', border: `1px solid ${'rgba(255,255,255,0.08)'}` }}>
                   <div className="w-full h-44 relative" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 50%, #7c3aed 100%)' }}>
                     <div className="absolute inset-0 flex items-center justify-center"><BookOpen className="w-12 h-12" style={{ color: 'rgba(255,255,255,0.2)' }} /></div>
                     <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: course.type === 'live' ? '#7c3aed' : '#2563eb', color: '#fff' }}>
@@ -175,30 +171,30 @@ export default function LandingPage() {
                     </span>
                   </div>
                   <div className="p-5 flex flex-col flex-1">
-                    <h3 className="font-bold text-base mb-2 line-clamp-2" style={{ color: c.text }}>{course.title}</h3>
-                    <p className="text-sm line-clamp-2 mb-4 flex-1" style={{ color: c.textMuted }}>{course.description}</p>
-                    <div className="flex items-center justify-between text-xs mb-3" style={{ color: c.textFaint }}>
+                    <h3 className="font-bold text-base mb-2 line-clamp-2" style={{ color: '#ffffff' }}>{course.title}</h3>
+                    <p className="text-sm line-clamp-2 mb-4 flex-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{course.description}</p>
+                    <div className="flex items-center justify-between text-xs mb-3" style={{ color: '#ffffff'Faint }}>
                       <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {course.duration_hours}h</span>
                       <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {course.enrollment_count}</span>
                       {course.avg_rating > 0 && <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" style={{ color: '#f59e0b', fill: '#f59e0b' }} />{parseFloat(String(course.avg_rating)).toFixed(1)}</span>}
                     </div>
-                    <div className="pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${c.cardBorder}` }}>
-                      <span className="text-xs" style={{ color: c.textFaint }}>{course.instructor_name}</span>
-                      <span className="text-sm font-bold px-4 py-1.5 rounded-lg" style={{ backgroundColor: c.accent, color: '#fff' }}>{t('landing.enrollNow')}</span>
+                    <div className="pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${'rgba(255,255,255,0.08)'}` }}>
+                      <span className="text-xs" style={{ color: '#ffffff'Faint }}>{course.instructor_name}</span>
+                      <span className="text-sm font-bold px-4 py-1.5 rounded-lg" style={{ backgroundColor: '#3b82f6', color: '#fff' }}>{t('landing.enrollNow')}</span>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
             <div className="mt-8 text-center md:hidden">
-              <Link href="/courses" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: c.accent }}>{t('landing.viewAll')} <ArrowRight className="w-4 h-4" /></Link>
+              <Link href="/courses" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: '#3b82f6' }}>{t('landing.viewAll')} <ArrowRight className="w-4 h-4" /></Link>
             </div>
           </div>
         </section>
       )}
 
       {/* ══════════════════ FAQ ══════════════════ */}
-      <section className="py-20 relative overflow-hidden" style={{ backgroundColor: c.darkStripBg }}>
+      <section className="py-20 relative overflow-hidden" style={{ backgroundColor: '#060e1e' }}>
         <div className="absolute inset-0 opacity-[0.05]">
           <div className="absolute top-0 right-1/4 w-64 h-64 bg-blue-500 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-purple-500 rounded-full blur-3xl" />
@@ -216,7 +212,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════ CTA ══════════════════ */}
-      <section className="py-20" style={{ backgroundColor: c.pageBg }}>
+      <section className="py-20" style={{ backgroundColor: '#0a1628' }}>
         <div className="max-w-5xl mx-auto px-6">
           <div className="rounded-3xl p-10 md:p-16 text-center relative overflow-hidden"
                style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 50%, #7c3aed 100%)' }}>

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { GraduationCap, Users, Star, Briefcase, Loader2, Linkedin, Youtube, BookOpen, X } from 'lucide-react';
 import Link from 'next/link';
-import PublicNavbar, { usePublicTheme } from '@/components/PublicNavbar';
+import PublicNavbar from '@/components/PublicNavbar';
 import PublicFooter from '@/components/PublicFooter';
 import { useLanguage } from '@/hooks/useLanguage';
 import api from '@/lib/api';
@@ -26,7 +26,13 @@ const PROJECTS = [
 
 export default function AboutPage() {
   const { t, isAr, dir } = useLanguage();
-  const { c } = usePublicTheme();
+  // Dark theme colors
+  const c = {
+    pageBg: '#0a1628', heroBg: '#0f1d32', sectionBg: '#111d33', sectionAltBg: '#0b1426',
+    cardBg: '#162038', cardBorder: 'rgba(255,255,255,0.08)',
+    text: '#ffffff', textSub: 'rgba(255,255,255,0.7)', textMuted: 'rgba(255,255,255,0.5)', textFaint: 'rgba(255,255,255,0.4)',
+    accent: '#3b82f6', accentLight: '#60a5fa', accentBg: 'rgba(59,130,246,0.1)', accentBorder: 'rgba(59,130,246,0.2)',
+  };
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState<string | null>(null);
