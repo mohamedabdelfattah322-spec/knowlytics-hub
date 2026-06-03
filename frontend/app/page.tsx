@@ -81,7 +81,7 @@ export default function LandingPage() {
           <div className="absolute bottom-10 right-20 w-80 h-80 bg-purple-500 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-20 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-8" style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: `1px solid ${'rgba(59,130,246,0.2)'}` }}>
+          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-8" style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
             <Star className="w-4 h-4" style={{ color: '#3b82f6' }} />
             <span className="text-sm font-semibold" style={{ color: '#3b82f6' }}>{t('landing.badge')}</span>
           </div>
@@ -134,7 +134,7 @@ export default function LandingPage() {
               ].map((s, i) => (
                 <div key={i} className="text-center p-5 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid rgba(255,255,255,0.06)` }}>
                   <s.icon className="w-6 h-6 mx-auto mb-2" style={{ color: '#3b82f6' }} />
-                  <p className="text-2xl md:text-3xl font-extrabold mb-1" style={{ color: '#3b82f6'Light }}>{s.value}</p>
+                  <p className="text-2xl md:text-3xl font-extrabold mb-1" style={{ color: '#60a5fa' }}>{s.value}</p>
                   <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.label}</p>
                 </div>
               ))}
