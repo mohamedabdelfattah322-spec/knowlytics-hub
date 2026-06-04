@@ -156,12 +156,17 @@ export default function CourseDetailPage() {
                     <div className="flex items-center gap-2 font-medium text-sm mb-2" style={{ color: '#4ade80' }}>
                       <CheckCircle className="w-4 h-4" /> {isAr ? 'أنت مسجل بالفعل' : 'You are enrolled'}
                     </div>
-                    {sections[0]?.lessons?.[0] && (
+                    {sections[0]?.lessons?.[0] ? (
                       <Link href={`/courses/${id}/lessons/${sections[0].lessons[0].id}`}
                         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform"
                         style={{ backgroundColor: '#3b82f6', color: '#fff' }}>
                         <Play className="w-4 h-4" /> {isAr ? 'ابدأ التعلم' : 'Start Learning'}
                       </Link>
+                    ) : (
+                      <div className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm"
+                        style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                        <BookOpen className="w-4 h-4" /> {isAr ? 'لا توجد دروس بعد' : 'No lessons yet'}
+                      </div>
                     )}
                     {examStatus?.final_quiz && (
                       <div className="rounded-xl p-3 space-y-2" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
