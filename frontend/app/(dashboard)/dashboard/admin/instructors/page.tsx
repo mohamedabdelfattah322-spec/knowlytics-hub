@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Users, Star, Briefcase, Loader2, X, Save } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Star, Briefcase, Loader2, X, Save, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 
@@ -109,8 +109,41 @@ export default function AdminInstructorsPage() {
                 <textarea className="input resize-none" rows={3} value={editing.bio_ar || ''} onChange={e => setEditing({ ...editing, bio_ar: e.target.value })} />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs text-slate-400 mb-1">رابط الصورة</label>
-                <input className="input" type="url" value={editing.photo_url || ''} onChange={e => setEditing({ ...editing, photo_url: e.target.value })} placeholder="https://..." />
+                <label className="block text-xs text-slate-400 mb-1">صورة المدرب</label>
+                {editing.photo_url && (
+                  <div className="mb-2 relative w-24 h-24 rounded-xl overflow-hidden bg-dark-700">
+                    <img src={editing.photo_url} alt="photo" className="w-full h-full object-cover" />
+                    <button onClick={() => setEditing({ ...editing, photo_url: '' })}
+                      className="absolute top-1 right-1 p-1 bg-red-500/90 hover:bg-red-600 rounded-lg text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input className="input flex-1" type="url" value={editing.photo_url || ''} onChange={e => setEditing({ ...editing, photo_url: e.target.value })} placeholder="رابط صورة (أو ارفع ملف ←)" />
+                  <label className="btn-secondary cursor-pointer flex items-center gap-2 whitespace-nowrap">
+                    <Upload className="w-4 h-4" /> رفع
+                    <input type="file" accept="image/*" className="sr-only"
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        const fd = new FormData();
+                        fd.append('file', f);
+                        fd.append('title', f.name);
+                        try {
+                          const { data } = await api.post('/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                          const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+                          const baseHost = apiBase.replace(/\/api\/?$/, '');
+                          const url = `${baseHost}/uploads/${data.file.file_key}`;
+                          setEditing({ ...editing, photo_url: url });
+                          toast.success('✅ تم رفع الصورة');
+                        } catch (err: any) {
+                          toast.error(err?.response?.data?.error || 'فشل الرفع');
+                        }
+                        e.target.value = '';
+                      }} />
+                  </label>
+                </div>
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">سنوات الخبرة</label>
