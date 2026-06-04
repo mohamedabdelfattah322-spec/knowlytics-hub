@@ -90,10 +90,8 @@ app.use(rateLimit({
 }));
 
 // ─── Local uploads static serving ─────────────────────────
-// Only serve in dev; in production all file access goes through /api/files/stream (auth-protected)
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-}
+// Images (thumbnails, etc.) are served publicly; videos go through /api/files/stream (auth-protected)
+app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 
 // ─── Stripe webhook MUST receive raw body (mount BEFORE json parser) ──
 const { stripeWebhook } = require('./routes/payments');
