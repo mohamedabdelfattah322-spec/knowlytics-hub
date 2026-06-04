@@ -38,6 +38,8 @@ const referralRoutes = require('./routes/referrals');
 const discussionRoutes = require('./routes/discussions');
 const aiRoutes = require('./routes/ai');
 const instructorRoutes = require('./routes/instructors');
+const consultationRoutes = require('./routes/consultations');
+const communityRoutes = require('./routes/community');
 const { sendBroadcast, getBroadcastHistory } = require('./controllers/broadcastController');
 
 const app = express();
@@ -204,6 +206,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/discussions', discussionRoutes);
 app.use('/api/instructors', instructorRoutes);
+app.use('/api/consultations', consultationRoutes);
+app.use('/api/community', communityRoutes);
 app.use('/api/ai', aiRoutes);
 
 // ─── Admin broadcast ──────────────────────────────────────

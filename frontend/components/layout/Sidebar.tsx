@@ -30,6 +30,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     { href: '/dashboard/admin/newsletter', icon: Mail, label: t('nav.newsletter') },
     { href: '/dashboard/admin/categories', icon: FolderOpen, label: t('nav.categories') },
     { href: '/dashboard/admin/instructors', icon: Users, label: isAr ? 'المدربين' : 'Instructors' },
+    { href: '/dashboard/admin/consultations', icon: Calendar, label: isAr ? 'الاستشارات' : 'Consultations' },
     { href: '/dashboard/admin/subscriptions', icon: CreditCard, label: t('nav.subscriptions') },
     { href: '/dashboard/admin/referrals', icon: Share2, label: t('nav.referrals') },
     { href: '/dashboard/admin/teams', icon: UserCheck, label: t('nav.teams') },
@@ -46,6 +47,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     { href: '/dashboard/student/cart', icon: ShoppingCart, label: t('nav.cart') },
     { href: '/dashboard/student/calendar', icon: Calendar, label: t('nav.calendar') },
     { href: '/dashboard/student/referrals', icon: Share2, label: t('nav.referrals') },
+    { href: '/community', icon: Users, label: isAr ? 'المجتمع' : 'Community' },
     { href: '/courses', icon: GraduationCap, label: t('nav.browse') },
     { href: '/dashboard/student/settings', icon: Settings, label: t('nav.settings') },
   ];

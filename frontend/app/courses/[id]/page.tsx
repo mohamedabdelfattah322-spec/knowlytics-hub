@@ -17,6 +17,7 @@ import PublicFooter from '@/components/PublicFooter';
 import CourseFeedback from '@/components/CourseFeedback';
 import CertificateButton from '@/components/CertificateButton';
 import ReviewSection from '@/components/course/ReviewSection';
+import ConsultationSection from '@/components/ConsultationSection';
 import DiscussionForum from '@/components/course/DiscussionForum';
 import AIChatbot from '@/components/AIChatbot';
 
@@ -26,7 +27,7 @@ interface Course {
   id: string; title: string; description: string; type: string; level: string;
   price: number; duration_hours: number; thumbnail_url: string;
   instructor_name: string; instructor_avatar?: string; enrollment_count: string;
-  promo_video_url?: string;
+  promo_video_url?: string; instructor_profile_id?: string;
 }
 
 function Stars({ rating }: { rating: number }) {
@@ -337,6 +338,14 @@ export default function CourseDetailPage() {
 
             {/* Reviews */}
             <ReviewSection courseId={String(id)} />
+
+            {/* Consultation Booking */}
+            {course.instructor_profile_id && (
+              <ConsultationSection
+                instructorId={course.instructor_profile_id}
+                instructorName={course.instructor_name}
+              />
+            )}
 
             {/* Discussion Forum */}
             {enrolled && <DiscussionForum courseId={String(id)} />}
