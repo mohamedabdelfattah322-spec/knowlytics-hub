@@ -72,8 +72,13 @@ export default function MyCoursesPage() {
           ))
           : filtered.map((e) => (
             <div key={e.course_id} className="card hover:border-brand-500/40 transition-all duration-200 flex flex-col">
-              <div className="w-full h-32 bg-gradient-to-br from-brand-500/20 to-purple-500/20 rounded-lg mb-4 flex items-center justify-center relative">
-                <BookOpen className="w-10 h-10 text-brand-400" />
+              <div className="w-full h-32 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden"
+                style={{ background: e.thumbnail_url ? undefined : 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2))' }}>
+                {e.thumbnail_url ? (
+                  <img src={e.thumbnail_url} alt={e.course_title} className="w-full h-full object-cover" />
+                ) : (
+                  <BookOpen className="w-10 h-10 text-brand-400" />
+                )}
                 {e.progress_pct === 100 && (
                   <div className="absolute top-2 right-2"><Award className="w-5 h-5 text-yellow-400" /></div>
                 )}

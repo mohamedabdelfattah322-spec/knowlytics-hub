@@ -122,8 +122,13 @@ export default function CoursesPage() {
             : courses.map((c) => (
               <Link key={c.id} href={`/courses/${c.id}`} className="card hover:border-brand-500/50 transition-all duration-200 group flex flex-col">
                 {/* Thumbnail */}
-                <div className="w-full h-36 bg-gradient-to-br from-brand-500/20 to-purple-500/20 rounded-lg mb-4 flex items-center justify-center">
-                  <BookOpen className="w-10 h-10 text-brand-400" />
+                <div className="w-full h-36 rounded-lg mb-4 flex items-center justify-center overflow-hidden"
+                  style={{ background: c.thumbnail_url ? undefined : 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2))' }}>
+                  {c.thumbnail_url ? (
+                    <img src={c.thumbnail_url} alt={c.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <BookOpen className="w-10 h-10 text-brand-400" />
+                  )}
                 </div>
                 {/* Badges */}
                 <div className="flex items-center gap-2 mb-2">
