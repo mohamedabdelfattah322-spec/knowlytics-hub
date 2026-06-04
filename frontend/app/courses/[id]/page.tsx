@@ -71,6 +71,16 @@ export default function CourseDetailPage() {
     router.push(`/courses/${id}/buy`);
   };
 
+  const handleEnrollFree = async () => {
+    if (!user) { router.push(`/login?redirect=/courses/${id}`); return; }
+    try {
+      await api.post('/enrollments', { course_id: id });
+      setEnrolled(true);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'حدث خطأ');
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-dark-900 flex items-center justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>;
   if (!course) return <div className="min-h-screen bg-dark-900 flex items-center justify-center text-slate-400">Course not found.</div>;
 
@@ -199,11 +209,11 @@ export default function CourseDetailPage() {
                     <ShoppingCart className="w-4 h-4" /> {isAr ? 'اشترِ الكورس الآن' : 'Buy Course Now'}
                   </button>
                 ) : (
-                  <a href="https://wa.me/201226929392" target="_blank" rel="noreferrer"
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"
-                    style={{ backgroundColor: '#3b82f6', color: '#fff' }}>
-                    {isAr ? 'تواصل للتسجيل' : 'Contact to Enroll'}
-                  </a>
+                  <button onClick={handleEnrollFree}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform"
+                    style={{ backgroundColor: '#10b981', color: '#fff' }}>
+                    <CheckCircle className="w-4 h-4" /> {isAr ? 'سجّل مجاناً' : 'Enroll for Free'}
+                  </button>
                 )}
 
                 {/* Course Details */}
