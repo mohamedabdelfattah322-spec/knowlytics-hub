@@ -91,7 +91,7 @@ app.use(rateLimit({
 
 // ─── Local uploads static serving ─────────────────────────
 // Images (thumbnails, etc.) are served publicly; videos go through /api/files/stream (auth-protected)
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ─── Stripe webhook MUST receive raw body (mount BEFORE json parser) ──
 const { stripeWebhook } = require('./routes/payments');
