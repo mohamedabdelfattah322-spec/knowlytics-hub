@@ -7,11 +7,11 @@ const {
   forgotPassword, resetPassword,
 } = require('../controllers/authController');
 
-// Brute-force protection: max 5 login attempts per 15 min per IP
+// Brute-force protection: max 20 login attempts per 15 min per IP
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+  max: 20,
+  message: { error: 'Too many requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
