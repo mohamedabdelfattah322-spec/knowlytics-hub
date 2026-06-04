@@ -138,7 +138,13 @@ export default function AdminCourseEditorPage() {
       await api.put(`/courses/${id}`, {
         title: course.title, description: course.description, type: course.type,
         level: course.level, price: course.price, duration_hours: course.duration_hours,
-        is_published: course.is_published,
+        is_published: course.is_published, thumbnail_url: course.thumbnail_url,
+        promo_video_url: course.promo_video_url,
+        instructor_profile_id: (course as any).instructor_profile_id,
+        category_id: (course as any).category_id,
+        language: (course as any).language,
+        short_description: (course as any).short_description,
+        default_access_days: (course as any).default_access_days,
       });
       toast.success('✅ تم حفظ الكورس');
     } catch { toast.error('فشل الحفظ'); }
