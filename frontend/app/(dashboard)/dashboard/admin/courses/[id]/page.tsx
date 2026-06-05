@@ -290,22 +290,33 @@ export default function AdminCourseEditorPage() {
     } catch { toast.error('فشل التحديث'); }
   };
 
-  /* ── Upload video to lesson ── */
+  /* ── Upload video to lesson (auto-uploads to Bunny then deletes local) ── */
   const uploadVideo = async (lessonId: string, file: File) => {
     setUploadingVideo((p) => ({ ...p, [lessonId]: true }));
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('lesson_id', lessonId);
-      await api.post('/files/upload-video', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      // Mark the lesson as having a video
+      const { data } = await api.post('/files/upload-video', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       setSections((p) =>
         p.map((s) => ({
           ...s,
-          lessons: s.lessons.map((l) => l.id === lessonId ? { ...l, video_key: 'uploaded' } : l),
+          lessons: s.lessons.map((l) =>
+            l.id === lessonId
+              ? {
+                  ...l,
+                  video_key: data.lesson?.video_key || 'uploaded',
+                  bunny_video_id: data.lesson?.bunny_video_id ?? l.bunny_video_id,
+                  bunny_embed_url: data.lesson?.bunny_embed_url ?? l.bunny_embed_url,
+                  duration_minutes: data.lesson?.duration_minutes ?? l.duration_minutes,
+                }
+              : l
+          ),
         }))
       );
-      toast.success(`✅ تم رفع الفيديو للدرس`);
+      toast.success(data.message || '✅ تم رفع الفيديو');
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'فشل رفع الفيديو');
     } finally {
@@ -629,34 +640,24 @@ export default function AdminCourseEditorPage() {
                             {/* Video upload button */}
                             {lesson.type === 'video' && (
                               <div className="flex items-center gap-1">
-                                <label title="رفع فيديو لهذا الدرس"
+                                <label title="رفع فيديو (يُرفع تلقائياً على Bunny)"
                                   className={cn('flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer',
-                                    lesson.video_key
-                                      ? 'border-brand-500/40 bg-brand-500/10 text-brand-400 hover:bg-brand-500/20'
-                                      : 'border-slate-600 bg-dark-700 text-slate-400 hover:border-brand-500/50 hover:text-brand-400'
+                                    lesson.bunny_video_id
+                                      ? 'border-green-500/40 bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                                      : lesson.video_key
+                                        ? 'border-brand-500/40 bg-brand-500/10 text-brand-400 hover:bg-brand-500/20'
+                                        : 'border-slate-600 bg-dark-700 text-slate-400 hover:border-brand-500/50 hover:text-brand-400'
                                   )}>
                                   {uploadingVideo[lesson.id]
-                                    ? <Loader2 className="w-3 h-3 animate-spin" />
-                                    : <Video className="w-3 h-3" />}
-                                  {lesson.video_key ? 'تغيير الفيديو' : '🎬 رفع فيديو'}
+                                    ? <><Loader2 className="w-3 h-3 animate-spin" /> جاري الرفع...</>
+                                    : lesson.bunny_video_id
+                                      ? <><Video className="w-3 h-3" /> ✅ Bunny — تغيير</>
+                                      : <><Video className="w-3 h-3" /> 🎬 رفع فيديو</>
+                                  }
                                   <input type="file" accept="video/*" className="sr-only"
                                     onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadVideo(lesson.id, f); e.target.value = ''; }}
                                     disabled={uploadingVideo[lesson.id]} />
                                 </label>
-                                {lesson.video_key && !lesson.bunny_video_id && (
-                                  <button onClick={() => uploadVideoToBunny(lesson.id)}
-                                    disabled={uploadingToBunny[lesson.id]}
-                                    title="رفع الفيديو إلى Bunny.net"
-                                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-orange-500/40 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-all disabled:opacity-50">
-                                    {uploadingToBunny[lesson.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                                    رفع Bunny
-                                  </button>
-                                )}
-                                {lesson.bunny_video_id && (
-                                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-green-500/40 bg-green-500/10 text-green-400">
-                                    ✅ في Bunny
-                                  </span>
-                                )}
                               </div>
                             )}
 
