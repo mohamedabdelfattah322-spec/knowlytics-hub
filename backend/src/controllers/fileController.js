@@ -153,17 +153,49 @@ const uploadVideoToBunny = async (req, res, next) => {
     const bunnyData = await bunnyService.uploadVideoToBunny(filePath, lesson.title);
     const embedUrl = bunnyService.getEmbedUrl(bunnyData.videoId);
 
-    // Update lesson with Bunny info
+    // Get video duration from Bunny (wait for processing)
+    const durationSeconds = await bunnyService.getVideoDuration(bunnyData.videoId);
+    const durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
+
+    // Update lesson with Bunny info + duration
     const updateRes = await query(
-      `UPDATE lessons SET bunny_video_id = $1, bunny_embed_url = $2, updated_at = NOW()
-       WHERE id = $3 RETURNING id, bunny_video_id, bunny_embed_url`,
-      [bunnyData.videoId, embedUrl, lesson_id]
+      `UPDATE lessons
+       SET bunny_video_id = $1, bunny_embed_url = $2,
+           duration_minutes = COALESCE($3, duration_minutes),
+           updated_at = NOW()
+       WHERE id = $4 RETURNING id, bunny_video_id, bunny_embed_url, duration_minutes`,
+      [bunnyData.videoId, embedUrl, durationMinutes, lesson_id]
     );
+
+    // Recalculate course total duration from all lessons
+    const courseRes = await query(
+      `SELECT s.course_id FROM lessons l
+       JOIN sections s ON s.id = l.section_id
+       WHERE l.id = $1`,
+      [lesson_id]
+    );
+
+    if (courseRes.rows.length) {
+      const courseId = courseRes.rows[0].course_id;
+      await query(
+        `UPDATE courses
+         SET duration_hours = ROUND(
+           (SELECT COALESCE(SUM(l.duration_minutes), 0)
+            FROM lessons l
+            JOIN sections s ON s.id = l.section_id
+            WHERE s.course_id = $1) / 60.0, 1
+         )
+         WHERE id = $1`,
+        [courseId]
+      );
+      console.log(`[Auto] Updated course ${courseId} duration`);
+    }
 
     res.json({
       lesson: updateRes.rows[0],
       bunny: bunnyData,
-      message: '✅ تم رفع الفيديو إلى Bunny بنجاح'
+      duration_minutes: durationMinutes,
+      message: `✅ تم رفع الفيديو إلى Bunny${durationMinutes ? ` — المدة: ${durationMinutes} دقيقة` : ''}`
     });
   } catch (err) {
     console.error('[Bunny Upload Error]', err);

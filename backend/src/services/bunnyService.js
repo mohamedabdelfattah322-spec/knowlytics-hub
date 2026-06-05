@@ -83,6 +83,29 @@ const getEmbedUrl = (videoId) => {
 };
 
 /**
+ * Get video info from Bunny (including duration in seconds)
+ * Retries up to maxAttempts times (Bunny needs time to process)
+ */
+const getVideoDuration = async (videoId, maxAttempts = 10, delayMs = 3000) => {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const res = await bunnyClient.get(`/videos/${videoId}`);
+      const duration = res.data.length; // duration in seconds
+      if (duration && duration > 0) {
+        console.log(`[Bunny] Video ${videoId} duration: ${duration}s`);
+        return duration;
+      }
+      // Video still processing — wait and retry
+      console.log(`[Bunny] Waiting for video processing... attempt ${i + 1}/${maxAttempts}`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    } catch (err) {
+      console.error(`[Bunny] getVideoDuration error:`, err.message);
+    }
+  }
+  return null; // couldn't get duration
+};
+
+/**
  * Delete video from Bunny
  */
 const deleteVideoFromBunny = async (videoId) => {
@@ -98,5 +121,6 @@ module.exports = {
   uploadVideoToBunny,
   getEmbedUrl,
   getSignedEmbedUrl,
+  getVideoDuration,
   deleteVideoFromBunny,
 };

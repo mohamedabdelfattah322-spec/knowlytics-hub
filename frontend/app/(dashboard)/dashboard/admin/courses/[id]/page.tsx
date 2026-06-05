@@ -348,12 +348,17 @@ export default function AdminCourseEditorPage() {
           ...s,
           lessons: s.lessons.map((l) =>
             l.id === lessonId
-              ? { ...l, bunny_video_id: res.data.lesson.bunny_video_id, bunny_embed_url: res.data.lesson.bunny_embed_url }
+              ? {
+                  ...l,
+                  bunny_video_id: res.data.lesson.bunny_video_id,
+                  bunny_embed_url: res.data.lesson.bunny_embed_url,
+                  duration_minutes: res.data.lesson.duration_minutes ?? l.duration_minutes,
+                }
               : l
           ),
         }))
       );
-      toast.success(`✅ تم رفع الفيديو إلى Bunny`);
+      toast.success(res.data.message || `✅ تم رفع الفيديو إلى Bunny`);
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'فشل رفع الفيديو إلى Bunny');
     } finally {
