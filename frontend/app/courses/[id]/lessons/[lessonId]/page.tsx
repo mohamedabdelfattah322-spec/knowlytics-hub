@@ -192,6 +192,24 @@ export default function LessonPlayerPage() {
           let embedUrl: string | null = null;
           let isIframe = false;
 
+          // Bunny.net embed URL (iframe.mediadelivery.net)
+          if (videoUrl.includes('iframe.mediadelivery.net')) {
+            return (
+              <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+                <iframe
+                  src={videoUrl}
+                  className="w-full h-full"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                  style={{ border: 'none' }}
+                />
+                <div className="video-watermark pointer-events-none">
+                  {user?.email} · {new Date().toLocaleString()}
+                </div>
+              </div>
+            );
+          }
+
           // Google Drive: file/d/FILE_ID/view → file/d/FILE_ID/preview
           const driveMatch = videoUrl.match(/drive\.google\.com\/file\/d\/([^/]+)/);
           if (driveMatch) {

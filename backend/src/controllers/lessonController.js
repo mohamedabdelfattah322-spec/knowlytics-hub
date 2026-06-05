@@ -47,9 +47,12 @@ const getLesson = async (req, res, next) => {
       }
     }
 
-    // Build video URL — external link, S3 signed URL, or local stream endpoint
+    // Build video URL — Bunny > external link > S3 signed URL > local stream
     let videoUrl = null;
-    if (lesson.video_url) {
+    if (lesson.bunny_embed_url) {
+      // Bunny.net hosted video (most secure + fastest CDN)
+      videoUrl = lesson.bunny_embed_url;
+    } else if (lesson.video_url) {
       // External URL (Google Drive, YouTube, Vimeo, etc.) — use as-is
       videoUrl = lesson.video_url;
     } else if (lesson.video_key) {
