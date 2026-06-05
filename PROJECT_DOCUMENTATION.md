@@ -1,7 +1,7 @@
 # Knowlytics Hub - LMS Platform Documentation
 
-**Last Updated:** June 4, 2026  
-**Version:** 1.0.0  
+**Last Updated:** June 5, 2026  
+**Version:** 1.1.0  
 **Status:** Live (learn.knowlyticshub.com)
 
 ---
@@ -20,7 +20,7 @@
 - 🌍 دعم كامل للعربية والإنجليزية (RTL/LTR)
 - 📊 Analytics و Dashboard للـ Admin
 - 🎖️ نظام الشهادات والـ Badges
-- 🛒 نظام الدفع (تحت التطوير)
+- 🎬 Bunny.net Video Hosting (CDN محمي)
 
 ---
 
@@ -40,11 +40,14 @@
 - **Database:** PostgreSQL (Supabase)
 - **Authentication:** JWT + Session Guards
 - **Rate Limiting:** express-rate-limit
-- **Password Hashing:** bcrypt
+- **Password Hashing:** bcryptjs
+- **File Upload:** Multer (local disk)
+- **Video CDN:** Bunny.net Stream
 
 ### DevOps
 - **Hosting:** VPS (209.38.230.90)
 - **Process Manager:** PM2
+- **Reverse Proxy:** Nginx
 - **Version Control:** Git + GitHub
 - **Build Tool:** npm
 
@@ -66,187 +69,105 @@ D:/lms/
 │   │   │   ├── authController.js
 │   │   │   ├── courseController.js
 │   │   │   ├── enrollmentController.js
-│   │   │   └── ...
+│   │   │   ├── lessonController.js
+│   │   │   └── fileController.js
+│   │   ├── services/
+│   │   │   ├── bunnyService.js             # Bunny.net CDN integration
+│   │   │   ├── emailService.js
+│   │   │   └── index.js
 │   │   └── routes/
 │   │       ├── auth.js
 │   │       ├── courses.js
 │   │       ├── enrollments.js
-│   │       ├── instructors.js              # NEW: Instructor profiles
-│   │       ├── consultations.js            # NEW: Consultation booking
-│   │       └── community.js                # NEW: Community posts
+│   │       ├── instructors.js
+│   │       ├── consultations.js
+│   │       ├── community.js
+│   │       └── files.js
 │   └── package.json
 │
 ├── frontend/
 │   ├── app/
-│   │   ├── page.tsx                        # Landing page (redesigned)
-│   │   ├── globals.css                     # Theme variables + utilities
-│   │   ├── (auth)/
-│   │   │   ├── login/
-│   │   │   ├── register/
-│   │   │   └── reset-password/
-│   │   ├── (dashboard)/
-│   │   │   └── dashboard/
-│   │   │       ├── admin/
-│   │   │       │   ├── instructors/        # NEW: Manage instructors
-│   │   │       │   ├── consultations/      # NEW: Manage consultations
-│   │   │       │   ├── courses/
-│   │   │       │   ├── users/
-│   │   │       │   ├── analytics/
-│   │   │       │   └── ...
-│   │   │       └── student/
-│   │   │           ├── courses/
-│   │   │           ├── progress/
-│   │   │           ├── badges/
-│   │   │           └── ...
+│   │   ├── page.tsx                        # Landing page
+│   │   ├── globals.css                     # Theme variables
+│   │   ├── (auth)/login / register / reset-password
+│   │   ├── (dashboard)/dashboard/
+│   │   │   ├── admin/
+│   │   │   │   ├── courses/[id]/page.tsx   # Course editor (Bunny upload)
+│   │   │   │   ├── instructors/page.tsx    # Instructor management
+│   │   │   │   ├── consultations/
+│   │   │   │   ├── users/
+│   │   │   │   └── analytics/
+│   │   │   └── student/
+│   │   │       ├── courses/page.tsx        # My Courses (with thumbnails)
+│   │   │       └── ...
 │   │   ├── courses/
-│   │   │   ├── page.tsx                    # Courses listing
+│   │   │   ├── page.tsx                    # Courses listing (with thumbnails)
 │   │   │   └── [id]/
-│   │   │       ├── page.tsx                # Course detail (+ consultation booking)
-│   │   │       ├── buy/
-│   │   │       ├── lessons/
-│   │   │       └── quiz/
-│   │   ├── about/page.tsx                  # Instructor profiles
-│   │   ├── companies/page.tsx              # Companies trained
-│   │   ├── reviews/page.tsx                # Student reviews
-│   │   ├── contact/page.tsx                # Contact form
-│   │   └── community/page.tsx              # NEW: Community feed
-│   ├── components/
-│   │   ├── PublicNavbar.tsx                # Navbar (updated: light/dark theme)
-│   │   ├── PublicFooter.tsx                # Footer (updated: CSS vars)
-│   │   ├── ConsultationSection.tsx         # NEW: Booking form
-│   │   ├── layout/
-│   │   │   ├── Sidebar.tsx                 # Dashboard sidebar
-│   │   │   ├── Navbar.tsx
-│   │   │   └── ...
-│   │   └── course/
-│   │       ├── ReviewSection.tsx
-│   │       ├── LessonPlayer.tsx
-│   │       └── ...
-│   ├── hooks/
-│   │   ├── useAuth.ts                      # Auth context hook
-│   │   ├── useLanguage.ts                  # I18n hook
-│   │   ├── useTheme.ts                     # Theme hook
-│   │   └── ...
-│   ├── lib/
-│   │   ├── api.ts                          # Axios instance
-│   │   ├── auth.ts                         # Auth utilities
-│   │   ├── utils.ts                        # Helpers
-│   │   └── i18n.ts                         # i18n config
+│   │   │       ├── page.tsx                # Course detail
+│   │   │       └── lessons/[lessonId]/page.tsx  # Lesson player (Bunny)
+│   │   ├── about/page.tsx
+│   │   ├── community/page.tsx
+│   │   └── contact/page.tsx
 │   └── public/
-│       ├── company-logos/                  # Company images
-│       ├── logo-nav-w.png
-│       └── ...
 │
 └── DATABASE/
-    └── migrations/                         # SQL migrations
+    └── migrations/
         ├── 001_initial_schema.sql
-        ├── 002_courses_table.sql
-        ├── 015_consultations_community.sql # NEW
-        └── ...
+        ├── ...
+        └── 020_bunny_video_support.sql     # NEW: bunny_video_id, bunny_embed_url
 ```
 
 ---
 
-## 🎯 Key Features Completed
+## 🎬 Bunny.net Video System
 
-### 1. Landing Page Redesign ✅
-- **File:** `D:\lms\frontend\app\page.tsx`
-- **Changes:**
-  - Removed: Reviews section, Companies trained section, Founder info
-  - Added: Hero with promo video, Featured courses grid, FAQ section, CTA
-  - Styling: Dark theme with Tailwind CSS
-  - Language: Arabic/English support
+### الإعدادات
+```env
+BUNNY_LIBRARY_ID=677094
+BUNNY_API_KEY=c53ca241-9fb8-49c7-971f9f50c103-d019-4bb3
+BUNNY_TOKEN_KEY=abb85efc-7fcf-4b52-a172-f41777f53bfa
+BUNNY_API_URL=https://video.bunnycdn.com
+```
 
-### 2. Instructor Profiles System ✅
-- **Files:**
-  - Backend: `D:\lms\backend\src\routes\instructors.js`
-  - Frontend Admin: `D:\lms\frontend\app\(dashboard)\dashboard\admin\instructors\page.tsx`
-  - Public: `D:\lms\frontend\app\about\page.tsx`
-  
-- **Features:**
-  - Admin can add/edit/delete instructor profiles
-  - Fields: Name (EN/AR), Title (EN/AR), Bio (EN/AR), Photo, Experience years, Trainees count, Rating, Specialties array, LinkedIn URL, YouTube URL
-  - Public page displays instructor cards with all info
-  - Courses automatically link to instructors
-  - `courses` table has `instructor_profile_id` foreign key
+### Security Settings (Bunny Dashboard)
+- ✅ **Enable direct play:** OFF
+- ✅ **Allowed domains:** `learn.knowlyticshub.com`
+- ✅ **Block direct url file access:** ON
+- ✅ **Embed view token authentication:** ON
 
-### 3. Public Pages Created ✅
-- **Pages:**
-  - `/companies` - Companies trained section
-  - `/reviews` - Student testimonials
-  - `/about` - Instructor profiles gallery
-  - `/contact` - Contact form (mock, no email backend yet)
+### Workflow رفع الفيديو
+```
+Admin → "🎬 رفع فيديو" → اختار الفيديو
+↓
+السيرفر يحفظه مؤقتاً
+↓
+يرفعه تلقائياً لـ Bunny.net
+↓
+يجيب المدة تلقائياً من Bunny API
+↓
+يحدّث duration_minutes في الدرس
+↓
+يحسب مجموع الكورس ويحدّث duration_hours
+↓
+يمسح الملف من السيرفر
+↓
+Badge "✅ Bunny — تغيير" يظهر
+```
 
-### 4. Theme System (Dark/Light/Mixed) ✅
-- **Files:** `D:\lms\frontend\app\globals.css`
-- **Implementation:**
-  - CSS variables approach (safe, no hydration issues)
-  - Variables defined in `:root`, `[data-theme="dark"]`, `[data-theme="light"]`
-  - Utility classes: `.pub-text`, `.pub-accent`, `.pub-bg`, etc.
-  - Theme toggle button in PublicNavbar
-  - localStorage persistence
-  
-- **Color Palettes:**
-  - Dark (default): Navy blue background with light text
-  - Light: White background with dark text
-  - Both include accent colors, borders, etc.
+### Signed URLs
+- كل رابط فيديو بينتهي بعد **4 ساعات**
+- Token = SHA256(TOKEN_KEY + video_id + expires)
+- مش ممكن حد يولّد رابط صح بدون الـ secret key
 
-### 5. Consultation Booking System ✅
-- **Files:**
-  - Backend: `D:\lms\backend\src\routes\consultations.js`
-  - Frontend: `D:\lms\frontend\components\ConsultationSection.tsx`
-  - Admin: `D:\lms\frontend\app\(dashboard)\dashboard\admin\consultations\page.tsx`
-  
-- **Database Tables:**
-  - `consultation_types` - Per-instructor consultation offerings
-  - `consultation_bookings` - Booking submissions
-  
-- **Features:**
-  - Each instructor can define multiple consultation types
-  - Types: "hourly" (per hour pricing) or "project" (flat rate)
-  - Booking form collects: name, email, phone, company, description, preferred date
-  - Admin dashboard: view all bookings, update status (pending → confirmed → completed)
-  - Student sees booking form on course detail pages
-  - Auto-hides if no consultations available for that instructor
-
-### 6. Community (Facebook-Style) ✅
-- **Files:**
-  - Backend: `D:\lms\backend\src\routes\community.js`
-  - Frontend: `D:\lms\frontend\app\community\page.tsx`
-  
-- **Database Tables:**
-  - `community_posts` - User posts (content, image_url, likes_count, comments_count, is_pinned)
-  - `community_comments` - Comments on posts
-  - `community_likes` - Like records
-  
-- **Features:**
-  - Create/read/delete posts (authenticated users only)
-  - Like/unlike posts
-  - Comment on posts
-  - Admin can pin posts to top
-  - Responsive design
-  - Dark theme with blue accents
-  - Multilingual (AR/EN)
-
-### 7. Mobile Responsiveness ✅
-- **Dashboard:**
-  - Sidebar hidden on mobile (< lg)
-  - Hamburger menu to open
-  - Overlay to close
-  - Click any link to close sidebar
-  
-- **Public Pages:**
-  - Navbar responsive (mobile-friendly)
-  - All sections stack on mobile
-  - Touch-friendly buttons and inputs
-
-### 8. Free Course Enrollment ✅
-- **Feature:**
-  - Courses with price = 0 show green "Enroll for Free" button
-  - Clicking directly enrolls student (no payment page)
-  - `handleEnrollFree()` function in course detail page
-  - Updates `enrolled` state immediately
-  - Paid courses still go to `/courses/[id]/buy` page
+### طبقات الحماية
+| الطبقة | التفاصيل |
+|---|---|
+| Enrollment check | مش enrolled = مش هيوصل |
+| Signed URL | رابط مؤقت ينتهي كل 4 ساعات |
+| Token SHA256 | مستحيل التزوير |
+| Domain restriction | يشتغل على learn.knowlyticshub.com بس |
+| Block direct URL | مش ممكن فتح الفيديو مباشرة |
+| Watermark | اسم/إيميل الطالب على الفيديو |
 
 ---
 
@@ -261,98 +182,77 @@ id | email | password_hash | name | role | avatar_url | created_at | updated_at
 
 #### `courses`
 ```sql
-id | title | description | type (live/online) | price | level | 
-thumbnail_url | promo_video_url | instructor_profile_id | created_at
+id | title | description | type (live/online) | price | level |
+thumbnail_url | promo_video_url | instructor_profile_id | duration_hours | created_at
+```
+
+#### `lessons`
+```sql
+id | section_id | title | type | video_key | video_url |
+bunny_video_id | bunny_embed_url | duration_minutes |
+order_index | is_preview | content | created_at
 ```
 
 #### `instructors`
 ```sql
-id | name | name_ar | title | title_ar | bio | bio_ar | photo_url | 
-experience_years | trainees_count | rating | specialties (array) | 
+id | name | name_ar | title | title_ar | bio | bio_ar | photo_url |
+experience_years | trainees_count | rating | specialties (array) |
 linkedin_url | youtube_url | is_active | created_at
 ```
 
 #### `consultation_types`
 ```sql
-id | instructor_id | name | name_ar | type (hourly/project) | 
+id | instructor_id | name | name_ar | type (hourly/project) |
 price | duration_minutes | description | description_ar | is_active | created_at
 ```
 
 #### `consultation_bookings`
 ```sql
-id | consultation_type_id | instructor_id | user_id | name | email | 
-phone | company | description | status | preferred_date | notes | 
+id | consultation_type_id | instructor_id | user_id | name | email |
+phone | company | description | status | preferred_date | notes |
 created_at | updated_at
 ```
 
 #### `community_posts`
 ```sql
-id | user_id | content | image_url | likes_count | comments_count | 
+id | user_id | content | image_url | likes_count | comments_count |
 is_pinned | created_at | updated_at
-```
-
-#### `community_comments`
-```sql
-id | post_id | user_id | content | created_at
-```
-
-#### `community_likes`
-```sql
-post_id | user_id | created_at
 ```
 
 ---
 
 ## 🚀 API Endpoints
 
-### Public Endpoints
-
-#### Instructors
+### Files / Upload
 ```
-GET  /api/instructors                          # List all instructors
-GET  /api/instructors/:id                      # Get single instructor + courses
-```
-
-#### Consultations
-```
-GET  /api/consultations/instructor/:id/types   # List consultation types
-POST /api/consultations/book                   # Submit booking (no auth required)
+POST /api/files/upload              # رفع ملف (PDF/Excel/صورة) — يحفظ في course_files
+                                    # إضافة image_only=true للصور بدون حفظ في course_files
+POST /api/files/upload-video        # رفع فيديو → Bunny تلقائياً → حذف محلي
+POST /api/files/upload-to-bunny     # رفع فيديو موجود محلياً إلى Bunny (legacy)
+GET  /api/files/stream/*            # Stream فيديو محلي (auth required)
 ```
 
-#### Community
+### Courses
 ```
-GET  /api/community/posts                      # Get posts feed (auth required)
-POST /api/community/posts                      # Create post (auth required)
-POST /api/community/posts/:id/like             # Like post (auth required)
-GET  /api/community/posts/:id/comments         # Get comments (auth required)
-POST /api/community/posts/:id/comments         # Add comment (auth required)
-```
-
-### Admin Endpoints
-
-#### Instructors
-```
-GET    /api/instructors                        # List all
-POST   /api/instructors                        # Create
-PUT    /api/instructors/:id                    # Update
-DELETE /api/instructors/:id                    # Delete
+GET    /api/courses                 # List all courses
+GET    /api/courses/:id             # Get course + sections + lessons
+PUT    /api/courses/:id             # Update course (admin)
+POST   /api/courses                 # Create course (admin)
+DELETE /api/courses/:id             # Delete course (admin)
 ```
 
-#### Consultations
+### Enrollments
 ```
-GET    /api/consultations/types                # List all types
-POST   /api/consultations/types                # Create type
-PUT    /api/consultations/types/:id            # Update type
-DELETE /api/consultations/types/:id            # Delete type
-GET    /api/consultations/bookings             # View all bookings
-PUT    /api/consultations/bookings/:id         # Update booking status
+POST /api/enrollments               # تسجيل في كورس
+                                    # Student: مجاني فقط (price=0)
+                                    # Admin: يقدر يسجّل في أي كورس
+GET  /api/enrollments/my            # كورساتي
 ```
 
-#### Community
+### Lessons
 ```
-PUT    /api/community/posts/:id/pin            # Pin/unpin post (admin only)
-DELETE /api/community/posts/:id                # Delete post (owner/admin)
-DELETE /api/community/posts/:id/comments/:id   # Delete comment (owner/admin)
+GET /api/lessons/:id                # الدرس + videoUrl (Bunny Signed URL)
+PUT /api/lessons/:id                # تعديل الدرس
 ```
 
 ---
@@ -360,33 +260,31 @@ DELETE /api/community/posts/:id/comments/:id   # Delete comment (owner/admin)
 ## 🔐 Authentication & Authorization
 
 ### Auth Flow
-1. User registers → password hashed with bcrypt
-2. User logs in → JWT token issued (stored in localStorage)
+1. User registers → password hashed with bcryptjs
+2. User logs in → JWT token issued → stored in cookie `kh_token`
 3. Token sent with every request (Authorization header)
 4. Token validated by `authenticate` middleware
 5. Role-based access via `authorize('admin')` middleware
 
 ### Roles
 - **student** - Default user role
-- **admin** - Can manage courses, users, instructors, consultations, community moderation
+- **admin** - Full access
 
 ### Rate Limiting
-- **Login:** 20 attempts per 15 minutes per IP
+- **Global:** 500 requests per 15 minutes per IP
+- **Login:** 100 attempts per 15 minutes per IP
 - **Registration:** 5 attempts per hour per IP
 - **Forgot Password:** 3 attempts per 15 minutes per IP
+- **Trust Proxy:** enabled (لـ Nginx)
 
 ---
 
 ## 🎨 Theme Configuration
 
-### CSS Variables Location
-**File:** `D:\lms\frontend\app\globals.css` (lines 132-175)
-
 ### Dark Theme (Default)
 ```css
 --pub-page-bg: #0a1628;
 --pub-nav-bg: #0b1426;
---pub-hero-bg: #0f1d32;
 --pub-section: #111d33;
 --pub-card-bg: #162038;
 --pub-text: #ffffff;
@@ -403,186 +301,205 @@ DELETE /api/community/posts/:id/comments/:id   # Delete comment (owner/admin)
 --pub-accent: #2563eb;
 ```
 
-### How to Change Theme
-1. **Frontend (Public pages):**
-   - Click Sun/Moon icon in PublicNavbar
-   - Toggles `data-theme` attribute on document
-   - CSS variables automatically update
-   - localStorage persists choice
-
-2. **Admin Dashboard:**
-   - Still dark theme only (can be enhanced)
-   - ThemeSwitcher in Sidebar changes global theme
-
 ---
 
 ## 📱 Responsive Breakpoints (Tailwind)
 
 ```
-sm:  640px
-md:  768px
-lg:  1024px
-xl:  1280px
-2xl: 1536px
+sm: 640px | md: 768px | lg: 1024px | xl: 1280px | 2xl: 1536px
 ```
-
-**Mobile-first approach:** Base styles are mobile, then override with `md:`, `lg:`, etc.
 
 ---
 
 ## 🌍 Internationalization (i18n)
 
-### Supported Languages
-- **Arabic** (ar) - RTL
-- **English** (en) - LTR
-
-### Implementation
-- **Hook:** `useLanguage()` from `@/hooks/useLanguage.ts`
-- **localStorage:** Persists user language choice
-- **Database:** Some fields have `_ar` suffix (name_ar, bio_ar, etc.)
-
-### Usage in Components
-```tsx
-const { t, isAr, dir, locale } = useLanguage();
-
-return (
-  <div dir={dir}>
-    <h1>{isAr ? 'مرحبا' : 'Hello'}</h1>
-  </div>
-);
-```
+- **Arabic** (ar) - RTL | **English** (en) - LTR
+- Hook: `useLanguage()` from `@/hooks/useLanguage.ts`
+- localStorage persistence
 
 ---
 
-## 📊 Admin Pages Available
+## 📊 Admin Pages
 
 - **Dashboard** - Stats overview
-- **Courses** - CRUD courses
-- **Users** - Manage user accounts
-- **Instructors** - NEW: Manage instructor profiles
-- **Consultations** - NEW: Manage consultation types & bookings
-- **Payments** - View payment records
-- **Coupons** - Create discount codes
+- **Courses** - CRUD + Bunny video upload
+- **Users** - Manage accounts
+- **Instructors** - Manage instructor profiles + photo upload
+- **Consultations** - Types & bookings
+- **Payments** - Payment records
+- **Coupons** - Discount codes
 - **Bundles** - Package courses
-- **Analytics** - Charts and metrics
+- **Analytics** - Charts
 - **Newsletter** - Email campaigns
 - **Categories** - Course categories
 - **Subscriptions** - Monthly plans
-- **Referrals** - Affiliate tracking
-- **Teams** - Corporate training groups
-- **Settings** - Platform config
 
 ---
 
 ## 🚦 Deployment
 
 ### Server Details
-- **IP:** 209.38.230.90
-- **Port:** 3000 (backend), 3001 (frontend)
-- **Domain:** learn.knowlyticshub.com
-- **Process Manager:** PM2
-
-### Deployment Steps
-```bash
-# SSH into server
-ssh -i ~/.ssh/id_rsa root@209.38.230.90
-
-# Pull latest code
-cd /root/knowlytics-hub
-git pull
-
-# Rebuild frontend
-cd frontend
-npm run build
-
-# Restart services
-pm2 restart backend frontend
+```
+IP:     209.38.230.90
+Ports:  3000 (frontend), 5000 (backend)
+Domain: learn.knowlyticshub.com
+PM2:    backend + frontend processes
+Nginx:  Reverse proxy with SSL
 ```
 
-### Build Output
-- Frontend: Next.js static + dynamic pages (~42 routes)
-- Bundle size: ~88.4 KB shared JS + route-specific chunks
+### ⚠️ Deploy Steps (المهم)
+```bash
+# SSH
+ssh root@209.38.230.90
+
+# Pull code
+cd /root/knowlytics-hub && git pull
+
+# Restart backend only
+pm2 restart backend
+
+# Full deploy (frontend changed)
+pm2 stop frontend
+cd frontend && npm run build > /tmp/build.log 2>&1
+pm2 start frontend
+
+# ⚠️ لا تعمل pm2 restart frontend قبل ما الـ build يخلص!
+# الـ build بياخد ~3 دقائق
+```
+
+### Nginx Config Location
+```
+/etc/nginx/sites-enabled/knowlytics
+```
 
 ---
 
 ## ⚙️ Environment Variables
 
-### Frontend (`.env.production`)
+### Frontend (`/root/knowlytics-hub/frontend/.env.production`)
 ```
-NEXT_PUBLIC_API_URL=https://api.knowlyticshub.com
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=https://api.knowlyticshub.com/api
+NEXT_PUBLIC_APP_NAME=Knowlytics Hub
 ```
 
-### Backend (`.env`)
+### Backend (`/root/knowlytics-hub/backend/.env`)
 ```
-DB_HOST=aws-1-eu-central-1.pooler.supabase.com
-DB_PORT=6543
-DB_USER=postgres.dyeocjpcgdvqfizxlrma
-DB_PASSWORD=***
-DB_NAME=postgres
-JWT_SECRET=***
 NODE_ENV=production
+PORT=5000
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+JWT_EXPIRES_IN=7d
+BUNNY_LIBRARY_ID=677094
+BUNNY_API_KEY=...
+BUNNY_TOKEN_KEY=...
+BUNNY_API_URL=https://video.bunnycdn.com
 ```
 
 ---
 
-## 📝 Common Tasks
+## 🖼️ Images Upload
 
-### Add New Instructor
-1. Go to Admin → Instructors
-2. Click "Add Instructor"
-3. Fill: Name (EN/AR), Title, Bio, Photo URL, Stats
-4. Save
-5. Appears in `/about` page automatically
+### Thumbnail الكورس
+- **أبعاد:** 1280×720 px (نسبة 16:9)
+- **Format:** JPG أو WebP
+- **حجم:** أقل من 500KB
+- **الرفع:** Admin → الكورس → الإعدادات → رفع
+- ⚠️ لا تستخدم Google Drive links — استخدم الرفع المباشر
 
-### Create Consultation Type
-1. Go to Admin → Consultations → Types
-2. Select Instructor
-3. Choose Type (Hourly/Project)
-4. Set Price
-5. Save
-6. Appears on that instructor's course pages
+### صورة المدرب
+- **أبعاد:** 400×400 px على الأقل
+- **Format:** JPG (مش PNG بخلفية شفافة)
+- **الرفع:** Admin → Instructors → رفع
 
-### Moderate Community
-1. Go to Community page (as admin)
-2. Pin important posts (admin icon on post)
-3. Delete inappropriate posts (trash icon)
-4. Delete comments if needed
-
-### Change Theme
-1. Click Sun/Moon in top navbar
-2. Dark/Light mode toggles
-3. Choice saved to localStorage
-4. Persists across sessions
+### ملاحظة مهمة
+رفع الصور بيستخدم `image_only=true` flag → مش بيتحفظ في `course_files` → مش بيظهر للطالب كـ material
 
 ---
 
-## 🐛 Known Issues & Limitations
+## 🔧 Common Tasks
 
-1. **Payment System** - Stripe integration not yet implemented
-2. **Email Notifications** - Contact form doesn't send emails (mock only)
-3. **Image Upload** - Uses external URLs only, no file upload yet
-4. **Search** - No full-text search on courses/instructors
-5. **Notifications** - No real-time notifications
-6. **Mobile** - Some admin pages not fully optimized for mobile
+### Reset Admin Password
+```bash
+ssh root@209.38.230.90
+cat > /root/knowlytics-hub/backend/resetpw.js << 'EOF'
+require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const { Pool } = require('pg');
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+(async () => {
+  const hash = await bcrypt.hash('NEW_PASSWORD_HERE', 12);
+  const res = await pool.query(
+    'UPDATE users SET password_hash = $1 WHERE email = $2 RETURNING email',
+    [hash, 'admin@knowlyticshub.com']
+  );
+  console.log('Done:', res.rows[0].email);
+  await pool.end();
+})();
+EOF
+cd /root/knowlytics-hub/backend && node resetpw.js && rm resetpw.js
+```
+
+### Clear Rate Limit
+```bash
+pm2 restart backend
+```
+
+### Check Logs
+```bash
+pm2 logs backend --lines 50
+pm2 logs frontend --lines 20
+```
+
+---
+
+## 🐛 Known Issues & Fixes
+
+| المشكلة | السبب | الحل |
+|---|---|---|
+| Too many requests | Rate Limit وصل الحد | `pm2 restart backend` |
+| Application error | Build قديم في cache | `Ctrl+Shift+R` |
+| فشل الحفظ | Rate Limit 429 | `pm2 restart backend` |
+| صورة مكسورة | Google Drive link | ارفع الصورة مباشرة |
+
+---
+
+## 📜 Session Changes - June 4-5, 2026
+
+### Bug Fixes
+1. ✅ **Free Course Enrollment** — الطالب يقدر يسجل في الكورسات المجانية بنفسه
+2. ✅ **Course Save** — إضافة thumbnail_url وpromo_video_url في حفظ الكورس
+3. ✅ **Static Images** — تصحيح مسار `/uploads` في production
+4. ✅ **Thumbnails Display** — ظهور الصور في cards الكورسات والـ Student Dashboard
+5. ✅ **No Lessons Button** — رسالة "لا توجد دروس بعد" بدل إخفاء الزرار
+6. ✅ **Rate Limit** — رفع الحد من 100 إلى 500 + trust proxy
+7. ✅ **Image in Materials** — صور الـ thumbnail مش بتظهر كـ course materials
+8. ✅ **CloudUpload Icon** — استبدال بـ Upload (غير موجود في lucide version)
+9. ✅ **Bunny GUID** — استخدام guid بدل videoId في Bunny API
+
+### New Features
+1. ✅ **Instructor Photo Upload** — رفع صور المدربين من Admin Dashboard
+2. ✅ **Course Thumbnail Upload** — رفع صور الكورسات مباشرة
+3. ✅ **Bunny.net Integration** — رفع فيديوهات محمية على CDN
+4. ✅ **Signed Video URLs** — روابط فيديو مؤقتة (4 ساعات)
+5. ✅ **Auto Video Duration** — حساب مدة الفيديو تلقائياً من Bunny
+6. ✅ **Auto Course Duration** — حساب مدة الكورس تلقائياً من مجموع الدروس
+7. ✅ **One-Click Bunny Upload** — خطوة واحدة بدل اتنين
 
 ---
 
 ## 🔮 Future Enhancements
 
-- [ ] Stripe/Payment Gateway integration
-- [ ] Live video sessions (Zoom/Jitsi integration)
+- [ ] Stripe / Payment Gateway
+- [ ] Live video sessions (Zoom/Jitsi)
 - [ ] AI-powered course recommendations
 - [ ] Two-factor authentication (2FA)
-- [ ] Advanced analytics dashboard
-- [ ] Course templates
-- [ ] Bulk user import
-- [ ] API documentation (Swagger)
-- [ ] Mobile app (React Native)
-- [ ] Video CDN optimization (Cloudinary)
+- [ ] Course completion certificates (PDF)
 - [ ] Search with filters
 - [ ] Real-time notifications
-- [ ] Course completion certificates (PDF generation)
+- [ ] Mobile app (React Native)
+- [ ] Email notifications (SMTP)
+- [ ] Bulk user import
+- [ ] API documentation (Swagger)
 
 ---
 
@@ -592,47 +509,10 @@ NODE_ENV=production
 - **Live Site:** https://learn.knowlyticshub.com
 - **Main Website:** https://knowlyticshub.com
 - **WhatsApp:** +20 122 692 9392
+- **Admin Email:** admin@knowlyticshub.com
 
 ---
 
-## 📜 Last Updated Changes (Session June 4, 2026)
-
-### New Features Added
-1. ✅ Consultation Booking System
-   - `consultation_types` table (per-instructor, hourly/project pricing)
-   - `consultation_bookings` table
-   - Admin management page
-   - Frontend booking form on course pages
-
-2. ✅ Community (Facebook-style)
-   - `community_posts`, `community_comments`, `community_likes` tables
-   - Full CRUD operations
-   - Like/comment functionality
-   - Admin moderation (pin/delete)
-
-3. ✅ Theme System Enhancement
-   - CSS variables approach (safer than hooks)
-   - Dark/Light mode toggle working properly
-   - Utility classes for consistent styling
-
-4. ✅ Free Course Enrollment
-   - Direct enrollment button for price=0 courses
-   - Green "Enroll for Free" button
-   - Bypasses payment page
-
-5. ✅ Mobile Dashboard
-   - Sidebar hidden on mobile
-   - Hamburger menu implementation
-   - Touch-friendly navigation
-
-### Bug Fixes
-- Fixed light mode text visibility (was white text on white background)
-- Fixed rate limiting (increased from 5 to 20 login attempts)
-- Fixed company logo display (filename space issues)
-- Fixed free course enrollment (was showing WhatsApp link instead)
-
----
-
-**Generated by:** Claude Opus 4.6  
+**Generated by:** Claude Sonnet 4.6  
 **For:** Knowlytics Hub LMS Platform  
 **Confidentiality:** Internal Use Only
