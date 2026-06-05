@@ -49,9 +49,10 @@ const getLesson = async (req, res, next) => {
 
     // Build video URL — Bunny > external link > S3 signed URL > local stream
     let videoUrl = null;
-    if (lesson.bunny_embed_url) {
-      // Bunny.net hosted video (most secure + fastest CDN)
-      videoUrl = lesson.bunny_embed_url;
+    if (lesson.bunny_video_id) {
+      // Bunny.net hosted video — generate fresh signed URL (expires in 4h)
+      const bunnyService = require('../services/bunnyService');
+      videoUrl = bunnyService.getSignedEmbedUrl(lesson.bunny_video_id, 14400);
     } else if (lesson.video_url) {
       // External URL (Google Drive, YouTube, Vimeo, etc.) — use as-is
       videoUrl = lesson.video_url;

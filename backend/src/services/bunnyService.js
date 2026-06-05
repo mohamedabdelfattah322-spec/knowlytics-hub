@@ -1,9 +1,11 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const BUNNY_LIBRARY_ID = process.env.BUNNY_LIBRARY_ID;
 const BUNNY_API_KEY = process.env.BUNNY_API_KEY;
+const BUNNY_TOKEN_KEY = process.env.BUNNY_TOKEN_KEY;
 const BUNNY_API_URL = process.env.BUNNY_API_URL || 'https://video.bunnycdn.com';
 
 const bunnyClient = axios.create({
@@ -43,13 +45,9 @@ const uploadVideoToBunny = async (filePath, title) => {
       },
     });
 
-    console.log(`[Bunny] Uploaded video: ${videoTitle} (ID: ${videoId}, Size: ${fileSize} bytes)`);
+    console.log(`[Bunny] Uploaded: ${videoTitle} (ID: ${videoId}, Size: ${fileSize} bytes)`);
 
-    return {
-      videoId,
-      guid,
-      title: createRes.data.title,
-    };
+    return { videoId, guid, title: createRes.data.title };
   } catch (err) {
     console.error('[Bunny Upload Error]', err.response?.data || err.message);
     throw new Error(`Failed to upload to Bunny: ${err.message}`);
@@ -57,7 +55,28 @@ const uploadVideoToBunny = async (filePath, title) => {
 };
 
 /**
- * Get Bunny video embed URL
+ * Generate a signed embed URL (expires in 4 hours)
+ * Token = SHA256(TOKEN_KEY + VIDEO_ID + EXPIRES)
+ */
+const getSignedEmbedUrl = (videoId, expiresInSeconds = 14400) => {
+  const expires = Math.floor(Date.now() / 1000) + expiresInSeconds;
+
+  if (!BUNNY_TOKEN_KEY) {
+    // No token key — return unsigned URL
+    return `https://iframe.mediadelivery.net/embed/${BUNNY_LIBRARY_ID}/${videoId}?autoplay=false`;
+  }
+
+  // Bunny token = SHA256(token_key + video_id + expires)
+  const hash = crypto
+    .createHash('sha256')
+    .update(BUNNY_TOKEN_KEY + videoId + expires)
+    .digest('hex');
+
+  return `https://iframe.mediadelivery.net/embed/${BUNNY_LIBRARY_ID}/${videoId}?token=${hash}&expires=${expires}&autoplay=false`;
+};
+
+/**
+ * Get static embed URL (no token — used when storing in DB)
  */
 const getEmbedUrl = (videoId) => {
   return `https://iframe.mediadelivery.net/embed/${BUNNY_LIBRARY_ID}/${videoId}`;
@@ -78,5 +97,6 @@ const deleteVideoFromBunny = async (videoId) => {
 module.exports = {
   uploadVideoToBunny,
   getEmbedUrl,
+  getSignedEmbedUrl,
   deleteVideoFromBunny,
 };
