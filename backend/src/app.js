@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const jwt = require('jsonwebtoken');
 const path = require('path');
 
 const errorHandler = require('./middleware/errorHandler');
@@ -86,10 +87,21 @@ app.set('trust proxy', 1);
 
 app.use(rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
-  max: parseInt(process.env.RATE_LIMIT_MAX || '500'),
+  max: parseInt(process.env.RATE_LIMIT_MAX || '2000'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },
+  skip: (req) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth || !auth.startsWith('Bearer ')) return false;
+      const token = auth.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      return decoded.role === 'admin';
+    } catch {
+      return false;
+    }
+  },
 }));
 
 // ─── Local uploads static serving ─────────────────────────
