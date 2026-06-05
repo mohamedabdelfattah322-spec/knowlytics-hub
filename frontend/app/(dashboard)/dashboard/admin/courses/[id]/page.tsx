@@ -7,7 +7,7 @@ import {
   Save, Loader2, Upload, ChevronDown, ChevronUp,
   Lock, Unlock, ClipboardList, CheckCircle, DollarSign,
   Eye, Image as ImageIcon, Paperclip, X, Users, UserPlus,
-  Search, BadgeCheck, Ban, ArrowUp, ArrowDown, CloudUpload,
+  Search, BadgeCheck, Ban, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -648,7 +648,7 @@ export default function AdminCourseEditorPage() {
                                     disabled={uploadingToBunny[lesson.id]}
                                     title="رفع الفيديو إلى Bunny.net"
                                     className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-orange-500/40 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-all disabled:opacity-50">
-                                    {uploadingToBunny[lesson.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <CloudUpload className="w-3 h-3" />}
+                                    {uploadingToBunny[lesson.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
                                     رفع Bunny
                                   </button>
                                 )}
