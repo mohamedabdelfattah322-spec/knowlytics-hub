@@ -7,8 +7,8 @@ const { createSession, revokeSession } = require('../middleware/sessionGuard');
 const emailService = require('../services/emailService');
 const { createNotification } = require('./notificationController');
 
-const signToken = (userId) =>
-  jwt.sign({ sub: userId }, process.env.JWT_SECRET, {
+const signToken = (userId, role = 'student') =>
+  jwt.sign({ sub: userId, role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
 
@@ -41,7 +41,7 @@ const register = async (req, res, next) => {
     );
 
     const user = result.rows[0];
-    const token = signToken(user.id);
+    const token = signToken(user.id, user.role);
     const deviceId = req.headers['x-device-id'] || uuidv4();
 
     await createSession(user.id, token, deviceId, req.ip);
@@ -87,7 +87,7 @@ const login = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = signToken(user.id);
+    const token = signToken(user.id, user.role);
     const deviceId = req.headers['x-device-id'] || uuidv4();
     const currentIp = req.ip || req.connection?.remoteAddress || 'unknown';
     const userAgent = req.headers['user-agent'] || 'Unknown device';
