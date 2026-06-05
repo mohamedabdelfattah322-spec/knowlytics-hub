@@ -80,9 +80,22 @@ const uploadFile = async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'لم يتم إرسال ملف' });
 
-    const { course_id, lesson_id, title } = req.body;
+    const { course_id, lesson_id, title, image_only } = req.body;
     const file = req.file;
     const fileKey = getFileKey(file);
+
+    // Build public URL for the uploaded file
+    const baseHost = (process.env.BACKEND_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+    const publicUrl = `${baseHost}/uploads/${fileKey}`;
+
+    // If image_only flag is set (thumbnail, instructor photo, etc.)
+    // → just return the URL without saving to course_files
+    if (image_only === 'true' || image_only === true) {
+      return res.status(201).json({
+        file: { file_key: fileKey, public_url: publicUrl },
+        storage: USE_S3 ? 's3' : 'local',
+      });
+    }
 
     const result = await query(
       `INSERT INTO course_files (course_id, lesson_id, name, file_key, file_type, file_size)

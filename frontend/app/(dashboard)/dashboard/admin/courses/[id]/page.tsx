@@ -1044,14 +1044,13 @@ export default function AdminCourseEditorPage() {
                       if (!f) return;
                       const fd = new FormData();
                       fd.append('file', f);
-                      fd.append('course_id', course.id);
+                      fd.append('image_only', 'true');
                       fd.append('title', f.name);
                       try {
                         const { data } = await api.post('/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-                        // Build a public URL: /uploads/<file_key>  (Express serves uploads/ statically)
                         const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
                         const baseHost = apiBase.replace(/\/api\/?$/, '');
-                        const url = `${baseHost}/uploads/${data.file.file_key}`;
+                        const url = data.file.public_url || `${baseHost}/uploads/${data.file.file_key}`;
                         setCourse({ ...course, thumbnail_url: url });
                         toast.success('✅ تم رفع الصورة');
                       } catch (err: any) {

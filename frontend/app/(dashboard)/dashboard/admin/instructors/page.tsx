@@ -129,12 +129,13 @@ export default function AdminInstructorsPage() {
                         if (!f) return;
                         const fd = new FormData();
                         fd.append('file', f);
+                        fd.append('image_only', 'true');
                         fd.append('title', f.name);
                         try {
                           const { data } = await api.post('/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
                           const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
                           const baseHost = apiBase.replace(/\/api\/?$/, '');
-                          const url = `${baseHost}/uploads/${data.file.file_key}`;
+                          const url = data.file.public_url || `${baseHost}/uploads/${data.file.file_key}`;
                           setEditing({ ...editing, photo_url: url });
                           toast.success('✅ تم رفع الصورة');
                         } catch (err: any) {
