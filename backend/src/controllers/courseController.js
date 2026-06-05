@@ -81,6 +81,8 @@ const getCourse = async (req, res, next) => {
                     'id', l.id, 'title', l.title, 'type', l.type,
                     'video_key', l.video_key,
                     'video_url', l.video_url,
+                    'bunny_video_id', l.bunny_video_id,
+                    'bunny_embed_url', l.bunny_embed_url,
                     'duration_minutes', l.duration_minutes, 'order_index', l.order_index,
                     'is_preview', l.is_preview
                   ) ORDER BY l.order_index
