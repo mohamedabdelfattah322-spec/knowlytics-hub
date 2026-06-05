@@ -31,23 +31,26 @@ const uploadVideoToBunny = async (filePath, title) => {
       title: videoTitle,
     });
 
-    const videoId = createRes.data.videoId;
+    // Bunny returns 'guid' as the video ID (not 'videoId')
     const guid = createRes.data.guid;
+    const videoId = guid;
+
+    console.log('[Bunny] Created video entry:', JSON.stringify(createRes.data));
 
     // Step 2: Upload the actual video file
     const fileBuffer = fs.readFileSync(filePath);
     const fileSize = fileBuffer.length;
 
-    await bunnyClient.put(`/videos/${videoId}`, fileBuffer, {
+    await bunnyClient.put(`/videos/${guid}`, fileBuffer, {
       headers: {
         'Content-Type': 'application/octet-stream',
         'Content-Length': fileSize,
       },
     });
 
-    console.log(`[Bunny] Uploaded: ${videoTitle} (ID: ${videoId}, Size: ${fileSize} bytes)`);
+    console.log(`[Bunny] Uploaded: ${videoTitle} (GUID: ${guid}, Size: ${fileSize} bytes)`);
 
-    return { videoId, guid, title: createRes.data.title };
+    return { videoId: guid, guid, title: createRes.data.title };
   } catch (err) {
     console.error('[Bunny Upload Error]', err.response?.data || err.message);
     throw new Error(`Failed to upload to Bunny: ${err.message}`);
