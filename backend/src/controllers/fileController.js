@@ -126,6 +126,51 @@ const uploadVideoToLesson = async (req, res, next) => {
   }
 };
 
+// ─── POST /api/files/upload-to-bunny ────────────────────
+// Upload a local video file to Bunny.net and link it to lesson
+const uploadVideoToBunny = async (req, res, next) => {
+  try {
+    const { lesson_id } = req.body;
+    if (!lesson_id) return res.status(400).json({ error: 'lesson_id مطلوب' });
+
+    // Get the lesson to find its current video
+    const lessonRes = await query('SELECT id, title, video_key FROM lessons WHERE id = $1', [lesson_id]);
+    if (!lessonRes.rows.length) return res.status(404).json({ error: 'الدرس غير موجود' });
+
+    const lesson = lessonRes.rows[0];
+    if (!lesson.video_key) return res.status(400).json({ error: 'لا يوجد فيديو محفوظ للدرس' });
+
+    // Get the local file path
+    const UPLOAD_DIR = path.join(__dirname, '../../uploads');
+    const filePath = path.join(UPLOAD_DIR, lesson.video_key);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'الملف المحلي غير موجود' });
+    }
+
+    // Upload to Bunny
+    const bunnyService = require('../services/bunnyService');
+    const bunnyData = await bunnyService.uploadVideoToBunny(filePath, lesson.title);
+    const embedUrl = bunnyService.getEmbedUrl(bunnyData.videoId);
+
+    // Update lesson with Bunny info
+    const updateRes = await query(
+      `UPDATE lessons SET bunny_video_id = $1, bunny_embed_url = $2, updated_at = NOW()
+       WHERE id = $3 RETURNING id, bunny_video_id, bunny_embed_url`,
+      [bunnyData.videoId, embedUrl, lesson_id]
+    );
+
+    res.json({
+      lesson: updateRes.rows[0],
+      bunny: bunnyData,
+      message: '✅ تم رفع الفيديو إلى Bunny بنجاح'
+    });
+  } catch (err) {
+    console.error('[Bunny Upload Error]', err);
+    next(err);
+  }
+};
+
 // ─── GET /api/files/:id/download ─────────────────────────
 const downloadFile = async (req, res, next) => {
   try {
@@ -240,4 +285,4 @@ const deleteFile = async (req, res, next) => {
   }
 };
 
-module.exports = { upload, uploadFile, uploadVideoToLesson, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };
+module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };

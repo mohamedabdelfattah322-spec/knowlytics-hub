@@ -2,7 +2,7 @@ const router = require('express').Router();
 const path = require('path');
 const { authenticate, authorize } = require('../middleware/auth');
 const {
-  upload, uploadFile, uploadVideoToLesson,
+  upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny,
   downloadFile, streamVideo, listCourseFiles, deleteFile,
 } = require('../controllers/fileController');
 
@@ -11,6 +11,9 @@ router.post('/upload', authenticate, authorize('admin'), upload.single('file'), 
 
 // Upload a video and directly link it to a lesson
 router.post('/upload-video', authenticate, authorize('admin'), upload.single('file'), uploadVideoToLesson);
+
+// Upload local video to Bunny.net
+router.post('/upload-to-bunny', authenticate, authorize('admin'), uploadVideoToBunny);
 
 // Stream local video with HTTP Range support
 router.get('/stream/*', authenticate, streamVideo);
