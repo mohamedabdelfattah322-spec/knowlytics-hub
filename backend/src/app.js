@@ -92,12 +92,14 @@ app.use(rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },
   skip: (req) => {
+    // Skip rate limiting for any authenticated user (valid JWT token)
+    // Unauthenticated requests are still rate-limited to prevent abuse
     try {
       const auth = req.headers.authorization;
       if (!auth || !auth.startsWith('Bearer ')) return false;
       const token = auth.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      return decoded.role === 'admin';
+      jwt.verify(token, process.env.JWT_SECRET);
+      return true;
     } catch {
       return false;
     }

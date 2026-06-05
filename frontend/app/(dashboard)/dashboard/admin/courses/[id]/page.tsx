@@ -56,6 +56,9 @@ export default function AdminCourseEditorPage() {
   const [instructorsList, setInstructorsList] = useState<{id: string; name: string}[]>([]);
   const [loading, setLoading]     = useState(true);
 
+  // Track whether assignments have been loaded (avoid re-fetching on every sections update)
+  const assignmentsLoadedRef = useRef(false);
+
   // New-section form
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [addingSection, setAddingSection]     = useState(false);
@@ -121,10 +124,12 @@ export default function AdminCourseEditorPage() {
     return () => clearTimeout(t);
   }, [studentSearch]);
 
-  // Load assignments whenever sections change
+  // Load assignments ONCE after sections are first fetched (not on every sections state update)
   useEffect(() => {
+    if (assignmentsLoadedRef.current) return;
     const lessonIds = sections.flatMap((s) => (s.lessons ?? []).map((l) => l.id));
     if (!lessonIds.length) return;
+    assignmentsLoadedRef.current = true;
     Promise.all(lessonIds.map((lid) => api.get(`/assignments/lesson/${lid}`)))
       .then((results) => {
         const all = results.flatMap((r) => r.data);
