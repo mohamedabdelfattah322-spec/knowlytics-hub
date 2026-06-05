@@ -7,7 +7,7 @@ import {
   Save, Loader2, Upload, ChevronDown, ChevronUp,
   Lock, Unlock, ClipboardList, CheckCircle, DollarSign,
   Eye, Image as ImageIcon, Paperclip, X, Users, UserPlus,
-  Search, BadgeCheck, Ban, ArrowUp, ArrowDown,
+  Search, BadgeCheck, Ban, ArrowUp, ArrowDown, CloudUpload,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -19,6 +19,7 @@ interface Lesson {
   id: string; title: string; type: string;
   duration_minutes: number; order_index: number;
   is_preview: boolean; video_key: string | null; video_url: string | null;
+  bunny_video_id?: string | null; bunny_embed_url?: string | null;
 }
 interface Section { id: string; title: string; description: string | null; order_index: number; lessons: Lesson[]; }
 interface Course {
@@ -64,6 +65,7 @@ export default function AdminCourseEditorPage() {
 
   // Upload state per lesson
   const [uploadingVideo, setUploadingVideo] = useState<Record<string, boolean>>({});
+  const [uploadingToBunny, setUploadingToBunny] = useState<Record<string, boolean>>({});
   const [uploadingFile, setUploadingFile]   = useState(false);
 
   // Assignment form per lesson
@@ -336,6 +338,29 @@ export default function AdminCourseEditorPage() {
     e.target.value = '';
   };
 
+  /* ── Upload video to Bunny.net ── */
+  const uploadVideoToBunny = async (lessonId: string) => {
+    setUploadingToBunny((p) => ({ ...p, [lessonId]: true }));
+    try {
+      const res = await api.post('/files/upload-to-bunny', { lesson_id: lessonId });
+      setSections((p) =>
+        p.map((s) => ({
+          ...s,
+          lessons: s.lessons.map((l) =>
+            l.id === lessonId
+              ? { ...l, bunny_video_id: res.data.lesson.bunny_video_id, bunny_embed_url: res.data.lesson.bunny_embed_url }
+              : l
+          ),
+        }))
+      );
+      toast.success(`✅ تم رفع الفيديو إلى Bunny`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'فشل رفع الفيديو إلى Bunny');
+    } finally {
+      setUploadingToBunny((p) => ({ ...p, [lessonId]: false }));
+    }
+  };
+
   /* ── Set Drive/YouTube URL for a lesson ── */
   const setLessonVideoUrl = async (lessonId: string, url: string) => {
     try {
@@ -598,20 +623,36 @@ export default function AdminCourseEditorPage() {
 
                             {/* Video upload button */}
                             {lesson.type === 'video' && (
-                              <label title="رفع فيديو لهذا الدرس"
-                                className={cn('flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer',
-                                  lesson.video_key
-                                    ? 'border-brand-500/40 bg-brand-500/10 text-brand-400 hover:bg-brand-500/20'
-                                    : 'border-slate-600 bg-dark-700 text-slate-400 hover:border-brand-500/50 hover:text-brand-400'
-                                )}>
-                                {uploadingVideo[lesson.id]
-                                  ? <Loader2 className="w-3 h-3 animate-spin" />
-                                  : <Video className="w-3 h-3" />}
-                                {lesson.video_key ? 'تغيير الفيديو' : '🎬 رفع فيديو'}
-                                <input type="file" accept="video/*" className="sr-only"
-                                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadVideo(lesson.id, f); e.target.value = ''; }}
-                                  disabled={uploadingVideo[lesson.id]} />
-                              </label>
+                              <div className="flex items-center gap-1">
+                                <label title="رفع فيديو لهذا الدرس"
+                                  className={cn('flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer',
+                                    lesson.video_key
+                                      ? 'border-brand-500/40 bg-brand-500/10 text-brand-400 hover:bg-brand-500/20'
+                                      : 'border-slate-600 bg-dark-700 text-slate-400 hover:border-brand-500/50 hover:text-brand-400'
+                                  )}>
+                                  {uploadingVideo[lesson.id]
+                                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                                    : <Video className="w-3 h-3" />}
+                                  {lesson.video_key ? 'تغيير الفيديو' : '🎬 رفع فيديو'}
+                                  <input type="file" accept="video/*" className="sr-only"
+                                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadVideo(lesson.id, f); e.target.value = ''; }}
+                                    disabled={uploadingVideo[lesson.id]} />
+                                </label>
+                                {lesson.video_key && !lesson.bunny_video_id && (
+                                  <button onClick={() => uploadVideoToBunny(lesson.id)}
+                                    disabled={uploadingToBunny[lesson.id]}
+                                    title="رفع الفيديو إلى Bunny.net"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-orange-500/40 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-all disabled:opacity-50">
+                                    {uploadingToBunny[lesson.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <CloudUpload className="w-3 h-3" />}
+                                    رفع Bunny
+                                  </button>
+                                )}
+                                {lesson.bunny_video_id && (
+                                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-green-500/40 bg-green-500/10 text-green-400">
+                                    ✅ في Bunny
+                                  </span>
+                                )}
+                              </div>
                             )}
 
                             {/* Multi-file upload */}
