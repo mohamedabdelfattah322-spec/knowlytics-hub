@@ -13,10 +13,18 @@ export const metadata: Metadata = {
   },
   description: 'منصة تعليمية متكاملة لتعلم تحليل البيانات، Excel، Power BI، والبرمجة. كورسات أونلاين ومباشرة مع شهادات معتمدة. ابدأ رحلتك التعليمية اليوم.',
   keywords: [
+    // عربي — مصر
     'تحليل البيانات', 'كورس Excel', 'Power BI', 'تعلم البرمجة',
-    'منصة تعليمية', 'شهادات معتمدة', 'كورسات أونلاين',
-    'Knowlytics Hub', 'data analysis course', 'online learning Arabic',
-    'LMS عربي', 'تعليم عن بعد',
+    'منصة تعليمية', 'شهادات معتمدة', 'كورسات أونلاين', 'تعليم عن بعد',
+    // عربي — دول أخرى
+    'كورسات السعودية', 'تعليم الإمارات', 'كورسات الكويت', 'تعلم قطر',
+    'كورسات تحليل البيانات العربية', 'منصة تعليمية عربية',
+    'أفضل كورسات Excel بالعربي', 'تحليل البيانات بالعربي',
+    // English — International
+    'data analysis course Arabic', 'online learning Arabic',
+    'Excel course Arabic', 'Power BI Arabic', 'LMS Arabic',
+    'online courses Middle East', 'data analytics training Arabic',
+    'Knowlytics Hub', 'certified data analyst course',
   ],
   authors: [{ name: 'Knowlytics Hub', url: 'https://knowlyticshub.com' }],
   creator: 'Knowlytics Hub',
@@ -29,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ar_EG',
-    alternateLocale: 'en_US',
+    alternateLocale: ['en_US', 'ar_SA', 'ar_AE', 'ar_KW', 'ar_QA'],
     url: 'https://learn.knowlyticshub.com',
     siteName: 'Knowlytics Hub',
     title: 'Knowlytics Hub | منصة تعليمية لتحليل البيانات',
@@ -51,6 +59,14 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: 'https://learn.knowlyticshub.com',
+    languages: {
+      'ar': 'https://learn.knowlyticshub.com',
+      'en': 'https://learn.knowlyticshub.com',
+      'ar-EG': 'https://learn.knowlyticshub.com',
+      'ar-SA': 'https://learn.knowlyticshub.com',
+      'ar-AE': 'https://learn.knowlyticshub.com',
+      'x-default': 'https://learn.knowlyticshub.com',
+    },
   },
   icons: {
     icon: '/favicon.ico',
@@ -85,14 +101,31 @@ const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'EducationalOrganization',
   name: 'Knowlytics Hub',
+  alternateName: 'نولتكس هاب',
   url: 'https://learn.knowlyticshub.com',
   logo: 'https://learn.knowlyticshub.com/Logo.jpeg',
-  description: 'منصة تعليمية متكاملة لتعلم تحليل البيانات والبرمجة مع شهادات معتمدة',
+  description: 'منصة تعليمية متكاملة لتعلم تحليل البيانات والبرمجة مع شهادات معتمدة — متاحة لجميع الدول العربية',
+  foundingLocation: {
+    '@type': 'Place',
+    name: 'Egypt',
+    addressCountry: 'EG',
+  },
+  areaServed: [
+    { '@type': 'Country', name: 'Egypt' },
+    { '@type': 'Country', name: 'Saudi Arabia' },
+    { '@type': 'Country', name: 'United Arab Emirates' },
+    { '@type': 'Country', name: 'Kuwait' },
+    { '@type': 'Country', name: 'Qatar' },
+    { '@type': 'Country', name: 'Jordan' },
+    { '@type': 'Country', name: 'Morocco' },
+    { '@type': 'GeoShape', name: 'Worldwide' },
+  ],
   contactPoint: {
     '@type': 'ContactPoint',
     telephone: '+201226929392',
     contactType: 'customer service',
     availableLanguage: ['Arabic', 'English'],
+    areaServed: 'Worldwide',
   },
   sameAs: [
     'https://knowlyticshub.com',
