@@ -13,18 +13,35 @@ export const metadata: Metadata = {
   },
   description: 'منصة تعليمية متكاملة لتعلم تحليل البيانات، Excel، Power BI، والبرمجة. كورسات أونلاين ومباشرة مع شهادات معتمدة. ابدأ رحلتك التعليمية اليوم.',
   keywords: [
-    // عربي — مصر
+    // ── Brand variations (English) ──
+    'Knowlytics Hub', 'knowlytics hub', 'KnowlyticsHub',
+    'Knowlytics', 'knowlytics', 'knowlytics hub courses',
+    'knowlytics hub lms', 'knowlytics hub egypt',
+    'knowlytics hub online', 'knowlyticshub.com',
+    'learn.knowlyticshub.com', 'knowlytics hub arabic',
+    'knowlitics hub', 'nolytix hub', 'knowletics hub',
+
+    // ── Brand variations (Arabic) ──
+    'نولتكس هاب', 'نولتيكس هاب', 'نولتكس', 'نولتيكس',
+    'نوليتكس هاب', 'منصة نولتكس', 'موقع نولتكس',
+    'كورسات نولتكس', 'نولتكس للتعليم', 'نولتكس هاب مصر',
+    'نولتكس هاب للكورسات', 'منصة نولتكس هاب',
+
+    // ── عربي — محتوى ──
     'تحليل البيانات', 'كورس Excel', 'Power BI', 'تعلم البرمجة',
     'منصة تعليمية', 'شهادات معتمدة', 'كورسات أونلاين', 'تعليم عن بعد',
-    // عربي — دول أخرى
-    'كورسات السعودية', 'تعليم الإمارات', 'كورسات الكويت', 'تعلم قطر',
-    'كورسات تحليل البيانات العربية', 'منصة تعليمية عربية',
     'أفضل كورسات Excel بالعربي', 'تحليل البيانات بالعربي',
-    // English — International
-    'data analysis course Arabic', 'online learning Arabic',
-    'Excel course Arabic', 'Power BI Arabic', 'LMS Arabic',
-    'online courses Middle East', 'data analytics training Arabic',
-    'Knowlytics Hub', 'certified data analyst course',
+    'كورس تحليل البيانات', 'منصة تعليمية عربية',
+
+    // ── دول عربية ──
+    'كورسات مصر', 'كورسات السعودية', 'تعليم الإمارات',
+    'كورسات الكويت', 'تعلم قطر', 'كورسات عربية أونلاين',
+
+    // ── English — International ──
+    'data analysis course Arabic', 'Excel course Arabic',
+    'Power BI Arabic', 'online courses Middle East',
+    'data analytics training Arabic', 'certified data analyst course',
+    'online learning platform Arabic', 'LMS Arabic',
   ],
   authors: [{ name: 'Knowlytics Hub', url: 'https://knowlyticshub.com' }],
   creator: 'Knowlytics Hub',
@@ -137,6 +154,10 @@ const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'Knowlytics Hub',
+  alternateName: [
+    'نولتكس هاب', 'نولتيكس هاب', 'KnowlyticsHub',
+    'Knowlytics', 'نولتكس', 'knowlytics hub lms',
+  ],
   url: 'https://learn.knowlyticshub.com',
   potentialAction: {
     '@type': 'SearchAction',
