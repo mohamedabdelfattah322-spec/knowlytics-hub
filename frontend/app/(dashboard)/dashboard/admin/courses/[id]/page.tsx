@@ -70,6 +70,7 @@ export default function AdminCourseEditorPage() {
   const [uploadingVideo, setUploadingVideo] = useState<Record<string, boolean>>({});
   const [uploadingToBunny, setUploadingToBunny] = useState<Record<string, boolean>>({});
   const [uploadingFile, setUploadingFile]   = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   // Assignment form per lesson
   const [newAssignment, setNewAssignment] = useState<Record<string, { title: string; description: string; due_days: string }>>({});
@@ -298,12 +299,18 @@ export default function AdminCourseEditorPage() {
   /* ── Upload video to lesson (auto-uploads to Bunny then deletes local) ── */
   const uploadVideo = async (lessonId: string, file: File) => {
     setUploadingVideo((p) => ({ ...p, [lessonId]: true }));
+    setUploadProgress((p) => ({ ...p, [lessonId]: 0 }));
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('lesson_id', lessonId);
       const { data } = await api.post('/files/upload-video', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 0, // no timeout for large video uploads
+        onUploadProgress: (e) => {
+          const pct = e.total ? Math.round((e.loaded * 100) / e.total) : 0;
+          setUploadProgress((p) => ({ ...p, [lessonId]: pct }));
+        },
       });
       setSections((p) =>
         p.map((s) => ({
@@ -654,7 +661,7 @@ export default function AdminCourseEditorPage() {
                                         : 'border-slate-600 bg-dark-700 text-slate-400 hover:border-brand-500/50 hover:text-brand-400'
                                   )}>
                                   {uploadingVideo[lesson.id]
-                                    ? <><Loader2 className="w-3 h-3 animate-spin" /> جاري الرفع...</>
+                                    ? <><Loader2 className="w-3 h-3 animate-spin" /> {uploadProgress[lesson.id] < 100 ? `${uploadProgress[lesson.id]}% جاري الرفع...` : '⏳ جاري المعالجة...'}</>
                                     : lesson.bunny_video_id
                                       ? <><Video className="w-3 h-3" /> ✅ Bunny — تغيير</>
                                       : <><Video className="w-3 h-3" /> 🎬 رفع فيديو</>
