@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     apple: '/Logo.jpeg',
   },
   verification: {
-    google: '', // هنحط الـ code هنا بعدين
+    google: 'oFkjl6U_wE68ihHU3rmzvo-y9QyVVK-5xqL_C6IZEEg',
   },
 };
 
