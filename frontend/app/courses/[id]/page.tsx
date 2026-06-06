@@ -93,6 +93,19 @@ export default function CourseDetailPage() {
     <div className="min-h-screen" style={{ backgroundColor: '#0a1628' }}>
       <PublicNavbar />
 
+      {/* ── Admin Preview Banner ── */}
+      {user?.role === 'admin' && (
+        <div className="sticky top-0 z-50 bg-amber-500 text-black px-4 py-2 flex items-center justify-between text-sm font-semibold">
+          <span>👁️ وضع المعاينة — أنت تشوف الكورس كما يراه الطالب</span>
+          <a
+            href={`/dashboard/admin/courses/${id}`}
+            className="bg-black text-white px-3 py-1 rounded-lg text-xs hover:bg-gray-800 transition-colors"
+          >
+            ← رجوع للأدمن
+          </a>
+        </div>
+      )}
+
       {/* ══════════════════ HERO — Video + Title ══════════════════ */}
       <section className="relative" style={{ backgroundColor: '#0f1d32' }}>
         <div className="max-w-7xl mx-auto px-6 pt-10 pb-16">

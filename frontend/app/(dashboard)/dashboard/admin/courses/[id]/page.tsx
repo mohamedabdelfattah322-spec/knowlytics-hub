@@ -504,9 +504,21 @@ export default function AdminCourseEditorPage() {
             </div>
           </div>
         </div>
-        <button onClick={saveCourse} disabled={saving} className="btn-primary flex items-center gap-2">
-          {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> جاري الحفظ...</> : <><Save className="w-4 h-4" /> حفظ التغييرات</>}
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/courses/${id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-secondary flex items-center gap-2 text-sm"
+            title="شوف الكورس كما يراه الطالب"
+          >
+            <Eye className="w-4 h-4" />
+            معاينة كطالب
+          </a>
+          <button onClick={saveCourse} disabled={saving} className="btn-primary flex items-center gap-2">
+            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> جاري الحفظ...</> : <><Save className="w-4 h-4" /> حفظ التغييرات</>}
+          </button>
+        </div>
       </div>
 
       {/* ── Analytics strip ── */}
