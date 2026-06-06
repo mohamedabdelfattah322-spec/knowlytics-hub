@@ -49,13 +49,26 @@ if (USE_S3) {
 }
 
 const ALLOWED_TYPES = [
+  // Videos
   'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo',
+  // Documents
   'application/pdf',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/msword',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+  'application/vnd.ms-excel',                                           // xls
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+  'application/msword',                                                  // doc
+  'application/vnd.ms-powerpoint',                                       // ppt
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
+  // CSV
+  'text/csv',
+  'application/csv',
+  'text/plain',
+  // Images
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  // Archives
+  'application/zip',
+  'application/x-rar-compressed',
+  'application/x-zip-compressed',
 ];
 
 const upload = multer({

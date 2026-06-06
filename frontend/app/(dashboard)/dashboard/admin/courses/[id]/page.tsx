@@ -671,7 +671,7 @@ export default function AdminCourseEditorPage() {
                               className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-slate-600 bg-dark-700 text-slate-400 hover:border-purple-500/50 hover:text-purple-400 transition-all cursor-pointer">
                               <Paperclip className="w-3 h-3" /> 📎 ملفات
                               <input type="file" multiple className="sr-only"
-                                accept=".pdf,.xlsx,.xls,.docx,.doc,.zip,.rar,image/*"
+                                accept=".pdf,.xlsx,.xls,.docx,.doc,.pptx,.ppt,.csv,.txt,.zip,.rar,image/*"
                                 onChange={(e) => uploadCourseFile(e, lesson.id)} />
                             </label>
 
@@ -974,7 +974,7 @@ export default function AdminCourseEditorPage() {
                 : <><Upload className="w-6 h-6 text-slate-400" /><div><p className="text-slate-300 font-medium">اختر ملفاً للرفع</p><p className="text-xs text-slate-500">PDF · Excel · Word · صور · حتى 2GB</p></div></>
               }
               <input type="file" multiple className="sr-only" onChange={(e) => uploadCourseFile(e)} disabled={uploadingFile}
-                accept=".pdf,.xlsx,.xls,.docx,.doc,.zip,.rar,image/*" />
+                accept=".pdf,.xlsx,.xls,.docx,.doc,.pptx,.ppt,.csv,.txt,.zip,.rar,image/*" />
             </label>
           </div>
 
