@@ -37,15 +37,19 @@ const uploadVideoToBunny = async (filePath, title) => {
 
     console.log('[Bunny] Created video entry:', JSON.stringify(createRes.data));
 
-    // Step 2: Upload the actual video file
-    const fileBuffer = fs.readFileSync(filePath);
-    const fileSize = fileBuffer.length;
+    // Step 2: Upload the actual video file using stream (not readFileSync — avoids OOM for large files)
+    const fileStat = fs.statSync(filePath);
+    const fileSize = fileStat.size;
+    const fileStream = fs.createReadStream(filePath);
 
-    await bunnyClient.put(`/videos/${guid}`, fileBuffer, {
+    await bunnyClient.put(`/videos/${guid}`, fileStream, {
       headers: {
         'Content-Type': 'application/octet-stream',
         'Content-Length': fileSize,
       },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      timeout: 0, // no timeout for large video uploads
     });
 
     console.log(`[Bunny] Uploaded: ${videoTitle} (GUID: ${guid}, Size: ${fileSize} bytes)`);
