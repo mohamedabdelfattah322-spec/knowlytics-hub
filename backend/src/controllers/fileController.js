@@ -130,7 +130,7 @@ const uploadFile = async (req, res, next) => {
 };
 
 // ─── POST /api/files/upload-video-to-lesson ───────────────
-// Uploads a video → saves locally → uploads to Bunny → deletes local file
+// Uploads a video → saves locally → responds immediately → uploads to Bunny in background
 const uploadVideoToLesson = async (req, res, next) => {
   const localFilePath = req.file ? path.join(UPLOAD_DIR, getFileKey(req.file)) : null;
   try {
@@ -140,76 +140,79 @@ const uploadVideoToLesson = async (req, res, next) => {
 
     const fileKey = getFileKey(req.file);
 
-    // Get lesson title for Bunny
     const lessonRes = await query('SELECT id, title FROM lessons WHERE id = $1', [lesson_id]);
     if (!lessonRes.rows.length) return res.status(404).json({ error: 'الدرس غير موجود' });
     const lessonTitle = lessonRes.rows[0].title;
 
-    // Try to upload to Bunny if configured
     const bunnyService = require('../services/bunnyService');
     const hasBunny = !!(process.env.BUNNY_LIBRARY_ID && process.env.BUNNY_API_KEY);
 
-    let bunnyVideoId = null;
-    let bunnyEmbedUrl = null;
-    let durationMinutes = null;
-
-    if (hasBunny) {
-      // Upload to Bunny
-      const bunnyData = await bunnyService.uploadVideoToBunny(localFilePath, lessonTitle);
-      bunnyVideoId = bunnyData.videoId;
-      bunnyEmbedUrl = bunnyService.getEmbedUrl(bunnyData.videoId);
-
-      // Get duration from Bunny
-      const durationSeconds = await bunnyService.getVideoDuration(bunnyData.videoId);
-      durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
-
-      // Delete local file (no longer needed)
-      try {
-        fs.unlinkSync(localFilePath);
-        console.log(`[Bunny] Deleted local file: ${fileKey}`);
-      } catch (e) {
-        console.warn(`[Bunny] Could not delete local file: ${e.message}`);
-      }
+    if (!hasBunny) {
+      // No Bunny — save locally and respond
+      const result = await query(
+        `UPDATE lessons SET video_key = $1, updated_at = NOW()
+         WHERE id = $2 RETURNING id, title, video_key, bunny_video_id, bunny_embed_url, duration_minutes`,
+        [fileKey, lesson_id]
+      );
+      return res.json({ lesson: result.rows[0], storage: 'local', message: '✅ تم رفع الفيديو' });
     }
 
-    // Update lesson
-    const result = await query(
-      `UPDATE lessons
-       SET video_key = $1, bunny_video_id = $2, bunny_embed_url = $3,
-           duration_minutes = COALESCE($4, duration_minutes), updated_at = NOW()
-       WHERE id = $5
-       RETURNING id, title, video_key, bunny_video_id, bunny_embed_url, duration_minutes`,
-      [hasBunny ? null : fileKey, bunnyVideoId, bunnyEmbedUrl, durationMinutes, lesson_id]
+    // ── Bunny mode: respond immediately, upload in background ──
+    const initialResult = await query(
+      `UPDATE lessons SET video_key = $1, updated_at = NOW()
+       WHERE id = $2 RETURNING id, title, video_key, bunny_video_id, bunny_embed_url, duration_minutes`,
+      [fileKey, lesson_id]
     );
 
-    // Recalculate course total duration
-    if (durationMinutes) {
-      const courseRes = await query(
-        `SELECT s.course_id FROM lessons l JOIN sections s ON s.id = l.section_id WHERE l.id = $1`,
-        [lesson_id]
-      );
-      if (courseRes.rows.length) {
-        await query(
-          `UPDATE courses SET duration_hours = ROUND(
-            (SELECT COALESCE(SUM(l.duration_minutes), 0)
-             FROM lessons l JOIN sections s ON s.id = l.section_id
-             WHERE s.course_id = $1) / 60.0, 1)
-           WHERE id = $1`,
-          [courseRes.rows[0].course_id]
-        );
-      }
-    }
-
+    // Respond to client immediately
     res.json({
-      lesson: result.rows[0],
-      storage: hasBunny ? 'bunny' : (USE_S3 ? 's3' : 'local'),
-      duration_minutes: durationMinutes,
-      message: hasBunny
-        ? `✅ تم رفع الفيديو إلى Bunny${durationMinutes ? ` — المدة: ${durationMinutes} دقيقة` : ''}`
-        : '✅ تم رفع الفيديو',
+      lesson: initialResult.rows[0],
+      storage: 'bunny_processing',
+      message: '⏳ تم استلام الفيديو — جاري الرفع لـ Bunny في الخلفية...',
     });
+
+    // Upload to Bunny in background after response
+    setImmediate(async () => {
+      try {
+        console.log(`[Bunny] Starting background upload for lesson ${lesson_id} (${req.file.size} bytes)`);
+        const bunnyData = await bunnyService.uploadVideoToBunny(localFilePath, lessonTitle);
+        const bunnyVideoId = bunnyData.videoId;
+        const bunnyEmbedUrl = bunnyService.getEmbedUrl(bunnyData.videoId);
+
+        const durationSeconds = await bunnyService.getVideoDuration(bunnyData.videoId);
+        const durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
+
+        await query(
+          `UPDATE lessons SET video_key = NULL, bunny_video_id = $1, bunny_embed_url = $2,
+           duration_minutes = COALESCE($3, duration_minutes), updated_at = NOW() WHERE id = $4`,
+          [bunnyVideoId, bunnyEmbedUrl, durationMinutes, lesson_id]
+        );
+
+        if (durationMinutes) {
+          const courseRes = await query(
+            `SELECT s.course_id FROM lessons l JOIN sections s ON s.id = l.section_id WHERE l.id = $1`,
+            [lesson_id]
+          );
+          if (courseRes.rows.length) {
+            await query(
+              `UPDATE courses SET duration_hours = ROUND(
+                (SELECT COALESCE(SUM(l.duration_minutes), 0)
+                 FROM lessons l JOIN sections s ON s.id = l.section_id
+                 WHERE s.course_id = $1) / 60.0, 1) WHERE id = $1`,
+              [courseRes.rows[0].course_id]
+            );
+          }
+        }
+
+        try { fs.unlinkSync(localFilePath); } catch (e) {}
+        console.log(`[Bunny] ✅ Background upload complete for lesson ${lesson_id}${durationMinutes ? ` — ${durationMinutes} min` : ''}`);
+      } catch (e) {
+        console.error(`[Bunny] ❌ Background upload failed for lesson ${lesson_id}:`, e.message);
+        try { fs.unlinkSync(localFilePath); } catch (err) {}
+      }
+    });
+
   } catch (err) {
-    // Clean up local file on error
     if (localFilePath && fs.existsSync(localFilePath)) {
       try { fs.unlinkSync(localFilePath); } catch (e) {}
     }

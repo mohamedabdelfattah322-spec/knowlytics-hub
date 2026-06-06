@@ -328,7 +328,11 @@ export default function AdminCourseEditorPage() {
           ),
         }))
       );
-      toast.success(data.message || '✅ تم رفع الفيديو');
+      if (data.storage === 'bunny_processing') {
+        toast.success('✅ تم استلام الفيديو — جاري الرفع لـ Bunny في الخلفية\n🔄 حدّث الصفحة بعد دقيقتين لتأكيد الرفع', { duration: 8000 });
+      } else {
+        toast.success(data.message || '✅ تم رفع الفيديو');
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'فشل رفع الفيديو');
     } finally {
