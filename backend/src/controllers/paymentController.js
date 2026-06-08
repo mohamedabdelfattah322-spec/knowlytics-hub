@@ -9,6 +9,11 @@ const PAYMOB_API_KEY        = process.env.PAYMOB_API_KEY;
 const PAYMOB_HMAC_SECRET    = process.env.PAYMOB_HMAC_SECRET;
 const PAYMOB_IFRAME_ID      = process.env.PAYMOB_IFRAME_ID;
 
+// ─── EasyKash config (from env) ───────────────────────────
+const EASYKASH_API_KEY      = process.env.EASYKASH_API_KEY;
+const EASYKASH_HMAC_SECRET  = process.env.EASYKASH_HMAC_SECRET;
+const EASYKASH_BASE         = 'https://back.easykash.net/api/directpayv1';
+
 // Per-method integration IDs (each Paymob "integration" = one payment method)
 const PAYMOB_INTEGRATIONS = {
   card:     process.env.PAYMOB_INTEGRATION_ID,        // Visa / MasterCard / Meeza
@@ -79,7 +84,8 @@ const getPaymentMethods = async (req, res) => {
         valu:   !!PAYMOB_INTEGRATIONS.valu,
       },
     },
-    stripe: { enabled: !!stripe },
+    stripe:   { enabled: !!stripe },
+    easykash: { enabled: !!EASYKASH_API_KEY },
   });
 };
 
@@ -138,6 +144,40 @@ const initiatePayment = async (req, res, next) => {
       [userId, course_id || null, bundle_id || null, itemPriceEgp, phone || null, user.email, method]
     );
     const paymentId = paymentRes.rows[0].id;
+
+    // ════════════════════════════════════════════════════════
+    // EASYKASH — Egypt (redirect to hosted payment page)
+    // ════════════════════════════════════════════════════════
+    if (method === 'easykash') {
+      if (!EASYKASH_API_KEY) {
+        return res.status(500).json({ error: 'EasyKash غير مفعّل. تواصل مع الإدارة.' });
+      }
+
+      const backendUrl = (process.env.BACKEND_URL || 'https://api.knowlyticshub.com').replace(/\/api\/?$/, '');
+      const returnUrl  = `${backendUrl}/api/payments/easykash/return?payment_id=${paymentId}`;
+
+      const ekRes = await axios.post(`${EASYKASH_BASE}/pay`, {
+        amount:            itemPriceEgp,
+        currency:          'EGP',
+        name:              user.name || 'Student',
+        email:             user.email,
+        mobile:            phone || '01000000000',
+        redirectUrl:       returnUrl,
+        customerReference: paymentId,   // UUID string — EasyKash accepts it
+      }, {
+        headers: { authorization: EASYKASH_API_KEY },
+      });
+
+      const ekUrl = ekRes.data?.redirectUrl;
+      if (!ekUrl) {
+        return res.status(502).json({ error: 'فشل إنشاء رابط الدفع من EasyKash' });
+      }
+
+      await query('UPDATE payments SET raw_response = $1, payment_method = $2 WHERE id = $3',
+        [{ easykash_payment_url: ekUrl }, 'easykash', paymentId]);
+
+      return res.json({ type: 'redirect', url: ekUrl, payment_id: paymentId });
+    }
 
     // ════════════════════════════════════════════════════════
     // STRIPE — international card payments
@@ -524,10 +564,107 @@ const getInvoice = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// ───────────────────────────────────────────────────────────
+// GET /api/payments/easykash/return
+// Browser redirect from EasyKash after the user completes payment.
+// EasyKash appends: status, providerRefNum, customerReference, voucher
+// ───────────────────────────────────────────────────────────
+const easykashReturn = async (req, res) => {
+  const { payment_id, status, providerRefNum } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL || 'https://learn.knowlyticshub.com';
+
+  try {
+    if (!payment_id) return res.redirect(`${frontendUrl}/?error=missing_payment_id`);
+
+    const payRes = await query('SELECT * FROM payments WHERE id = $1', [payment_id]);
+    if (!payRes.rows.length) return res.redirect(`${frontendUrl}/?error=payment_not_found`);
+    const payment = payRes.rows[0];
+
+    const courseId  = payment.course_id;
+    const returnBase = courseId
+      ? `${frontendUrl}/courses/${courseId}/buy`
+      : `${frontendUrl}/dashboard/student`;
+
+    // status from EasyKash can be: "success" | "pending" | "failed"
+    if (status === 'success') {
+      // Mark success immediately from redirect (callback will also fire)
+      if (payment.status !== 'success') {
+        await fulfilPayment(payment, providerRefNum || '', 'easykash');
+        await query(`UPDATE payments SET raw_response = raw_response || $1 WHERE id = $2`,
+          [JSON.stringify({ return_status: status, provider_ref: providerRefNum }), payment.id]);
+      }
+      return res.redirect(`${returnBase}?status=success&payment_id=${payment_id}`);
+    } else if (status === 'pending') {
+      return res.redirect(`${returnBase}?status=pending&payment_id=${payment_id}`);
+    } else {
+      await query(`UPDATE payments SET status = 'failed' WHERE id = $1 AND status = 'pending'`, [payment_id]);
+      return res.redirect(`${returnBase}?status=cancel&payment_id=${payment_id}`);
+    }
+  } catch (err) {
+    console.error('[EasyKash Return]', err.message);
+    return res.redirect(`${frontendUrl}/?error=payment_error`);
+  }
+};
+
+// ───────────────────────────────────────────────────────────
+// GET /api/payments/easykash/callback
+// Server-to-server callback from EasyKash (also supports POST).
+// Verifies HMAC-SHA512 then fulfils the payment.
+// ───────────────────────────────────────────────────────────
+const easykashCallback = async (req, res) => {
+  try {
+    // Accept both GET (query params) and POST (body)
+    const data = Object.keys(req.query).length ? req.query : req.body;
+    const {
+      ProductCode, Amount, ProductType, PaymentMethod,
+      status, easykashRef, customerReference, signatureHash,
+    } = data;
+
+    // ── HMAC verification ──
+    if (EASYKASH_HMAC_SECRET && signatureHash) {
+      const dataStr = `${ProductCode}${Amount}${ProductType}${PaymentMethod}${status}${easykashRef}${customerReference}`;
+      const calculated = crypto
+        .createHmac('sha512', EASYKASH_HMAC_SECRET)
+        .update(dataStr)
+        .digest('hex');
+
+      if (calculated.toLowerCase() !== signatureHash.toLowerCase()) {
+        console.warn('[EasyKash Callback] HMAC mismatch — possible spoofing');
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+    }
+
+    // ── Find payment ──
+    const payRes = await query('SELECT * FROM payments WHERE id = $1', [customerReference]);
+    if (!payRes.rows.length) {
+      console.warn('[EasyKash Callback] Payment not found:', customerReference);
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+    const payment = payRes.rows[0];
+
+    // ── Fulfil or fail ──
+    if (status === 'PAID' && payment.status !== 'success') {
+      await fulfilPayment(payment, easykashRef || '', PaymentMethod || 'easykash');
+      await query('UPDATE payments SET raw_response = $1 WHERE id = $2', [data, payment.id]);
+      console.log(`[EasyKash] ✅ Payment ${payment.id} fulfilled — ref: ${easykashRef}`);
+    } else if (status !== 'PAID' && payment.status === 'pending') {
+      await query(`UPDATE payments SET status = 'failed', raw_response = $1 WHERE id = $2`, [data, payment.id]);
+      console.log(`[EasyKash] ❌ Payment ${payment.id} failed — status: ${status}`);
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[EasyKash Callback] Error:', err.message);
+    return res.status(500).json({ error: 'Internal error' });
+  }
+};
+
 module.exports = {
   initiatePayment,
   paymobWebhook,
   stripeWebhook,
+  easykashReturn,
+  easykashCallback,
   getPaymentMethods,
   myPayments,
   listAllPayments,

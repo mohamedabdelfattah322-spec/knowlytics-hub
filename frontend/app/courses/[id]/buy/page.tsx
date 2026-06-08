@@ -17,21 +17,23 @@ interface Course {
   price: number; duration_hours: number;
 }
 
-type Method = 'card' | 'wallet' | 'kiosk' | 'valu' | 'stripe';
+type Method = 'card' | 'wallet' | 'kiosk' | 'valu' | 'stripe' | 'easykash';
 
 interface MethodsResponse {
-  paymob: { enabled: boolean; methods: Record<string, boolean> };
-  stripe: { enabled: boolean };
+  paymob:   { enabled: boolean; methods: Record<string, boolean> };
+  stripe:   { enabled: boolean };
+  easykash: { enabled: boolean };
 }
 
 interface FormValues { phone: string; wallet_number?: string }
 
 const METHOD_INFO: Record<Method, { label: string; icon: any; desc: string; foreign?: boolean }> = {
-  card:   { label: 'فيزا / ماستركارد / ميزة',   icon: CreditCard, desc: 'دفع آمن بالبطاقة عبر Paymob' },
-  wallet: { label: 'محفظة / إنستاباي',          icon: Smartphone, desc: 'فودافون كاش، أورانج موني، إنستاباي' },
-  kiosk:  { label: 'فوري / أمان (نقدي)',         icon: Store,      desc: 'ادفع نقداً في أي منفذ فوري أو أمان' },
-  valu:   { label: 'ڤاليو (تقسيط)',              icon: Wallet,     desc: 'قسّط على 6/9/12/18 شهر' },
-  stripe: { label: 'بطاقة دولية (خارج مصر)',    icon: Globe2,     desc: 'Visa / Mastercard / Apple Pay — بالدولار', foreign: true },
+  card:     { label: 'فيزا / ماستركارد / ميزة',   icon: CreditCard, desc: 'دفع آمن بالبطاقة عبر Paymob' },
+  wallet:   { label: 'محفظة / إنستاباي',          icon: Smartphone, desc: 'فودافون كاش، أورانج موني، إنستاباي' },
+  kiosk:    { label: 'فوري / أمان (نقدي)',         icon: Store,      desc: 'ادفع نقداً في أي منفذ فوري أو أمان' },
+  valu:     { label: 'ڤاليو (تقسيط)',              icon: Wallet,     desc: 'قسّط على 6/9/12/18 شهر' },
+  stripe:   { label: 'بطاقة دولية (خارج مصر)',    icon: Globe2,     desc: 'Visa / Mastercard / Apple Pay — بالدولار', foreign: true },
+  easykash: { label: 'EasyKash',                   icon: CreditCard, desc: 'فيزا، فوري، محفظة، أمان — مدعوم بـ EasyKash' },
 };
 
 export default function BuyCoursePage() {
@@ -54,13 +56,18 @@ export default function BuyCoursePage() {
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm<FormValues>();
 
-  // Stripe success / cancel return handler
+  // Handle return from Stripe / EasyKash after payment redirect
   useEffect(() => {
     const status = searchParams.get('status');
-    const pid = searchParams.get('payment_id');
+    const pid    = searchParams.get('payment_id');
     if (status === 'success' && pid) {
       toast.success('تم الدفع بنجاح! 🎉');
       setTimeout(() => router.push(`/courses/${id}`), 1500);
+    } else if (status === 'pending' && pid) {
+      // EasyKash pending — start polling
+      setPaymentId(pid);
+      setPolling(true);
+      toast('⏳ الدفع قيد المعالجة — سيتم تأكيده قريباً');
     } else if (status === 'cancel') {
       toast.error('تم إلغاء الدفع');
     }
@@ -81,6 +88,8 @@ export default function BuyCoursePage() {
         if (first) setSelectedMethod(first);
       } else if (m.stripe.enabled) {
         setSelectedMethod('stripe');
+      } else if (m.easykash?.enabled) {
+        setSelectedMethod('easykash');
       }
       if (cRes.data.course.type === 'live') {
         toast.error('الكورسات المباشرة لا تُشترى أونلاين');
@@ -157,7 +166,8 @@ export default function BuyCoursePage() {
     if (methods.paymob.methods.kiosk)  availableMethods.push('kiosk');
     if (methods.paymob.methods.valu)   availableMethods.push('valu');
   }
-  if (methods?.stripe.enabled) availableMethods.push('stripe');
+  if (methods?.stripe.enabled)   availableMethods.push('stripe');
+  if (methods?.easykash?.enabled) availableMethods.push('easykash');
 
   // ─── Show payment-in-progress UI ───
   if (iframeUrl || kioskRef || walletMessage) {
