@@ -63,7 +63,13 @@ export default function CoursesPage() {
   useEffect(() => {
     setLoading(true);
     api.get('/courses', { params: { search, type: typeFilter || undefined, category: categoryFilter || undefined, sort: sortBy || undefined, limit: 50 } })
-      .then(({ data }) => setCourses(data.courses))
+      .then(({ data }) => {
+        // Hide live courses from the public catalog unless explicitly filtered
+        const filtered = typeFilter === 'live'
+          ? data.courses
+          : (data.courses || []).filter((c: Course) => c.type !== 'live');
+        setCourses(filtered);
+      })
       .finally(() => setLoading(false));
   }, [search, typeFilter, categoryFilter, sortBy]);
 
@@ -90,7 +96,6 @@ export default function CoursesPage() {
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="input w-auto">
               <option value="">{t('courses.allTypes')}</option>
               <option value="online">{t('courses.online')}</option>
-              <option value="live">{t('courses.live')}</option>
               <option value="hybrid">{t('courses.hybrid')}</option>
             </select>
             <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="input w-auto">
