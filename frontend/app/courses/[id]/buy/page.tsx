@@ -74,6 +74,12 @@ export default function BuyCoursePage() {
   }, [searchParams, id, router]);
 
   useEffect(() => {
+    // If returning from EasyKash with success, redirect to course directly (even if session expired)
+    const returnStatus = searchParams.get('status');
+    if (returnStatus === 'success') {
+      router.push(`/courses/${id}`);
+      return;
+    }
     if (!user) { router.push(`/login?redirect=/courses/${id}/buy`); return; }
     Promise.all([
       api.get(`/courses/${id}`),

@@ -604,10 +604,17 @@ const easykashReturn = async (req, res) => {
       }
     };
 
-    // EasyKash redirect status values: "success" | "pending" | "failed"
+    // EasyKash redirect status values: "PAID" | "success" | "pending" | "failed"
     const s = (status || '').toLowerCase();
+    console.log('[EasyKash Return] status received:', status, '→ normalized:', s);
 
-    if (s === 'success') {
+    // If DB payment already fulfilled (via callback), always redirect as success
+    if (payment.status === 'success') {
+      console.log('[EasyKash Return] already fulfilled in DB → redirect success');
+      return res.redirect(`${returnBase}?status=success&payment_id=${pid}`);
+    }
+
+    if (s === 'paid' || s === 'success') {
       doFulfil();
       return res.redirect(`${returnBase}?status=success&payment_id=${pid}`);
     } else if (s === 'pending') {
