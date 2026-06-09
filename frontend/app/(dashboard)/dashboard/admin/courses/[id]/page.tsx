@@ -296,45 +296,66 @@ export default function AdminCourseEditorPage() {
     } catch { toast.error('فشل التحديث'); }
   };
 
-  /* ── Upload video to lesson (auto-uploads to Bunny then deletes local) ── */
+  /* ── Upload video DIRECTLY to Bunny via TUS (browser → Bunny, bypasses server) ── */
   const uploadVideo = async (lessonId: string, file: File) => {
     setUploadingVideo((p) => ({ ...p, [lessonId]: true }));
     setUploadProgress((p) => ({ ...p, [lessonId]: 0 }));
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('lesson_id', lessonId);
-      const { data } = await api.post('/files/upload-video', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 0, // no timeout for large video uploads
-        onUploadProgress: (e) => {
-          const pct = e.total ? Math.round((e.loaded * 100) / e.total) : 0;
-          setUploadProgress((p) => ({ ...p, [lessonId]: pct }));
-        },
+      // Step 1: Get TUS credentials from backend (creates video entry on Bunny)
+      const { data: token } = await api.post('/files/bunny-tus-token', {
+        lesson_id: lessonId,
+        title: file.name.replace(/\.[^/.]+$/, ''),
       });
+
+      // Step 2: Upload directly to Bunny via TUS
+      const tus = (await import('tus-js-client')).default;
+
+      await new Promise<void>((resolve, reject) => {
+        const upload = new tus.Upload(file, {
+          endpoint: 'https://video.bunnycdn.com/tusupload',
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            AuthorizationSignature: token.authorizationSignature,
+            AuthorizationExpire:    String(token.authorizationExpire),
+            VideoId:                token.videoId,
+            LibraryId:              String(token.libraryId),
+          },
+          metadata: {
+            filename:    file.name,
+            filetype:    file.type,
+            title:       file.name.replace(/\.[^/.]+$/, ''),
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const pct = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress((p) => ({ ...p, [lessonId]: pct }));
+          },
+          onSuccess: () => resolve(),
+          onError:   (err) => reject(err),
+        });
+        upload.start();
+      });
+
+      // Step 3: Notify backend to fetch duration
+      await api.post('/files/bunny-tus-complete', {
+        lesson_id: lessonId,
+        video_id:  token.videoId,
+      });
+
+      // Update local state
       setSections((p) =>
         p.map((s) => ({
           ...s,
           lessons: s.lessons.map((l) =>
             l.id === lessonId
-              ? {
-                  ...l,
-                  video_key: data.lesson?.video_key || 'uploaded',
-                  bunny_video_id: data.lesson?.bunny_video_id ?? l.bunny_video_id,
-                  bunny_embed_url: data.lesson?.bunny_embed_url ?? l.bunny_embed_url,
-                  duration_minutes: data.lesson?.duration_minutes ?? l.duration_minutes,
-                }
+              ? { ...l, bunny_video_id: token.videoId }
               : l
           ),
         }))
       );
-      if (data.storage === 'bunny_processing') {
-        toast.success('✅ تم استلام الفيديو — جاري الرفع لـ Bunny في الخلفية\n🔄 حدّث الصفحة بعد دقيقتين لتأكيد الرفع', { duration: 8000 });
-      } else {
-        toast.success(data.message || '✅ تم رفع الفيديو');
-      }
+
+      toast.success('✅ تم رفع الفيديو على Bunny مباشرة!\n🔄 المدة ستظهر تلقائياً بعد المعالجة', { duration: 6000 });
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || 'فشل رفع الفيديو');
+      toast.error(err?.message || err?.response?.data?.error || 'فشل رفع الفيديو');
     } finally {
       setUploadingVideo((p) => ({ ...p, [lessonId]: false }));
     }

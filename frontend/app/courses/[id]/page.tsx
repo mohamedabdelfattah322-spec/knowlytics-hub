@@ -85,6 +85,17 @@ export default function CourseDetailPage() {
   if (!course) return <div className="min-h-screen bg-dark-900 flex items-center justify-center text-slate-400">Course not found.</div>;
 
   const totalLessons = sections.reduce((acc, s) => acc + (s.lessons?.length || 0), 0);
+  const totalMinutes = sections.reduce((acc, s) => acc + (s.lessons?.reduce((a, l) => a + (l.duration_minutes || 0), 0) || 0), 0);
+  const formatDuration = (mins: number) => {
+    if (!mins) return null;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h ${m > 0 ? m + 'm' : ''}`.trim() : `${m}m`;
+  };
+  const sectionDuration = (s: Section) => {
+    const mins = s.lessons?.reduce((a, l) => a + (l.duration_minutes || 0), 0) || 0;
+    return formatDuration(mins);
+  };
   const embedUrl = course.promo_video_url
     ? course.promo_video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/').replace('youtube.com/shorts/', 'youtube.com/embed/')
     : null;
@@ -327,7 +338,7 @@ export default function CourseDetailPage() {
             <div>
               <h2 className="text-xl font-bold mb-4" style={{ color: '#fff' }}>{isAr ? 'محتوى الكورس' : 'Course Content'}</h2>
               <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                {sections.length} {isAr ? 'أقسام' : 'sections'} · {totalLessons} {isAr ? 'درس' : 'lessons'} · {course.duration_hours} {isAr ? 'ساعة' : 'hours'}
+                {sections.length} {isAr ? 'أقسام' : 'sections'} · {totalLessons} {isAr ? 'درس' : 'lessons'} · {totalMinutes > 0 ? formatDuration(totalMinutes) : `${course.duration_hours}h`}
               </p>
               <div className="space-y-2">
                 {sections.map((section) => (
@@ -337,7 +348,7 @@ export default function CourseDetailPage() {
                       style={{ backgroundColor: '#162038' }}>
                       <span className="font-medium text-sm" style={{ color: '#e2e8f0' }}>{section.title}</span>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{section.lessons?.length || 0} {isAr ? 'درس' : 'lessons'}</span>
+                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{section.lessons?.length || 0} {isAr ? 'درس' : 'lessons'}{sectionDuration(section) ? ` · ${sectionDuration(section)}` : ''}</span>
                         {expanded[section.id] ? <ChevronUp className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.4)' }} /> : <ChevronDown className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.4)' }} />}
                       </div>
                     </button>
@@ -354,7 +365,7 @@ export default function CourseDetailPage() {
                             {lesson.is_preview && !enrolled && (
                               <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>Preview</span>
                             )}
-                            <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>{lesson.duration_minutes}m</span>
+                            {lesson.duration_minutes > 0 && <span className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>{formatDuration(lesson.duration_minutes)}</span>}
                           </div>
                         ))}
                       </div>

@@ -411,4 +411,105 @@ const deleteFile = async (req, res, next) => {
   }
 };
 
-module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };
+// ─── POST /api/files/bunny-tus-token ─────────────────────────────────────────
+// Creates a Bunny video entry + returns TUS upload credentials so the browser
+// can upload directly to Bunny (bypassing this server entirely).
+// Body: { lesson_id, title }
+// Returns: { videoId, uploadUrl, authorizationSignature, authorizationExpire, libraryId }
+const getBunnyTusToken = async (req, res, next) => {
+  try {
+    const { lesson_id, title } = req.body;
+    if (!lesson_id) return res.status(400).json({ error: 'lesson_id مطلوب' });
+
+    const hasBunny = !!(process.env.BUNNY_LIBRARY_ID && process.env.BUNNY_API_KEY);
+    if (!hasBunny) return res.status(500).json({ error: 'Bunny غير مفعّل' });
+
+    // Step 1: Create video entry on Bunny
+    const bunnyService = require('../services/bunnyService');
+    const lessonRes = await query('SELECT id, title FROM lessons WHERE id = $1', [lesson_id]);
+    if (!lessonRes.rows.length) return res.status(404).json({ error: 'الدرس غير موجود' });
+
+    const videoTitle = title || lessonRes.rows[0].title || 'lesson';
+
+    const createRes = await require('axios').post(
+      `https://video.bunnycdn.com/library/${process.env.BUNNY_LIBRARY_ID}/videos`,
+      { title: videoTitle },
+      { headers: { AccessKey: process.env.BUNNY_API_KEY } }
+    );
+    const videoId = createRes.data.guid;
+
+    // Step 2: Generate TUS signature
+    // Bunny TUS auth: SHA256(apiKey + expirationTime + videoId)
+    const expirationTime = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+    const signature = require('crypto')
+      .createHash('sha256')
+      .update(process.env.BUNNY_API_KEY + expirationTime + videoId)
+      .digest('hex');
+
+    // Step 3: Save video ID to lesson immediately
+    await query(
+      `UPDATE lessons SET bunny_video_id = $1, bunny_embed_url = $2, updated_at = NOW() WHERE id = $3`,
+      [videoId, bunnyService.getEmbedUrl(videoId), lesson_id]
+    );
+
+    res.json({
+      videoId,
+      libraryId:             process.env.BUNNY_LIBRARY_ID,
+      authorizationSignature: signature,
+      authorizationExpire:    expirationTime,
+    });
+  } catch (err) {
+    console.error('[BunnyTUS Token]', err.response?.data || err.message);
+    next(err);
+  }
+};
+
+// ─── POST /api/files/bunny-tus-complete ──────────────────────────────────────
+// Called after TUS upload finishes — triggers duration fetch & course update
+// Body: { lesson_id, video_id }
+const bunnyTusComplete = async (req, res, next) => {
+  try {
+    const { lesson_id, video_id } = req.body;
+    if (!lesson_id || !video_id) return res.status(400).json({ error: 'lesson_id و video_id مطلوبان' });
+
+    const bunnyService = require('../services/bunnyService');
+
+    // Fetch duration in background (Bunny needs time to process)
+    setImmediate(async () => {
+      try {
+        const durationSeconds = await bunnyService.getVideoDuration(video_id);
+        const durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
+
+        await query(
+          `UPDATE lessons SET duration_minutes = COALESCE($1, duration_minutes), updated_at = NOW() WHERE id = $2`,
+          [durationMinutes, lesson_id]
+        );
+
+        if (durationMinutes) {
+          const courseRes = await query(
+            `SELECT s.course_id FROM lessons l JOIN sections s ON s.id = l.section_id WHERE l.id = $1`,
+            [lesson_id]
+          );
+          if (courseRes.rows.length) {
+            await query(
+              `UPDATE courses SET duration_hours = ROUND(
+                (SELECT COALESCE(SUM(l.duration_minutes), 0)
+                 FROM lessons l JOIN sections s ON s.id = l.section_id
+                 WHERE s.course_id = $1) / 60.0, 1) WHERE id = $1`,
+              [courseRes.rows[0].course_id]
+            );
+          }
+        }
+        console.log(`[BunnyTUS] ✅ Duration updated for lesson ${lesson_id}: ${durationMinutes} min`);
+      } catch (e) {
+        console.error('[BunnyTUS Complete]', e.message);
+      }
+    });
+
+    res.json({ ok: true, message: 'جاري معالجة الفيديو وحساب المدة...' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, getBunnyTusToken, bunnyTusComplete, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };
