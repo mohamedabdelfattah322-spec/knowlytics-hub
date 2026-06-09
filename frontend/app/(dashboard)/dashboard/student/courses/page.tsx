@@ -65,19 +65,19 @@ export default function MyCoursesPage() {
         {loading
           ? [...Array(6)].map((_, i) => (
             <div key={i} className="card animate-pulse">
-              <div className="w-full h-32 bg-dark-700 rounded-lg mb-3" />
+              <div className="w-full h-48 bg-dark-700 rounded-lg mb-3" />
               <div className="h-4 bg-dark-700 rounded mb-2" />
               <div className="h-3 bg-dark-700 rounded w-2/3" />
             </div>
           ))
           : filtered.map((e) => (
             <div key={e.course_id} className="card hover:border-brand-500/40 transition-all duration-200 flex flex-col">
-              <div className="w-full h-32 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden"
+              <div className="w-full h-48 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden"
                 style={{ background: e.thumbnail_url ? undefined : 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2))' }}>
                 {e.thumbnail_url ? (
                   <img src={e.thumbnail_url} alt={e.course_title} className="w-full h-full object-cover" />
                 ) : (
-                  <BookOpen className="w-10 h-10 text-brand-400" />
+                  <BookOpen className="w-14 h-14 text-brand-400" />
                 )}
                 {e.progress_pct === 100 && (
                   <div className="absolute top-2 right-2"><Award className="w-5 h-5 text-yellow-400" /></div>
