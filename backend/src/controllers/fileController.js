@@ -439,24 +439,17 @@ const getBunnyTusToken = async (req, res, next) => {
     const videoId = createRes.data.guid;
 
     // Step 2: Generate TUS signature
-    // Bunny TUS auth: SHA256(apiKey + expirationTime + videoId)
+    // Bunny TUS auth (CORRECT format): SHA256(libraryId + apiKey + expirationTime + videoId)
     const apiKey      = (process.env.BUNNY_API_KEY    || '').trim();
     const libraryId   = (process.env.BUNNY_LIBRARY_ID || '').trim();
     const expirationTime   = Math.floor(Date.now() / 1000) + 3600; // 1 hour
-    const signatureInput   = apiKey + String(expirationTime) + videoId;
+    const signatureInput   = libraryId + apiKey + String(expirationTime) + videoId;
     const signature        = require('crypto')
       .createHash('sha256')
       .update(signatureInput)
       .digest('hex');
 
-    console.log('[BunnyTUS] Credentials:', {
-      videoId,
-      libraryId,
-      expirationTime,
-      apiKeyLen:  apiKey.length,
-      apiKeyHead: apiKey.substring(0, 8),
-      sigHead:    signature.substring(0, 12),
-    });
+    console.log('[BunnyTUS] Credentials:', { videoId, libraryId, expirationTime, sigHead: signature.substring(0, 12) });
 
     // Step 3: Save video ID to lesson immediately
     await query(
