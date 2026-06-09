@@ -310,10 +310,18 @@ export default function AdminCourseEditorPage() {
       // Step 2: Upload directly to Bunny via TUS
       const { Upload } = await import('tus-js-client');
 
+      console.log('[TUS] Starting upload with:', {
+        videoId:   token.videoId,
+        libraryId: token.libraryId,
+        expire:    token.authorizationExpire,
+        sigLen:    token.authorizationSignature?.length,
+      });
+
       await new Promise<void>((resolve, reject) => {
         const upload = new Upload(file, {
-          endpoint: 'https://video.bunnycdn.com/tusupload',
-          retryDelays: [0, 3000, 5000, 10000, 20000],
+          endpoint:       'https://video.bunnycdn.com/tusupload',
+          retryDelays:    [0, 3000, 5000, 10000, 20000],
+          storeFingerprintForResuming: false,
           headers: {
             AuthorizationSignature: token.authorizationSignature,
             AuthorizationExpire:    String(token.authorizationExpire),
@@ -321,16 +329,19 @@ export default function AdminCourseEditorPage() {
             LibraryId:              String(token.libraryId),
           },
           metadata: {
-            filename:    file.name,
-            filetype:    file.type,
-            title:       file.name.replace(/\.[^/.]+$/, ''),
+            filename:  file.name,
+            filetype:  file.type,
+            title:     file.name.replace(/\.[^/.]+$/, ''),
           },
           onProgress: (bytesUploaded, bytesTotal) => {
             const pct = Math.round((bytesUploaded / bytesTotal) * 100);
             setUploadProgress((p) => ({ ...p, [lessonId]: pct }));
           },
           onSuccess: () => resolve(),
-          onError:   (err) => reject(err),
+          onError:   (err) => {
+            console.error('[TUS] Upload error:', err);
+            reject(err);
+          },
         });
         upload.start();
       });
