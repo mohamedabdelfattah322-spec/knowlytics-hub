@@ -308,10 +308,10 @@ export default function AdminCourseEditorPage() {
       });
 
       // Step 2: Upload directly to Bunny via TUS
-      const tus = (await import('tus-js-client')).default;
+      const { Upload } = await import('tus-js-client');
 
       await new Promise<void>((resolve, reject) => {
-        const upload = new tus.Upload(file, {
+        const upload = new Upload(file, {
           endpoint: 'https://video.bunnycdn.com/tusupload',
           retryDelays: [0, 3000, 5000, 10000, 20000],
           headers: {
