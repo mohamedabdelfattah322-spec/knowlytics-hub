@@ -1410,8 +1410,6 @@ export default function AdminCourseEditorPage() {
         </div>
       )}
     </div>
-
-    </div>
     {/* ── Quiz Builder Modal ── */}
     {quizModal && (
       <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-8 px-4">
