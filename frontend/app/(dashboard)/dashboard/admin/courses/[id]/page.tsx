@@ -7,7 +7,7 @@ import {
   Save, Loader2, Upload, ChevronDown, ChevronUp,
   Lock, Unlock, ClipboardList, CheckCircle, DollarSign,
   Eye, Image as ImageIcon, Paperclip, X, Users, UserPlus,
-  Search, BadgeCheck, Ban, ArrowUp, ArrowDown,
+  Search, BadgeCheck, Ban, ArrowUp, ArrowDown, Link as LinkIcon,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -84,7 +84,21 @@ export default function AdminCourseEditorPage() {
   const [enrolling, setEnrolling]       = useState(false);
 
   // Active tab
-  const [tab, setTab] = useState<'curriculum' | 'files' | 'students' | 'batches' | 'settings'>('curriculum');
+  const [tab, setTab] = useState<'curriculum' | 'files' | 'students' | 'batches' | 'settings' | 'quizzes'>('curriculum');
+
+  // ── Quiz state ──
+  interface QuizAnswer { text: string; is_correct: boolean; }
+  interface QuizQuestion { question_text: string; points: number; answers: QuizAnswer[]; }
+  interface QuizRecord { id: string; title: string; description: string; section_id: string; section_title: string; question_count: string; attempt_count: string; }
+  const [quizzes, setQuizzes]         = useState<QuizRecord[]>([]);
+  const [quizModal, setQuizModal]     = useState(false);
+  const [quizSectionId, setQuizSectionId] = useState('');
+  const [quizTitle, setQuizTitle]     = useState('');
+  const [quizDesc, setQuizDesc]       = useState('');
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([
+    { question_text: '', points: 1, answers: [{ text: '', is_correct: true }, { text: '', is_correct: false }, { text: '', is_correct: false }, { text: '', is_correct: false }] },
+  ]);
+  const [savingQuiz, setSavingQuiz]   = useState(false);
 
   /* ── Load data ── */
   useEffect(() => {
@@ -113,7 +127,69 @@ export default function AdminCourseEditorPage() {
         .then(({ data }) => setEnrollments(data))
         .catch(() => {});
     }
+    if (tab === 'quizzes' && id) {
+      api.get(`/quizzes/course/${id}`)
+        .then(({ data }) => setQuizzes(data))
+        .catch(() => {});
+    }
   }, [tab, id]);
+
+  const openQuizModal = (sectionId: string) => {
+    setQuizSectionId(sectionId);
+    setQuizTitle('');
+    setQuizDesc('');
+    setQuizQuestions([{ question_text: '', points: 1, answers: [{ text: '', is_correct: true }, { text: '', is_correct: false }, { text: '', is_correct: false }, { text: '', is_correct: false }] }]);
+    setQuizModal(true);
+  };
+
+  const addQuestion = () => setQuizQuestions(p => [
+    ...p,
+    { question_text: '', points: 1, answers: [{ text: '', is_correct: true }, { text: '', is_correct: false }, { text: '', is_correct: false }, { text: '', is_correct: false }] },
+  ]);
+
+  const updateQuestion = (qi: number, field: string, val: any) =>
+    setQuizQuestions(p => p.map((q, i) => i === qi ? { ...q, [field]: val } : q));
+
+  const updateAnswer = (qi: number, ai: number, field: string, val: any) =>
+    setQuizQuestions(p => p.map((q, i) => i === qi ? {
+      ...q,
+      answers: q.answers.map((a, j) =>
+        field === 'is_correct'
+          ? { ...a, is_correct: j === ai }           // radio: only one correct
+          : j === ai ? { ...a, [field]: val } : a
+      ),
+    } : q));
+
+  const saveQuiz = async () => {
+    if (!quizTitle.trim()) return toast.error('أدخل عنوان الكويز');
+    if (quizQuestions.some(q => !q.question_text.trim())) return toast.error('أدخل نص كل الأسئلة');
+    if (quizQuestions.some(q => q.answers.every(a => !a.text.trim()))) return toast.error('أدخل الإجابات');
+    setSavingQuiz(true);
+    try {
+      await api.post('/quizzes', {
+        section_id: quizSectionId,
+        title:      quizTitle,
+        description: quizDesc,
+        questions:  quizQuestions.map(q => ({
+          question_text: q.question_text,
+          question_type: 'multiple_choice',
+          points:        q.points,
+          answers:       q.answers.filter(a => a.text.trim()),
+        })),
+      });
+      toast.success('✅ تم حفظ الكويز!');
+      setQuizModal(false);
+      api.get(`/quizzes/course/${id}`).then(({ data }) => setQuizzes(data));
+    } catch { toast.error('فشل الحفظ'); }
+    finally { setSavingQuiz(false); }
+  };
+
+  const deleteQuizById = async (quizId: string) => {
+    if (!confirm('مسح الكويز؟')) return;
+    await api.delete(`/quizzes/${quizId}`);
+    setQuizzes(p => p.filter(q => q.id !== quizId));
+    toast.success('تم المسح');
+  };
 
   // Search students for enrollment
   useEffect(() => {
@@ -574,6 +650,7 @@ export default function AdminCourseEditorPage() {
       <div className="flex gap-1 bg-dark-800 border border-dark-700 rounded-xl p-1 w-fit flex-wrap">
         {([
           { key: 'curriculum', label: '📚 المحتوى' },
+          { key: 'quizzes',    label: '❓ الكويزات' },
           { key: 'batches',    label: '👥 الدفعات (Groups)' },
           { key: 'students',   label: '🎓 جميع الطلاب' },
           { key: 'files',      label: '📎 الملفات' },
@@ -869,6 +946,75 @@ export default function AdminCourseEditorPage() {
             <div className="card text-center py-12">
               <FileText className="w-10 h-10 text-slate-600 mx-auto mb-3" />
               <p className="text-slate-400 text-sm">لا توجد أقسام بعد. أضف قسماً لبناء محتوى الكورس.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════
+          TAB: QUIZZES
+      ══════════════════════════════════════════════════ */}
+      {tab === 'quizzes' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-white">الكويزات</h2>
+              <p className="text-slate-400 text-sm mt-0.5">أضف كويز لأي سيكشن في الكورس</p>
+            </div>
+            <button onClick={() => openQuizModal(sections[0]?.id || '')} className="btn-primary flex items-center gap-2 text-sm">
+              <Plus className="w-4 h-4" /> إضافة كويز
+            </button>
+          </div>
+
+          {quizzes.length === 0 ? (
+            <div className="card text-center py-16">
+              <HelpCircle className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-400">مفيش كويزات لحد دلوقتي</p>
+              <button onClick={() => openQuizModal(sections[0]?.id || '')} className="btn-primary text-sm mt-4 inline-flex items-center gap-2">
+                <Plus className="w-4 h-4" /> إنشاء أول كويز
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {quizzes.map((quiz) => (
+                <div key={quiz.id} className="card flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                      <HelpCircle className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">{quiz.title}</p>
+                      <p className="text-xs text-slate-400">{quiz.section_title} · {quiz.question_count} سؤال · {quiz.attempt_count} محاولة</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Link href={`/courses/${id}/quiz/${quiz.id}`} target="_blank"
+                      className="btn-secondary text-xs px-3 py-1.5">معاينة</Link>
+                    <button onClick={() => openQuizModal(quiz.section_id)} className="btn-secondary text-xs px-3 py-1.5">
+                      + سؤال جديد
+                    </button>
+                    <button onClick={() => deleteQuizById(quiz.id)} className="text-red-400 hover:text-red-300 p-1.5">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Per-section quick add */}
+          {sections.length > 0 && (
+            <div className="card space-y-3">
+              <p className="text-sm font-medium text-slate-300">إضافة كويز لسيكشن محدد:</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {sections.map(s => (
+                  <button key={s.id} onClick={() => openQuizModal(s.id)}
+                    className="text-xs text-left bg-dark-700 hover:bg-dark-600 border border-dark-600 rounded-lg px-3 py-2 text-slate-300 hover:text-white transition-all">
+                    <Plus className="w-3 h-3 inline ml-1" />
+                    {s.title}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -1263,5 +1409,111 @@ export default function AdminCourseEditorPage() {
         </div>
       )}
     </div>
+
+    {/* ── Quiz Builder Modal ── */}
+    {quizModal && (
+      <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-8 px-4">
+        <div className="bg-dark-800 border border-dark-600 rounded-2xl w-full max-w-2xl shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-dark-700">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-purple-400" /> إنشاء كويز جديد
+            </h2>
+            <button onClick={() => setQuizModal(false)} className="text-slate-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Section selector */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">السيكشن</label>
+              <select value={quizSectionId} onChange={e => setQuizSectionId(e.target.value)} className="input w-full">
+                {sections.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+              </select>
+            </div>
+
+            {/* Quiz title + desc */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">عنوان الكويز *</label>
+                <input value={quizTitle} onChange={e => setQuizTitle(e.target.value)}
+                  placeholder="مثال: كويز الوحدة الأولى" className="input w-full" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">وصف (اختياري)</label>
+                <input value={quizDesc} onChange={e => setQuizDesc(e.target.value)}
+                  placeholder="وصف مختصر للكويز" className="input w-full" />
+              </div>
+            </div>
+
+            {/* Questions */}
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-white">الأسئلة ({quizQuestions.length})</h3>
+                <button onClick={addQuestion} className="btn-secondary text-xs flex items-center gap-1 px-3 py-1.5">
+                  <Plus className="w-3.5 h-3.5" /> إضافة سؤال
+                </button>
+              </div>
+
+              {quizQuestions.map((q, qi) => (
+                <div key={qi} className="bg-dark-700/60 border border-dark-600 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-purple-400 bg-purple-500/20 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0">{qi + 1}</span>
+                    <input
+                      value={q.question_text}
+                      onChange={e => updateQuestion(qi, 'question_text', e.target.value)}
+                      placeholder={`السؤال ${qi + 1}`}
+                      className="input flex-1 text-sm"
+                    />
+                    <div className="flex items-center gap-1 text-xs text-slate-400 flex-shrink-0">
+                      <span>درجة:</span>
+                      <input type="number" min={1} max={10} value={q.points}
+                        onChange={e => updateQuestion(qi, 'points', parseInt(e.target.value) || 1)}
+                        className="input w-14 text-center text-sm py-1 px-2" />
+                    </div>
+                    {quizQuestions.length > 1 && (
+                      <button onClick={() => setQuizQuestions(p => p.filter((_, i) => i !== qi))}
+                        className="text-red-400 hover:text-red-300 flex-shrink-0">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Answers */}
+                  <div className="space-y-2 mr-8">
+                    {q.answers.map((a, ai) => (
+                      <div key={ai} className={cn('flex items-center gap-2 rounded-lg px-3 py-2 border transition-all',
+                        a.is_correct ? 'border-green-500/50 bg-green-500/10' : 'border-dark-500 bg-dark-800/50')}>
+                        <input type="radio" name={`correct-${qi}`} checked={a.is_correct}
+                          onChange={() => updateAnswer(qi, ai, 'is_correct', true)}
+                          className="accent-green-400 flex-shrink-0" />
+                        <input
+                          value={a.text}
+                          onChange={e => updateAnswer(qi, ai, 'text', e.target.value)}
+                          placeholder={`الإجابة ${ai + 1}${a.is_correct ? ' ✓ الصح' : ''}`}
+                          className="bg-transparent flex-1 text-sm text-white outline-none placeholder:text-slate-500"
+                        />
+                        {a.is_correct && <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />}
+                      </div>
+                    ))}
+                    <p className="text-xs text-slate-500 mr-1">اضغط على الـ radio button قدام الإجابة الصح ✓</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between p-6 border-t border-dark-700">
+            <button onClick={() => setQuizModal(false)} className="btn-secondary">إلغاء</button>
+            <button onClick={saveQuiz} disabled={savingQuiz} className="btn-primary flex items-center gap-2">
+              {savingQuiz ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              حفظ الكويز ({quizQuestions.length} أسئلة)
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   );
 }

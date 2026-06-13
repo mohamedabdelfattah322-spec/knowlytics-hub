@@ -1,5 +1,34 @@
 const { query } = require('../config/database');
 
+// GET /api/quizzes/course/:courseId  — list all quizzes for a course (admin)
+const getQuizzesByCourse = async (req, res, next) => {
+  try {
+    const { courseId } = req.params;
+    const result = await query(
+      `SELECT q.id, q.title, q.description, q.section_id, s.title AS section_title,
+              COUNT(DISTINCT qq.id) AS question_count,
+              COUNT(DISTINCT qa2.id) AS attempt_count
+       FROM quizzes q
+       JOIN sections s ON s.id = q.section_id
+       LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
+       LEFT JOIN quiz_attempts qa2 ON qa2.quiz_id = q.id
+       WHERE s.course_id = $1
+       GROUP BY q.id, q.title, q.description, q.section_id, s.title
+       ORDER BY s.order_index, q.id`,
+      [courseId]
+    );
+    res.json(result.rows);
+  } catch (err) { next(err); }
+};
+
+// DELETE /api/quizzes/:id  (admin)
+const deleteQuiz = async (req, res, next) => {
+  try {
+    await query(`DELETE FROM quizzes WHERE id = $1`, [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+};
+
 // GET /api/quizzes/:id  — quiz with questions (no correct answers exposed)
 const getQuiz = async (req, res, next) => {
   try {
@@ -154,4 +183,4 @@ const getResults = async (req, res, next) => {
   }
 };
 
-module.exports = { getQuiz, submitQuiz, createQuiz, getResults };
+module.exports = { getQuiz, submitQuiz, createQuiz, getResults, getQuizzesByCourse, deleteQuiz };
