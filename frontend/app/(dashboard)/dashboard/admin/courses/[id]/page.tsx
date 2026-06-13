@@ -593,6 +593,7 @@ export default function AdminCourseEditorPage() {
      RENDER
   ════════════════════════════════════════════════════════ */
   return (
+    <>
     <div className="space-y-6 animate-slide-up">
 
       {/* ── Header ── */}
@@ -1410,6 +1411,7 @@ export default function AdminCourseEditorPage() {
       )}
     </div>
 
+    </div>
     {/* ── Quiz Builder Modal ── */}
     {quizModal && (
       <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-8 px-4">
@@ -1515,5 +1517,6 @@ export default function AdminCourseEditorPage() {
         </div>
       </div>
     )}
+    </>
   );
 }
