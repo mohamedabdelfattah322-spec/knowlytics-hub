@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   BookOpen, Clock, Users, Play, Lock, ChevronDown, ChevronUp, Loader2,
   CheckCircle, ShoppingCart, Phone, Trophy, Star, GraduationCap, Award,
-  Globe, Shield, BarChart3, Zap,
+  Globe, Shield, BarChart3, Zap, HelpCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -23,6 +23,7 @@ import AIChatbot from '@/components/AIChatbot';
 
 interface Lesson { id: string; title: string; type: string; duration_minutes: number; is_preview: boolean; }
 interface Section { id: string; title: string; order_index: number; lessons: Lesson[]; }
+interface QuizItem { id: string; title: string; description: string; section_id: string; question_count: string; }
 interface Course {
   id: string; title: string; description: string; type: string; level: string;
   price: number; duration_hours: number; thumbnail_url: string;
@@ -51,6 +52,7 @@ export default function CourseDetailPage() {
   const [examStatus, setExamStatus] = useState<any>(null);
   const [feedbackSummary, setFeedbackSummary] = useState<{ total_reviews: number; avg_rating: number; recommend_count: number } | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,6 +65,7 @@ export default function CourseDetailPage() {
     if (user) {
       api.get('/enrollments/my').then(({ data }) => { setEnrolled(data.some((e: any) => e.course_id === id)); });
       api.get(`/courses/${id}/final-quiz-status`).then(({ data }) => setExamStatus(data)).catch(() => {});
+      api.get(`/quizzes/course/${id}`).then(({ data }) => setQuizzes(data)).catch(() => {});
     }
   }, [id, user]);
 
@@ -366,6 +369,27 @@ export default function CourseDetailPage() {
                               <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>Preview</span>
                             )}
                             {lesson.duration_minutes > 0 && <span className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>{formatDuration(lesson.duration_minutes)}</span>}
+                          </div>
+                        ))}
+                        {/* Quizzes for this section */}
+                        {quizzes.filter(q => q.section_id === section.id).map(quiz => (
+                          <div key={quiz.id} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                            {enrolled ? (
+                              <Link href={`/courses/${id}/quiz/${quiz.id}`}
+                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors">
+                                <HelpCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#a855f7' }} />
+                                <span className="text-sm flex-1" style={{ color: 'rgba(255,255,255,0.7)' }}>{quiz.title}</span>
+                                <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(168,85,247,0.15)', color: '#c084fc' }}>
+                                  {quiz.question_count} سؤال
+                                </span>
+                              </Link>
+                            ) : (
+                              <div className="flex items-center gap-3 px-4 py-2.5">
+                                <Lock className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.2)' }} />
+                                <span className="text-sm flex-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{quiz.title}</span>
+                                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>كويز</span>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
