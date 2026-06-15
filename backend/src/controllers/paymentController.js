@@ -103,7 +103,7 @@ const getPaymentMethods = async (req, res) => {
 // ───────────────────────────────────────────────────────────
 const initiatePayment = async (req, res, next) => {
   try {
-    const { course_id, bundle_id, phone, method = 'card', wallet_number } = req.body;
+    const { course_id, bundle_id, phone, method = 'card', wallet_number, coupon_code } = req.body;
     const userId = req.user.user_id;
 
     if (!course_id && !bundle_id) {
@@ -134,6 +134,38 @@ const initiatePayment = async (req, res, next) => {
       itemTitle = item.name;
     }
 
+    // ── Apply coupon if provided ──
+    let appliedCouponId = null;
+    if (coupon_code && course_id) {
+      const couponRes = await query(
+        `SELECT c.* FROM coupons c
+         WHERE c.code = $1 AND c.is_active = true
+           AND (c.course_id IS NULL OR c.course_id = $2)
+           AND (c.valid_from  IS NULL OR c.valid_from  <= NOW())
+           AND (c.valid_until IS NULL OR c.valid_until >= NOW())`,
+        [coupon_code.toUpperCase().trim(), course_id]
+      );
+      if (couponRes.rows.length) {
+        const coupon = couponRes.rows[0];
+        const usedRes = await query(
+          `SELECT COUNT(*)::int AS n FROM coupon_redemptions WHERE coupon_id = $1 AND user_id = $2`,
+          [coupon.id, userId]
+        );
+        const totalUsed = await query(
+          `SELECT used_count FROM coupons WHERE id = $1`, [coupon.id]
+        );
+        const maxOk = !coupon.max_uses || totalUsed.rows[0].used_count < coupon.max_uses;
+        const userOk = usedRes.rows[0].n < coupon.max_uses_per_user;
+        if (maxOk && userOk) {
+          const discount = coupon.discount_type === 'percent'
+            ? Math.round(itemPriceEgp * parseFloat(coupon.discount_value) / 100 * 100) / 100
+            : Math.min(parseFloat(coupon.discount_value), itemPriceEgp);
+          itemPriceEgp = Math.max(0, itemPriceEgp - discount);
+          appliedCouponId = coupon.id;
+        }
+      }
+    }
+
     const userRes = await query('SELECT id, name, email FROM users WHERE id = $1', [userId]);
     const user = userRes.rows[0];
 
@@ -144,6 +176,16 @@ const initiatePayment = async (req, res, next) => {
       [userId, course_id || null, bundle_id || null, itemPriceEgp, phone || null, user.email, method]
     );
     const paymentId = paymentRes.rows[0].id;
+
+    // Record coupon redemption
+    if (appliedCouponId) {
+      await query(
+        `INSERT INTO coupon_redemptions (coupon_id, user_id, payment_id) VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING`,
+        [appliedCouponId, userId, paymentId]
+      );
+      await query(`UPDATE coupons SET used_count = used_count + 1 WHERE id = $1`, [appliedCouponId]);
+    }
 
     // ════════════════════════════════════════════════════════
     // EASYKASH — Egypt (redirect to hosted payment page)

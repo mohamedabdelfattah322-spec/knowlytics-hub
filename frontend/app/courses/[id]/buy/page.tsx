@@ -54,6 +54,10 @@ export default function BuyCoursePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  const [couponCode, setCouponCode]   = useState('');
+  const [couponData, setCouponData]   = useState<{ valid: boolean; amount_off: number; final_price: number; discount_type: string; discount_value: number; error?: string } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+
   const { register, handleSubmit, formState: { errors }, watch } = useForm<FormValues>();
 
   // Handle return from Stripe / EasyKash after payment redirect
@@ -129,6 +133,20 @@ export default function BuyCoursePage() {
     return () => clearInterval(interval);
   }, [paymentId, polling, id, router]);
 
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    try {
+      const { data } = await api.post('/coupons/validate', { code: couponCode.trim(), course_id: id });
+      setCouponData(data);
+      if (data.valid) toast.success(`✅ خصم ${data.discount_type === 'percent' ? data.discount_value + '%' : formatPrice(data.discount_value)}`);
+      else toast.error(data.error || 'كود غير صالح');
+    } catch (e: any) {
+      setCouponData({ valid: false, amount_off: 0, final_price: course?.price || 0, discount_type: '', discount_value: 0, error: e?.response?.data?.error || 'كود غير صالح' });
+      toast.error(e?.response?.data?.error || 'كود غير صالح');
+    } finally { setCouponLoading(false); }
+  };
+
   const onSubmit = async (data: FormValues) => {
     setSubmitting(true);
     try {
@@ -137,6 +155,7 @@ export default function BuyCoursePage() {
         phone: data.phone,
         method: selectedMethod,
         wallet_number: data.wallet_number,
+        coupon_code: couponData?.valid ? couponCode.trim() : undefined,
       });
       const { type, iframe_url, redirect_url, url, reference, message, payment_id } = res.data;
       setPaymentId(payment_id);
@@ -254,10 +273,53 @@ export default function BuyCoursePage() {
             <div className="border-t border-dark-700 pt-3 space-y-1.5 text-sm">
               <div className="flex justify-between text-slate-400"><span>المدة</span><span className="text-white">{course.duration_hours} ساعة</span></div>
               <div className="flex justify-between text-slate-400"><span>النوع</span><span className="text-white capitalize">{course.type}</span></div>
-              <div className="flex justify-between font-bold border-t border-dark-700 pt-3 mt-3">
-                <span className="text-slate-300">الإجمالي</span>
-                <span className="text-white text-lg">{formatPrice(course.price)}</span>
+
+              {/* Coupon input */}
+              <div className="border-t border-dark-700 pt-3 mt-3">
+                <p className="text-xs text-slate-400 mb-1.5">كود خصم؟</p>
+                <div className="flex gap-2">
+                  <input
+                    value={couponCode}
+                    onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponData(null); }}
+                    onKeyDown={(e) => e.key === 'Enter' && validateCoupon()}
+                    placeholder="أدخل الكود"
+                    className="input flex-1 text-sm text-center tracking-widest font-mono"
+                  />
+                  <button type="button" onClick={validateCoupon} disabled={couponLoading || !couponCode.trim()}
+                    className="px-3 py-2 rounded-lg bg-dark-700 border border-dark-600 text-slate-300 text-xs hover:border-brand-500/50 hover:text-brand-400 transition-all disabled:opacity-40">
+                    {couponLoading ? '...' : 'تحقق'}
+                  </button>
+                </div>
+                {couponData?.valid && (
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="text-green-400">✅ تم تطبيق الخصم</span>
+                    <button onClick={() => { setCouponData(null); setCouponCode(''); }} className="text-red-400 hover:text-red-300">× إلغاء</button>
+                  </div>
+                )}
+                {couponData && !couponData.valid && (
+                  <p className="text-red-400 text-xs mt-1">❌ {couponData.error}</p>
+                )}
               </div>
+
+              <div className="border-t border-dark-700 pt-3 mt-3 space-y-1">
+                {couponData?.valid && (
+                  <>
+                    <div className="flex justify-between text-slate-400">
+                      <span>السعر الأصلي</span>
+                      <span className="line-through">{formatPrice(course.price)}</span>
+                    </div>
+                    <div className="flex justify-between text-green-400">
+                      <span>الخصم</span>
+                      <span>- {formatPrice(couponData.amount_off)}</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-300">الإجمالي</span>
+                  <span className="text-white text-lg">{formatPrice(couponData?.valid ? couponData.final_price : course.price)}</span>
+                </div>
+              </div>
+
               {selectedMethod === 'stripe' && (
                 <p className="text-xs text-blue-400 mt-2">💱 سيُحوَّل إلى الدولار عند الدفع</p>
               )}
@@ -370,7 +432,7 @@ export default function BuyCoursePage() {
                 >
                   {submitting
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> جارِ التحويل...</>
-                    : `ادفع ${formatPrice(course.price)}`
+                    : `ادفع ${formatPrice(couponData?.valid ? couponData.final_price : course.price)}`
                   }
                 </button>
               </form>
