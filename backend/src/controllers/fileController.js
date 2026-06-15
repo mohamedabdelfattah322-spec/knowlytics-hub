@@ -519,6 +519,7 @@ const bunnyTusComplete = async (req, res, next) => {
 
 // ─── POST /api/files/bunny-thumbnail ─────────────────────────────────────────
 // Upload a custom thumbnail image for a Bunny video.
+// Bunny requires a public URL — save image locally then pass URL via ?thumbnailUrl=
 // Accepts multipart form: { video_id } + image file field "thumbnail"
 const setBunnyThumbnail = async (req, res, next) => {
   try {
@@ -530,18 +531,24 @@ const setBunnyThumbnail = async (req, res, next) => {
     const libraryId = (process.env.BUNNY_LIBRARY_ID || '').trim();
     if (!apiKey || !libraryId) return res.status(500).json({ error: 'Bunny غير مفعّل' });
 
+    // 1. Save image to local disk so Bunny can fetch it via a public URL
+    const ext      = path.extname(req.file.originalname || '.jpg') || '.jpg';
+    const filename = `thumb-${uuidv4()}${ext}`;
+    const thumbDir = path.join(UPLOAD_DIR, 'files');
+    fs.mkdirSync(thumbDir, { recursive: true });
+    fs.writeFileSync(path.join(thumbDir, filename), req.file.buffer);
+
+    const baseUrl      = (process.env.BACKEND_URL || process.env.API_URL || '').replace(/\/+$/, '');
+    const thumbnailUrl = `${baseUrl}/uploads/files/${filename}`;
+
+    // 2. Tell Bunny to download and use that URL as the video thumbnail
     await require('axios').post(
       `https://video.bunnycdn.com/library/${libraryId}/videos/${video_id}/thumbnail`,
-      req.file.buffer,
-      {
-        headers: {
-          AccessKey:      apiKey,
-          'Content-Type': req.file.mimetype,
-        },
-      }
+      {},
+      { params: { thumbnailUrl }, headers: { AccessKey: apiKey } }
     );
 
-    res.json({ ok: true, message: 'تم تحديث الـ thumbnail ✅' });
+    res.json({ ok: true, message: 'تم تحديث الـ thumbnail ✅', thumbnailUrl });
   } catch (err) {
     console.error('[BunnyThumbnail]', err.response?.data || err.message);
     next(err);
