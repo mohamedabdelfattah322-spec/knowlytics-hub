@@ -139,6 +139,7 @@ const getOverview = async (req, res, next) => {
     const since = `NOW() - INTERVAL '${parseInt(days)} days'`;
 
     const [
+      platformStats,
       videoStats,
       cartStats,
       topCoursesByWatch,
@@ -151,6 +152,20 @@ const getOverview = async (req, res, next) => {
       deviceBreakdown,
       revenueByDay,
     ] = await Promise.all([
+      // Real platform totals (not date-filtered — always show reality)
+      query(`
+        SELECT
+          (SELECT COUNT(*)::int FROM users WHERE role = 'student') AS total_students,
+          (SELECT COUNT(*)::int FROM enrollments WHERE is_active = true) AS total_enrollments,
+          (SELECT COUNT(*)::int FROM payments WHERE status = 'success' AND payment_method != 'coupon_free') AS paid_count,
+          (SELECT COALESCE(SUM(amount),0)::float FROM payments WHERE status = 'success' AND payment_method != 'coupon_free') AS total_revenue,
+          (SELECT COUNT(*)::int FROM payments WHERE status = 'success' AND payment_method = 'coupon_free') AS free_count,
+          (SELECT COUNT(*)::int FROM payments WHERE status = 'pending') AS pending_count,
+          (SELECT COUNT(*)::int FROM courses WHERE is_published = true) AS published_courses,
+          (SELECT COALESCE(SUM(amount),0)::float FROM payments WHERE status = 'success' AND payment_method != 'coupon_free' AND created_at >= ${since}) AS revenue_period,
+          (SELECT COUNT(*)::int FROM enrollments WHERE is_active = true AND enrolled_at >= ${since}) AS enrollments_period,
+          (SELECT COUNT(*)::int FROM users WHERE role = 'student' AND created_at >= ${since}) AS new_students_period
+      `),
       // Total video stats
       query(`
         SELECT
@@ -317,7 +332,7 @@ const getOverview = async (req, res, next) => {
           COALESCE(SUM(p.amount), 0) AS revenue,
           COUNT(p.id) AS transactions
         FROM days d
-        LEFT JOIN payments p ON p.paid_at::date = d.d AND p.status = 'paid'
+        LEFT JOIN payments p ON p.paid_at::date = d.d AND p.status = 'success' AND p.payment_method != 'coupon_free'
         GROUP BY d.d
         ORDER BY d.d
       `),
@@ -325,6 +340,7 @@ const getOverview = async (req, res, next) => {
 
     res.json({
       period_days: parseInt(days),
+      platform: platformStats.rows[0],
       video: videoStats.rows[0],
       cart: cartStats.rows[0],
       top_courses_by_watch: topCoursesByWatch.rows,

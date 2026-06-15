@@ -221,12 +221,25 @@ export default function AdminInstructorsPage() {
             <div key={inst.id} className="card hover:border-brand-500/30 transition-colors">
               <div className="flex items-start gap-4 mb-4">
                 {inst.photo_url ? (
-                  <img src={inst.photo_url} alt={inst.name} className="w-14 h-14 rounded-xl object-cover" />
-                ) : (
-                  <div className="w-14 h-14 rounded-xl bg-brand-500/20 flex items-center justify-center text-lg font-bold text-brand-400">
-                    {inst.name.charAt(0)}
-                  </div>
-                )}
+                  <img
+                    src={inst.photo_url}
+                    alt={inst.name}
+                    className="w-14 h-14 rounded-xl object-cover"
+                    onError={(e) => {
+                      const t = e.currentTarget;
+                      t.onerror = null;
+                      t.style.display = 'none';
+                      const fb = t.nextElementSibling as HTMLElement | null;
+                      if (fb) fb.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div
+                  className="w-14 h-14 rounded-xl bg-brand-500/20 items-center justify-center text-lg font-bold text-brand-400"
+                  style={{ display: inst.photo_url ? 'none' : 'flex' }}
+                >
+                  {inst.name.charAt(0).toUpperCase()}
+                </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-white truncate">{inst.name}</h3>
                   {inst.name_ar && <p className="text-xs text-slate-400 truncate">{inst.name_ar}</p>}

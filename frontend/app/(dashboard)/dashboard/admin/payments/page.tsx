@@ -227,8 +227,11 @@ export default function AdminPaymentsPage() {
            p.paymob_txn_id?.includes(q);
   });
 
-  const totalEarnings = payments.filter((p) => p.status === 'success').reduce((s, p) => s + parseFloat(String(p.amount)), 0);
-  const refundedTotal = payments.filter((p) => p.status === 'refunded').reduce((s, p) => s + parseFloat(String(p.amount)), 0);
+  const successPayments = payments.filter((p) => p.status === 'success');
+  const freePayments    = successPayments.filter((p) => (p as any).payment_method === 'coupon_free');
+  const paidPayments    = successPayments.filter((p) => (p as any).payment_method !== 'coupon_free');
+  const totalEarnings   = paidPayments.reduce((s, p) => s + parseFloat(String(p.amount)), 0);
+  const refundedTotal   = payments.filter((p) => p.status === 'refunded').reduce((s, p) => s + parseFloat(String(p.amount)), 0);
 
   return (
     <div>
@@ -243,13 +246,19 @@ export default function AdminPaymentsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <div className="card"><p className="text-slate-400 text-xs mb-1">إجمالي المعاملات</p>
           <p className="text-2xl font-bold text-white">{payments.length}</p></div>
         <div className="card"><p className="text-slate-400 text-xs mb-1">ناجحة</p>
-          <p className="text-2xl font-bold text-green-400">{payments.filter((p) => p.status === 'success').length}</p></div>
-        <div className="card"><p className="text-slate-400 text-xs mb-1">إجمالي الدخل</p>
-          <p className="text-2xl font-bold text-brand-400">{formatCurrency(totalEarnings)}</p></div>
+          <p className="text-2xl font-bold text-green-400">{successPayments.length}</p></div>
+        <div className="card"><p className="text-slate-400 text-xs mb-1">🎟 مجاني (كوبون)</p>
+          <p className="text-2xl font-bold text-purple-400">{freePayments.length}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{freePayments.length} تسجيل مجاني</p></div>
+        <div className="card"><p className="text-slate-400 text-xs mb-1">💳 مدفوع فعلي</p>
+          <p className="text-2xl font-bold text-brand-400">{formatCurrency(totalEarnings)}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{paidPayments.length} معاملة</p></div>
+        <div className="card"><p className="text-slate-400 text-xs mb-1">⏳ قيد الانتظار</p>
+          <p className="text-2xl font-bold text-yellow-400">{payments.filter((p) => p.status === 'pending').length}</p></div>
         <div className="card"><p className="text-slate-400 text-xs mb-1">مُسترد</p>
           <p className="text-2xl font-bold text-red-400">{formatCurrency(refundedTotal)}</p></div>
       </div>

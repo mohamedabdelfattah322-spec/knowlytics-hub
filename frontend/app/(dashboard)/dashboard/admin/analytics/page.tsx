@@ -61,6 +61,7 @@ export default function AnalyticsPage() {
     );
   }
 
+  const platform = data?.platform || {};
   const video = data?.video || {};
   const cart = data?.cart || {};
   const dailyActivity = data?.daily_activity || [];
@@ -80,6 +81,8 @@ export default function AnalyticsPage() {
   const abandonRate = cart.total_adds > 0
     ? (((parseInt(cart.total_adds) - parseInt(cart.total_purchases)) / parseInt(cart.total_adds)) * 100).toFixed(1)
     : '0';
+
+  const fmtEGP = (v: number) => `${v?.toLocaleString('ar-EG') || 0} ج`;
 
   const tabs = [
     { key: 'overview', label: 'Overview', icon: BarChart2 },
@@ -125,21 +128,44 @@ export default function AnalyticsPage() {
       {/* ═══════════════════════ OVERVIEW TAB ═══════════════════════ */}
       {tab === 'overview' && (
         <>
-          {/* Top KPIs */}
+          {/* Top KPIs — Real platform stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: Users, label: 'Total Users', value: basic?.stats?.users?.total || 0, color: 'text-blue-400', bg: 'bg-blue-500/15' },
-              { icon: Eye, label: 'Video Sessions', value: formatK(parseInt(video.total_sessions || 0)), color: 'text-purple-400', bg: 'bg-purple-500/15' },
-              { icon: Clock, label: 'Total Watch Time', value: formatSeconds(parseInt(video.total_watch_seconds || 0)), color: 'text-cyan-400', bg: 'bg-cyan-500/15' },
-              { icon: TrendingUp, label: 'Conversion Rate', value: `${conversionRate}%`, color: 'text-green-400', bg: 'bg-green-500/15' },
-            ].map(({ icon: Icon, label, value, color, bg }) => (
+              { icon: Users,      label: 'إجمالي الطلاب',        value: platform.total_students ?? 0,                       sub: `+${platform.new_students_period ?? 0} آخر ${days} يوم`,    color: 'text-blue-400',   bg: 'bg-blue-500/15' },
+              { icon: Activity,   label: 'إجمالي التسجيلات',     value: platform.total_enrollments ?? 0,                    sub: `+${platform.enrollments_period ?? 0} آخر ${days} يوم`,     color: 'text-green-400',  bg: 'bg-green-500/15' },
+              { icon: CreditCard, label: 'إيراد المنصة',         value: fmtEGP(platform.total_revenue ?? 0),                sub: `${platform.paid_count ?? 0} معاملة مدفوعة`,               color: 'text-brand-400',  bg: 'bg-brand-500/15' },
+              { icon: Zap,        label: 'تسجيل مجاني (كوبون)',  value: platform.free_count ?? 0,                           sub: `${platform.pending_count ?? 0} قيد الانتظار`,             color: 'text-purple-400', bg: 'bg-purple-500/15' },
+            ].map(({ icon: Icon, label, value, sub, color, bg }) => (
               <div key={label} className="card">
-                <div className="flex items-center gap-3">
-                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', bg)}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', bg)}>
                     <Icon className={cn('w-5 h-5', color)} />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-white">{value}</p>
+                    <p className="text-slate-400 text-xs">{label}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500">{sub}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Secondary KPIs */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { icon: Eye,        label: 'Video Sessions',    value: formatK(parseInt(video.total_sessions || 0)),         color: 'text-purple-400', bg: 'bg-purple-500/10' },
+              { icon: Clock,      label: 'Total Watch Time',  value: formatSeconds(parseInt(video.total_watch_seconds || 0)), color: 'text-cyan-400',  bg: 'bg-cyan-500/10' },
+              { icon: TrendingUp, label: 'Cart Conversion',   value: `${conversionRate}%`,                                  color: 'text-green-400',  bg: 'bg-green-500/10' },
+              { icon: ShoppingCart,label:'كورسات في السلة',   value: formatK(parseInt(cart.total_adds || 0)),               color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+            ].map(({ icon: Icon, label, value, color, bg }) => (
+              <div key={label} className="card py-3">
+                <div className="flex items-center gap-2">
+                  <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', bg)}>
+                    <Icon className={cn('w-4 h-4', color)} />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-white">{value}</p>
                     <p className="text-slate-400 text-xs">{label}</p>
                   </div>
                 </div>
