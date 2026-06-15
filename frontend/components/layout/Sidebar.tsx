@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, BookOpen, Users, BarChart2, Video,
   Settings, LogOut, Bell, FolderOpen, GraduationCap, CreditCard, Tag, Package, Mail,
-  ShoppingCart, Trophy, Calendar, UserCheck, Share2,
+  ShoppingCart, Trophy, Calendar, UserCheck, Share2, MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,6 +27,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     { href: '/dashboard/admin/coupons', icon: Tag, label: t('nav.coupons') },
     { href: '/dashboard/admin/bundles', icon: Package, label: t('nav.bundles') },
     { href: '/dashboard/admin/analytics', icon: BarChart2, label: t('nav.analytics') },
+    { href: '/dashboard/admin/reviews', icon: MessageSquare, label: isAr ? 'التقييمات' : 'Reviews' },
     { href: '/dashboard/admin/newsletter', icon: Mail, label: t('nav.newsletter') },
     { href: '/dashboard/admin/categories', icon: FolderOpen, label: t('nav.categories') },
     { href: '/dashboard/admin/instructors', icon: Users, label: isAr ? 'المدربين' : 'Instructors' },
