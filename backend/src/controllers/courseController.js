@@ -65,10 +65,13 @@ const getCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
     const courseResult = await query(
-      `SELECT c.*, u.name AS instructor_name, u.avatar_url AS instructor_avatar
+      `SELECT c.*, u.name AS instructor_name, u.avatar_url AS instructor_avatar,
+              COUNT(DISTINCT e.id)::int AS enrollment_count
        FROM courses c
        LEFT JOIN users u ON u.id = c.instructor_id
-       WHERE c.id = $1`,
+       LEFT JOIN enrollments e ON e.course_id = c.id AND e.is_active = true
+       WHERE c.id = $1
+       GROUP BY c.id, u.name, u.avatar_url`,
       [id]
     );
     if (!courseResult.rows.length) return res.status(404).json({ error: 'Course not found' });

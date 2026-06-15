@@ -742,12 +742,32 @@ export default function AdminCourseEditorPage() {
       {tab === 'curriculum' && (
         <div className="space-y-4">
 
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 text-xs text-slate-400 bg-dark-800 border border-dark-700 rounded-xl px-4 py-3">
+          {/* Legend + Refresh All Durations */}
+          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 bg-dark-800 border border-dark-700 rounded-xl px-4 py-3">
             <span className="flex items-center gap-1.5"><Unlock className="w-3.5 h-3.5 text-green-400" /> مجاني (Preview) — يشوفه الكل</span>
             <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-yellow-400" /> مدفوع — فقط المسجلين</span>
             <span className="flex items-center gap-1.5"><Video className="w-3.5 h-3.5 text-brand-400" /> اضغط 🎬 لرفع فيديو للدرس</span>
             <span className="flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5 text-purple-400" /> اضغط ➕ لإضافة تاسك</span>
+            <button className="mr-auto flex items-center gap-1.5 px-3 py-1 rounded-lg border border-slate-600 text-slate-400 hover:border-brand-500/50 hover:text-brand-400 transition-all"
+              title="تحديث مدد جميع الفيديوهات التي لا تحمل قيمة"
+              onClick={async () => {
+                try {
+                  toast.loading('⏳ جاري تحديث المدد من Bunny…', { id: 'refresh-durations' });
+                  const { data } = await api.post('/files/refresh-durations-bulk', { course_id: id });
+                  toast.dismiss('refresh-durations');
+                  if (data.updated > 0) {
+                    toast.success(`✅ تم تحديث ${data.updated} درس`);
+                    // Reload sections to show new durations
+                    const res = await api.get(`/courses/${id}`);
+                    setSections(res.data.sections);
+                    if (res.data.course) setCourse(res.data.course);
+                  } else {
+                    toast.success(data.message || 'كل الدروس عندها مدة بالفعل');
+                  }
+                } catch { toast.dismiss('refresh-durations'); toast.error('فشل تحديث المدد'); }
+              }}>
+              ↻ تحديث جميع المدد
+            </button>
           </div>
 
           {/* Add section */}

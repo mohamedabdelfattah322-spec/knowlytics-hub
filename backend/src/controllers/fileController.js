@@ -517,6 +517,54 @@ const bunnyTusComplete = async (req, res, next) => {
   }
 };
 
+// ─── POST /api/files/refresh-durations-bulk ──────────────────────────────────
+// Re-fetch durations from Bunny for ALL lessons in a course that have 0/null duration.
+// Body: { course_id }
+const refreshAllDurations = async (req, res, next) => {
+  try {
+    const { course_id } = req.body;
+    if (!course_id) return res.status(400).json({ error: 'course_id مطلوب' });
+
+    const lessonsRes = await query(
+      `SELECT l.id, l.bunny_video_id FROM lessons l
+       JOIN sections s ON s.id = l.section_id
+       WHERE s.course_id = $1 AND l.bunny_video_id IS NOT NULL
+         AND (l.duration_minutes IS NULL OR l.duration_minutes = 0)`,
+      [course_id]
+    );
+
+    if (!lessonsRes.rows.length) return res.json({ ok: true, updated: 0, message: 'كل الدروس عندها مدة بالفعل' });
+
+    const bunnyService = require('../services/bunnyService');
+    let updated = 0;
+
+    for (const lesson of lessonsRes.rows) {
+      try {
+        const secs = await bunnyService.getVideoDuration(lesson.bunny_video_id);
+        if (secs) {
+          const mins = Math.ceil(secs / 60);
+          await query(`UPDATE lessons SET duration_minutes = $1, updated_at = NOW() WHERE id = $2`, [mins, lesson.id]);
+          updated++;
+        }
+      } catch (_) { /* skip this lesson, move on */ }
+    }
+
+    // Recalculate course total
+    await query(
+      `UPDATE courses SET duration_hours = ROUND(
+        (SELECT COALESCE(SUM(l.duration_minutes), 0)
+         FROM lessons l JOIN sections s ON s.id = l.section_id
+         WHERE s.course_id = $1) / 60.0, 1) WHERE id = $1`,
+      [course_id]
+    );
+
+    res.json({ ok: true, updated, total: lessonsRes.rows.length });
+  } catch (err) {
+    console.error('[RefreshAllDurations]', err.message);
+    next(err);
+  }
+};
+
 // ─── POST /api/files/refresh-duration ────────────────────────────────────────
 // Re-fetch duration from Bunny for a single lesson and update DB + course total.
 // Body: { lesson_id }
@@ -649,4 +697,4 @@ const getBunnyTusTokenPromo = async (req, res, next) => {
   }
 };
 
-module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, getBunnyTusToken, bunnyTusComplete, getBunnyTusTokenPromo, setBunnyThumbnail, refreshLessonDuration, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };
+module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, getBunnyTusToken, bunnyTusComplete, getBunnyTusTokenPromo, setBunnyThumbnail, refreshLessonDuration, refreshAllDurations, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };
