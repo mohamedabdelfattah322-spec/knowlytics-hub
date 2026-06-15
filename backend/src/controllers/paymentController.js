@@ -190,8 +190,9 @@ const initiatePayment = async (req, res, next) => {
       const accessDays = item.default_access_days || null;
       const expiresAt = accessDays ? new Date(Date.now() + accessDays * 86400000) : null;
       await query(
-        `INSERT INTO enrollments (user_id, course_id, payment_id, is_active, expires_at)
-         VALUES ($1, $2, $3, true, $4) ON CONFLICT (user_id, course_id) DO UPDATE SET is_active = true, payment_id = EXCLUDED.payment_id`,
+        `INSERT INTO enrollments (user_id, course_id, is_active, payment_ref, expires_at)
+         VALUES ($1, $2, true, $3, $4)
+         ON CONFLICT (user_id, course_id) DO UPDATE SET is_active = true, payment_ref = EXCLUDED.payment_ref`,
         [userId, course_id, paymentId, expiresAt]
       );
       return res.json({ type: 'free', payment_id: paymentId, message: 'تم التسجيل مجاناً بالكوبون 🎉' });
