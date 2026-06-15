@@ -540,7 +540,7 @@ const refreshAllDurations = async (req, res, next) => {
 
     for (const lesson of lessonsRes.rows) {
       try {
-        const secs = await bunnyService.getVideoDuration(lesson.bunny_video_id);
+        const secs = await bunnyService.getVideoDuration(lesson.bunny_video_id, 1, 0);
         if (secs) {
           const mins = Math.ceil(secs / 60);
           await query(`UPDATE lessons SET duration_minutes = $1, updated_at = NOW() WHERE id = $2`, [mins, lesson.id]);
