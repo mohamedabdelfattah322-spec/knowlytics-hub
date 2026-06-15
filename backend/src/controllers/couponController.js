@@ -118,4 +118,42 @@ const validateCoupon = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { listCoupons, createCoupon, updateCoupon, deleteCoupon, validateCoupon };
+// ─── GET /api/coupons/:id/redemptions  (admin) ────────────────────────────────
+const getCouponRedemptions = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT cr.created_at, u.id AS user_id, u.name, u.email, u.avatar_url,
+              co.title AS course_title, p.amount, p.status AS payment_status
+       FROM coupon_redemptions cr
+       JOIN users u ON u.id = cr.user_id
+       LEFT JOIN payments p ON p.id = cr.payment_id
+       LEFT JOIN courses co ON co.id = p.course_id
+       WHERE cr.coupon_id = $1
+       ORDER BY cr.created_at DESC`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) { next(err); }
+};
+
+// ─── GET /api/coupons/admin/cart-analytics  (admin) ──────────────────────────
+const getCartAnalytics = async (req, res, next) => {
+  try {
+    const [byEvent, byCourse, recent] = await Promise.all([
+      query(`SELECT event_type, COUNT(*)::int AS count, ROUND(SUM(amount))::int AS total_value
+             FROM cart_events GROUP BY event_type ORDER BY count DESC`),
+      query(`SELECT c.title, ce.event_type, COUNT(*)::int AS count
+             FROM cart_events ce JOIN courses c ON c.id = ce.course_id
+             WHERE ce.course_id IS NOT NULL
+             GROUP BY c.title, ce.event_type ORDER BY count DESC LIMIT 20`),
+      query(`SELECT ce.created_at, ce.event_type, u.name, u.email, c.title AS course_title, ce.amount
+             FROM cart_events ce
+             LEFT JOIN users u ON u.id = ce.user_id
+             LEFT JOIN courses c ON c.id = ce.course_id
+             ORDER BY ce.created_at DESC LIMIT 50`),
+    ]);
+    res.json({ by_event: byEvent.rows, by_course: byCourse.rows, recent: recent.rows });
+  } catch (err) { next(err); }
+};
+
+module.exports = { listCoupons, createCoupon, updateCoupon, deleteCoupon, validateCoupon, getCouponRedemptions, getCartAnalytics };

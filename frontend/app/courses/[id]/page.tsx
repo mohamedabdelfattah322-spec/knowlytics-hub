@@ -49,6 +49,8 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [enrolled, setEnrolled] = useState(false);
+  const [inCart, setInCart] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [examStatus, setExamStatus] = useState<any>(null);
   const [feedbackSummary, setFeedbackSummary] = useState<{ total_reviews: number; avg_rating: number; recommend_count: number } | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -66,12 +68,26 @@ export default function CourseDetailPage() {
       api.get('/enrollments/my').then(({ data }) => { setEnrolled(data.some((e: any) => e.course_id === id)); });
       api.get(`/courses/${id}/final-quiz-status`).then(({ data }) => setExamStatus(data)).catch(() => {});
       api.get(`/quizzes/course/${id}`).then(({ data }) => setQuizzes(data)).catch(() => {});
+      api.get('/cart').then(({ data }) => { setInCart(data.items?.some((i: any) => i.course_id === id)); }).catch(() => {});
     }
   }, [id, user]);
 
   const handleBuy = () => {
     if (!user) { router.push(`/login?redirect=/courses/${id}/buy`); return; }
     router.push(`/courses/${id}/buy`);
+  };
+
+  const handleAddToCart = async () => {
+    if (!user) { router.push(`/login?redirect=/courses/${id}`); return; }
+    if (inCart) { router.push('/dashboard/student/cart'); return; }
+    setAddingToCart(true);
+    try {
+      await api.post('/cart', { course_id: id });
+      setInCart(true);
+      toast.success('✅ تم إضافة الكورس للسلة');
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || 'فشل الإضافة للسلة');
+    } finally { setAddingToCart(false); }
   };
 
   const handleEnrollFree = async () => {
@@ -240,11 +256,18 @@ export default function CourseDetailPage() {
                     </a>
                   </div>
                 ) : parseFloat(String(course.price)) > 0 ? (
-                  <button onClick={handleBuy}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform"
-                    style={{ backgroundColor: '#3b82f6', color: '#fff' }}>
-                    <ShoppingCart className="w-4 h-4" /> {isAr ? 'اشترِ الكورس الآن' : 'Buy Course Now'}
-                  </button>
+                  <div className="space-y-2">
+                    <button onClick={handleBuy}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform"
+                      style={{ backgroundColor: '#3b82f6', color: '#fff' }}>
+                      <ShoppingCart className="w-4 h-4" /> {isAr ? 'اشترِ الكورس الآن' : 'Buy Course Now'}
+                    </button>
+                    <button onClick={handleAddToCart} disabled={addingToCart}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm border border-slate-600 text-slate-300 hover:border-brand-500/50 hover:text-brand-400 transition-all disabled:opacity-50">
+                      {addingToCart ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
+                      {inCart ? (isAr ? '📦 في السلة — اذهب للسلة' : 'In Cart — View Cart') : (isAr ? 'إضافة للسلة' : 'Add to Cart')}
+                    </button>
+                  </div>
                 ) : (
                   <button onClick={handleEnrollFree}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform"
