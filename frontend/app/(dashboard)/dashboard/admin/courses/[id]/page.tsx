@@ -832,7 +832,27 @@ export default function AdminCourseEditorPage() {
                               className="text-slate-200 text-sm font-medium flex-1 outline-none focus:bg-dark-700 focus:px-2 focus:rounded cursor-text">
                               {lesson.title}
                             </span>
-                            <span className="text-slate-500 text-xs">{lesson.duration_minutes}د</span>
+                            <span className="flex items-center gap-0.5 text-slate-500 text-xs">
+                              {lesson.duration_minutes || 0}د
+                              {lesson.bunny_video_id && (!lesson.duration_minutes || lesson.duration_minutes === 0) && (
+                                <button title="تحديث المدة من Bunny"
+                                  className="text-slate-600 hover:text-brand-400 transition-colors"
+                                  onClick={async () => {
+                                    try {
+                                      const { data } = await api.post('/files/refresh-duration', { lesson_id: lesson.id });
+                                      if (data.ok) {
+                                        setSections(secs => secs.map(s => ({
+                                          ...s,
+                                          lessons: s.lessons.map(l => l.id === lesson.id ? { ...l, duration_minutes: data.duration_minutes } : l),
+                                        })));
+                                        toast.success(`✅ تم تحديث المدة: ${data.duration_minutes} دقيقة`);
+                                      } else {
+                                        toast.error(data.message || 'الفيديو لسه بيتعالج');
+                                      }
+                                    } catch { toast.error('فشل تحديث المدة'); }
+                                  }}>↻</button>
+                              )}
+                            </span>
 
                             {/* Free / Paid toggle */}
                             <button onClick={() => togglePreview(section.id, lesson)}

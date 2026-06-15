@@ -4,7 +4,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 const {
   upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny,
   getBunnyTusToken, bunnyTusComplete, getBunnyTusTokenPromo, setBunnyThumbnail,
-  downloadFile, streamVideo, listCourseFiles, deleteFile,
+  refreshLessonDuration, downloadFile, streamVideo, listCourseFiles, deleteFile,
 } = require('../controllers/fileController');
 
 // Upload a general file (PDF, Excel, image…) attached to a course/lesson
@@ -21,6 +21,7 @@ router.post('/bunny-tus-token',       authenticate, authorize('admin'), getBunny
 router.post('/bunny-tus-complete',    authenticate, authorize('admin'), bunnyTusComplete);
 router.post('/bunny-tus-token-promo', authenticate, authorize('admin'), getBunnyTusTokenPromo);
 router.post('/bunny-thumbnail',       authenticate, authorize('admin'), upload.single('thumbnail'), setBunnyThumbnail);
+router.post('/refresh-duration',      authenticate, authorize('admin'), refreshLessonDuration);
 
 // Stream local video with HTTP Range support
 router.get('/stream/*', authenticate, streamVideo);

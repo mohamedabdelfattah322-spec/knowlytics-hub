@@ -517,6 +517,51 @@ const bunnyTusComplete = async (req, res, next) => {
   }
 };
 
+// ─── POST /api/files/refresh-duration ────────────────────────────────────────
+// Re-fetch duration from Bunny for a single lesson and update DB + course total.
+// Body: { lesson_id }
+const refreshLessonDuration = async (req, res, next) => {
+  try {
+    const { lesson_id } = req.body;
+    if (!lesson_id) return res.status(400).json({ error: 'lesson_id مطلوب' });
+
+    const lessonRes = await query(
+      `SELECT l.id, l.bunny_video_id, s.course_id
+       FROM lessons l JOIN sections s ON s.id = l.section_id WHERE l.id = $1`,
+      [lesson_id]
+    );
+    if (!lessonRes.rows.length) return res.status(404).json({ error: 'الدرس غير موجود' });
+
+    const { bunny_video_id, course_id } = lessonRes.rows[0];
+    if (!bunny_video_id) return res.status(400).json({ error: 'الدرس ليس لديه فيديو Bunny' });
+
+    const bunnyService = require('../services/bunnyService');
+    const durationSeconds = await bunnyService.getVideoDuration(bunny_video_id);
+    const durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
+
+    if (!durationMinutes) return res.status(202).json({ ok: false, message: 'الفيديو لسه بيتعالج، جرب تاني بعد شوية' });
+
+    await query(
+      `UPDATE lessons SET duration_minutes = $1, updated_at = NOW() WHERE id = $2`,
+      [durationMinutes, lesson_id]
+    );
+
+    // Recalculate course total duration
+    await query(
+      `UPDATE courses SET duration_hours = ROUND(
+        (SELECT COALESCE(SUM(l.duration_minutes), 0)
+         FROM lessons l JOIN sections s ON s.id = l.section_id
+         WHERE s.course_id = $1) / 60.0, 1) WHERE id = $1`,
+      [course_id]
+    );
+
+    res.json({ ok: true, duration_minutes: durationMinutes });
+  } catch (err) {
+    console.error('[RefreshDuration]', err.message);
+    next(err);
+  }
+};
+
 // ─── POST /api/files/bunny-thumbnail ─────────────────────────────────────────
 // Upload a custom thumbnail image for a Bunny video.
 // Bunny requires a public URL — save image locally then pass URL via ?thumbnailUrl=
@@ -604,4 +649,4 @@ const getBunnyTusTokenPromo = async (req, res, next) => {
   }
 };
 
-module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, getBunnyTusToken, bunnyTusComplete, getBunnyTusTokenPromo, setBunnyThumbnail, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };
+module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, getBunnyTusToken, bunnyTusComplete, getBunnyTusTokenPromo, setBunnyThumbnail, refreshLessonDuration, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };
