@@ -34,13 +34,13 @@ const getBundle = async (req, res, next) => {
 // ─── POST /api/bundles  (admin) ──────────────────────────
 const createBundle = async (req, res, next) => {
   try {
-    const { name, description, price, duration_days = 365, thumbnail_url, course_ids = [] } = req.body;
+    const { name, description, price, original_price, duration_days = 365, thumbnail_url, course_ids = [] } = req.body;
     if (!name || price === undefined) return res.status(400).json({ error: 'name and price required' });
 
     const r = await query(
-      `INSERT INTO bundles (name, description, price, duration_days, thumbnail_url)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [name, description || null, price, duration_days, thumbnail_url || null]
+      `INSERT INTO bundles (name, description, price, original_price, duration_days, thumbnail_url)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [name, description || null, price, original_price || null, duration_days, thumbnail_url || null]
     );
     const bundle = r.rows[0];
 
@@ -58,7 +58,7 @@ const createBundle = async (req, res, next) => {
 // ─── PATCH /api/bundles/:id  (admin) ─────────────────────
 const updateBundle = async (req, res, next) => {
   try {
-    const allowed = ['name', 'description', 'price', 'duration_days', 'thumbnail_url', 'is_active'];
+    const allowed = ['name', 'description', 'price', 'original_price', 'duration_days', 'thumbnail_url', 'is_active'];
     const updates = []; const values = [];
     Object.entries(req.body).forEach(([k, v]) => {
       if (allowed.includes(k)) { values.push(v); updates.push(`${k} = $${values.length}`); }
