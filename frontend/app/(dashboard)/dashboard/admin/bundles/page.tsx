@@ -179,9 +179,9 @@ export default function BundlesPage() {
             return (
               <div key={b.id} className={cn('card', !b.is_active && 'opacity-50')}>
                 {b.thumbnail_url && (
-                  <div className="relative mb-3">
+                  <div className="relative mb-3 bg-dark-900 rounded-lg overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={b.thumbnail_url} alt={b.name} className="w-full h-36 object-cover rounded-lg" />
+                    <img src={b.thumbnail_url} alt={b.name} className="w-full h-44 object-contain" />
                     {pct && (
                       <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                         خصم {pct}%
