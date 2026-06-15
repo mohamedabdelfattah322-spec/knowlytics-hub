@@ -531,13 +531,9 @@ const setBunnyThumbnail = async (req, res, next) => {
     const libraryId = (process.env.BUNNY_LIBRARY_ID || '').trim();
     if (!apiKey || !libraryId) return res.status(500).json({ error: 'Bunny غير مفعّل' });
 
-    // 1. Save image to local disk so Bunny can fetch it via a public URL
-    const ext      = path.extname(req.file.originalname || '.jpg') || '.jpg';
-    const filename = `thumb-${uuidv4()}${ext}`;
-    const thumbDir = path.join(UPLOAD_DIR, 'files');
-    fs.mkdirSync(thumbDir, { recursive: true });
-    fs.writeFileSync(path.join(thumbDir, filename), req.file.buffer);
-
+    // 1. Multer (disk storage) already saved the file — build its public URL
+    //    req.file.filename is set by diskStorage; req.file.buffer is undefined in disk mode
+    const filename     = req.file.filename || `thumb-${uuidv4()}${path.extname(req.file.originalname || '.jpg')}`;
     const baseUrl      = (process.env.BACKEND_URL || process.env.API_URL || '').replace(/\/+$/, '');
     const thumbnailUrl = `${baseUrl}/uploads/files/${filename}`;
 
