@@ -136,6 +136,7 @@ const initiatePayment = async (req, res, next) => {
 
     // ── Apply coupon if provided ──
     let appliedCouponId = null;
+    let appliedDiscountAmount = 0;
     if (coupon_code && course_id) {
       const couponRes = await query(
         `SELECT c.* FROM coupons c
@@ -160,6 +161,7 @@ const initiatePayment = async (req, res, next) => {
           const discount = coupon.discount_type === 'percent'
             ? Math.round(itemPriceEgp * parseFloat(coupon.discount_value) / 100 * 100) / 100
             : Math.min(parseFloat(coupon.discount_value), itemPriceEgp);
+          appliedDiscountAmount = discount;
           itemPriceEgp = Math.max(0, itemPriceEgp - discount);
           appliedCouponId = coupon.id;
         }
@@ -178,7 +180,10 @@ const initiatePayment = async (req, res, next) => {
       );
       const paymentId = paymentRes.rows[0].id;
       if (appliedCouponId) {
-        await query(`INSERT INTO coupon_redemptions (coupon_id, user_id, payment_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, [appliedCouponId, userId, paymentId]);
+        await query(
+          `INSERT INTO coupon_redemptions (coupon_id, user_id, course_id, payment_id, amount_off) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
+          [appliedCouponId, userId, course_id, paymentId, appliedDiscountAmount]
+        );
         await query(`UPDATE coupons SET used_count = used_count + 1 WHERE id = $1`, [appliedCouponId]);
       }
       // Enroll the user
@@ -203,9 +208,9 @@ const initiatePayment = async (req, res, next) => {
     // Record coupon redemption
     if (appliedCouponId) {
       await query(
-        `INSERT INTO coupon_redemptions (coupon_id, user_id, payment_id) VALUES ($1, $2, $3)
+        `INSERT INTO coupon_redemptions (coupon_id, user_id, course_id, payment_id, amount_off) VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT DO NOTHING`,
-        [appliedCouponId, userId, paymentId]
+        [appliedCouponId, userId, course_id || null, paymentId, appliedDiscountAmount]
       );
       await query(`UPDATE coupons SET used_count = used_count + 1 WHERE id = $1`, [appliedCouponId]);
     }
