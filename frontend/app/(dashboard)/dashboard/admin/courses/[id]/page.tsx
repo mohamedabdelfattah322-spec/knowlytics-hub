@@ -1570,7 +1570,7 @@ export default function AdminCourseEditorPage() {
               <label className="block text-sm font-medium text-slate-300">الفيديو الدعائي</label>
 
               {/* Bunny upload button */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <label className={cn(
                   'flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium cursor-pointer transition-all',
                   uploadingPromo
@@ -1589,6 +1589,33 @@ export default function AdminCourseEditorPage() {
                     disabled={uploadingPromo}
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPromoVideo(f); e.target.value = ''; }} />
                 </label>
+
+                {/* Thumbnail upload — only when promo video is on Bunny */}
+                {course.promo_video_url?.includes('iframe.mediadelivery.net') && (() => {
+                  const match = course.promo_video_url!.match(/embed\/\d+\/([a-f0-9-]+)/);
+                  const promoVideoId = match?.[1];
+                  if (!promoVideoId) return null;
+                  return (
+                    <label title="تغيير صورة الـ Thumbnail للفيديو الدعائي"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-600 bg-dark-700 text-slate-300 text-sm font-medium cursor-pointer hover:border-yellow-500/50 hover:text-yellow-400 transition-all">
+                      🖼 تغيير الـ Thumbnail
+                      <input type="file" accept="image/*" className="sr-only"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const fd = new FormData();
+                          fd.append('thumbnail', file);
+                          fd.append('video_id', promoVideoId);
+                          try {
+                            await api.post('/files/bunny-thumbnail', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                            toast.success('✅ تم تحديث الـ Thumbnail للفيديو الدعائي');
+                          } catch { toast.error('فشل تحديث الـ Thumbnail'); }
+                          e.target.value = '';
+                        }} />
+                    </label>
+                  );
+                })()}
+
                 {uploadingPromo && promoProgress > 0 && promoProgress < 100 && (
                   <div className="flex-1 h-2 bg-dark-700 rounded-full overflow-hidden">
                     <div className="h-full bg-brand-500 rounded-full transition-all duration-300"
