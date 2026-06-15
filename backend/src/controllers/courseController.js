@@ -84,7 +84,8 @@ const getCourse = async (req, res, next) => {
                     'bunny_video_id', l.bunny_video_id,
                     'bunny_embed_url', l.bunny_embed_url,
                     'duration_minutes', l.duration_minutes, 'order_index', l.order_index,
-                    'is_preview', l.is_preview
+                    'is_preview', l.is_preview,
+                    'has_files', (SELECT COUNT(*) > 0 FROM course_files cf WHERE cf.lesson_id = l.id)
                   ) ORDER BY l.order_index
                 ) FILTER (WHERE l.id IS NOT NULL),
                 '[]'::json
@@ -97,7 +98,18 @@ const getCourse = async (req, res, next) => {
       [id]
     );
 
-    res.json({ course: courseResult.rows[0], sections: sectionsResult.rows });
+    const courseData = courseResult.rows[0];
+
+    // Generate signed Bunny URL for promo video (token auth required)
+    if (courseData.promo_video_url?.includes('iframe.mediadelivery.net')) {
+      const videoIdMatch = courseData.promo_video_url.match(/embed\/\d+\/([a-f0-9-]+)/);
+      if (videoIdMatch) {
+        const bunnyService = require('../services/bunnyService');
+        courseData.promo_video_url = bunnyService.getSignedEmbedUrl(videoIdMatch[1], 14400);
+      }
+    }
+
+    res.json({ course: courseData, sections: sectionsResult.rows });
   } catch (err) {
     next(err);
   }

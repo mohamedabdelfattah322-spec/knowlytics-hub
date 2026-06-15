@@ -20,6 +20,7 @@ interface Lesson {
   duration_minutes: number; order_index: number;
   is_preview: boolean; video_key: string | null; video_url: string | null;
   bunny_video_id?: string | null; bunny_embed_url?: string | null;
+  content?: string | null;
 }
 interface Section { id: string; title: string; description: string | null; order_index: number; lessons: Lesson[]; }
 interface Course {
@@ -72,6 +73,10 @@ export default function AdminCourseEditorPage() {
   const [uploadingFile, setUploadingFile]   = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
+  // Promo video upload state
+  const [uploadingPromo, setUploadingPromo] = useState(false);
+  const [promoProgress, setPromoProgress]   = useState(0);
+
   // Assignment form per lesson
   const [newAssignment, setNewAssignment] = useState<Record<string, { title: string; description: string; due_days: string }>>({});
 
@@ -84,7 +89,11 @@ export default function AdminCourseEditorPage() {
   const [enrolling, setEnrolling]       = useState(false);
 
   // Active tab
-  const [tab, setTab] = useState<'curriculum' | 'files' | 'students' | 'batches' | 'settings' | 'quizzes'>('curriculum');
+  const [tab, setTab] = useState<'curriculum' | 'files' | 'students' | 'batches' | 'settings' | 'quizzes' | 'leaderboard'>('curriculum');
+
+  // ── Leaderboard state ──
+  interface LeaderRow { id: string; name: string; email: string; avatar_url: string | null; xp: number; level: number; streak_days: number; quizzes_done: number; total_attempts: number; avg_score: number | null; best_score: number | null; total_quiz_points: number; tasks_done: number; rank: number; }
+  const [leaderboard, setLeaderboard] = useState<LeaderRow[]>([]);
 
   // ── Quiz state ──
   interface QuizAnswer { text: string; is_correct: boolean; }
@@ -130,6 +139,11 @@ export default function AdminCourseEditorPage() {
     if (tab === 'quizzes' && id) {
       api.get(`/quizzes/course/${id}`)
         .then(({ data }) => setQuizzes(data))
+        .catch(() => {});
+    }
+    if (tab === 'leaderboard' && id) {
+      api.get(`/quizzes/course/${id}/leaderboard`)
+        .then(({ data }) => setLeaderboard(data))
         .catch(() => {});
     }
   }, [tab, id]);
@@ -501,6 +515,47 @@ export default function AdminCourseEditorPage() {
     }
   };
 
+  /* ── Upload promo video to Bunny (TUS direct) ── */
+  const uploadPromoVideo = async (file: File) => {
+    if (!id) return;
+    setUploadingPromo(true);
+    setPromoProgress(0);
+    try {
+      const { data: token } = await api.post('/files/bunny-tus-token-promo', {
+        course_id: id,
+        title: `Promo - ${course?.title || file.name.replace(/\.[^/.]+$/, '')}`,
+      });
+      const { Upload } = await import('tus-js-client');
+      await new Promise<void>((resolve, reject) => {
+        const upload = new Upload(file, {
+          endpoint: 'https://video.bunnycdn.com/tusupload',
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          storeFingerprintForResuming: false,
+          headers: {
+            AuthorizationSignature: token.authorizationSignature,
+            AuthorizationExpire:    String(token.authorizationExpire),
+            VideoId:                token.videoId,
+            LibraryId:              String(token.libraryId),
+          },
+          metadata: { filename: file.name, filetype: file.type },
+          onProgress: (uploaded, total) => setPromoProgress(Math.round((uploaded / total) * 100)),
+          onSuccess: () => resolve(),
+          onError:   (err) => { console.error('[PromoTUS]', err); reject(err); },
+        });
+        upload.start();
+      });
+      // Update local state with the embed URL
+      setCourse((c) => c ? { ...c, promo_video_url: token.embedUrl } : c);
+      toast.success('✅ تم رفع الفيديو الدعائي على Bunny!');
+    } catch (err) {
+      console.error('[PromoUpload]', err);
+      toast.error('فشل رفع الفيديو الدعائي');
+    } finally {
+      setUploadingPromo(false);
+      setPromoProgress(0);
+    }
+  };
+
   /* ── Set Drive/YouTube URL for a lesson ── */
   const setLessonVideoUrl = async (lessonId: string, url: string) => {
     try {
@@ -512,6 +567,20 @@ export default function AdminCourseEditorPage() {
         }))
       );
       toast.success(url ? '✅ تم حفظ رابط الفيديو' : 'تم حذف الرابط');
+    } catch { toast.error('فشل الحفظ'); }
+  };
+
+  /* ── Link a Quiz Builder quiz to a quiz-type lesson (stored in content field) ── */
+  const setLessonLinkedQuiz = async (lessonId: string, quizId: string) => {
+    try {
+      await api.put(`/lessons/${lessonId}`, { content: quizId || null });
+      setSections((p) =>
+        p.map((s) => ({
+          ...s,
+          lessons: s.lessons.map((l) => l.id === lessonId ? { ...l, content: quizId || null } : l),
+        }))
+      );
+      toast.success(quizId ? '✅ تم ربط الكويز بالدرس' : 'تم إلغاء ربط الكويز');
     } catch { toast.error('فشل الحفظ'); }
   };
 
@@ -651,8 +720,9 @@ export default function AdminCourseEditorPage() {
       <div className="flex gap-1 bg-dark-800 border border-dark-700 rounded-xl p-1 w-fit flex-wrap">
         {([
           { key: 'curriculum', label: '📚 المحتوى' },
-          { key: 'quizzes',    label: '❓ الكويزات' },
-          { key: 'batches',    label: '👥 الدفعات (Groups)' },
+          { key: 'quizzes',      label: '❓ الكويزات' },
+          { key: 'leaderboard',  label: '🏆 الترتيب' },
+          { key: 'batches',      label: '👥 الدفعات (Groups)' },
           { key: 'students',   label: '🎓 جميع الطلاب' },
           { key: 'files',      label: '📎 الملفات' },
           { key: 'settings',   label: '⚙️ الإعدادات' },
@@ -799,6 +869,27 @@ export default function AdminCourseEditorPage() {
                               </div>
                             )}
 
+                            {/* Thumbnail upload — only when lesson has Bunny video */}
+                            {lesson.bunny_video_id && (
+                              <label title="تغيير صورة الـ Thumbnail للفيديو"
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-slate-600 bg-dark-700 text-slate-400 hover:border-yellow-500/50 hover:text-yellow-400 transition-all cursor-pointer">
+                                🖼 Thumb
+                                <input type="file" accept="image/*" className="sr-only"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const fd = new FormData();
+                                    fd.append('thumbnail', file);
+                                    fd.append('video_id', lesson.bunny_video_id!);
+                                    try {
+                                      await api.post('/files/bunny-thumbnail', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                                      toast.success('✅ تم تحديث الـ Thumbnail');
+                                    } catch { toast.error('فشل تحديث الـ Thumbnail'); }
+                                    e.target.value = '';
+                                  }} />
+                              </label>
+                            )}
+
                             {/* Multi-file upload */}
                             <label title="رفع ملفات للدرس (PDF/Excel/Word) — يمكن اختيار عدة ملفات"
                               className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-slate-600 bg-dark-700 text-slate-400 hover:border-purple-500/50 hover:text-purple-400 transition-all cursor-pointer">
@@ -843,6 +934,35 @@ export default function AdminCourseEditorPage() {
                               {lesson.video_url && (
                                 <a href={lesson.video_url} target="_blank" rel="noreferrer"
                                    className="text-xs text-brand-400 hover:underline whitespace-nowrap">معاينة</a>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Quiz link selector — shown when lesson type is quiz */}
+                          {lesson.type === 'quiz' && (
+                            <div className="mt-2 ml-7 flex gap-2 items-center">
+                              <span className="text-xs text-slate-500 whitespace-nowrap">🔗 ربط بكويز:</span>
+                              <select
+                                value={lesson.content || ''}
+                                onChange={(e) => setLessonLinkedQuiz(lesson.id, e.target.value)}
+                                className="input text-xs py-1 flex-1"
+                              >
+                                <option value="">— اختر كويز —</option>
+                                {quizzes.map((q) => (
+                                  <option key={q.id} value={q.id}>
+                                    {q.title} ({q.section_title})
+                                  </option>
+                                ))}
+                              </select>
+                              {lesson.content && (
+                                <a
+                                  href={`/courses/${id}/quiz/${lesson.content}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-brand-400 hover:underline whitespace-nowrap"
+                                >
+                                  معاينة
+                                </a>
                               )}
                             </div>
                           )}
@@ -1017,6 +1137,166 @@ export default function AdminCourseEditorPage() {
                 ))}
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════
+          TAB: LEADERBOARD
+      ══════════════════════════════════════════════════ */}
+      {tab === 'leaderboard' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-white">🏆 ترتيب المتدربين</h2>
+              <p className="text-slate-400 text-sm mt-0.5">مرتبون حسب متوسط درجة الكويزات والنقاط</p>
+            </div>
+            <button onClick={() => api.get(`/quizzes/course/${id}/leaderboard`).then(({ data }) => setLeaderboard(data))}
+              className="btn-secondary text-xs flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              تحديث
+            </button>
+          </div>
+
+          {leaderboard.length === 0 ? (
+            <div className="card text-center py-16">
+              <p className="text-4xl mb-3">🏆</p>
+              <p className="text-slate-400">مفيش بيانات بعد — لما الطلاب يعملوا كويزات هيظهروا هنا</p>
+            </div>
+          ) : (
+            <>
+              {/* #1 Hero Card */}
+              {(() => {
+                const top = leaderboard[0];
+                return (
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-500/10 via-orange-500/5 to-dark-800 p-6 text-center">
+                    {/* Glow */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/5 to-transparent pointer-events-none" />
+                    <p className="text-xs text-yellow-400 font-bold tracking-widest uppercase mb-3">المتصدر #{top.rank}</p>
+                    {/* Avatar */}
+                    <div className="relative w-24 h-24 mx-auto mb-3">
+                      {top.avatar_url ? (
+                        <img src={top.avatar_url} alt={top.name}
+                          className="w-24 h-24 rounded-full object-cover border-4 border-yellow-500/60 shadow-lg" />
+                      ) : (
+                        <div className="w-24 h-24 rounded-full border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-500/30 to-orange-500/20 flex items-center justify-center shadow-lg">
+                          <span className="text-3xl font-bold text-yellow-300">
+                            {top.name?.charAt(0)?.toUpperCase() || '?'}
+                          </span>
+                        </div>
+                      )}
+                      <span className="absolute -bottom-1 -right-1 text-2xl">🥇</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-1">{top.name}</h3>
+                    <p className="text-slate-400 text-sm mb-4">{top.email}</p>
+                    <div className="flex justify-center gap-6 flex-wrap">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-yellow-400">{top.avg_score ?? '—'}%</p>
+                        <p className="text-xs text-slate-400">متوسط الدرجات</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-brand-400">{top.quizzes_done}</p>
+                        <p className="text-xs text-slate-400">كويز أتم</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-purple-400">{top.tasks_done}</p>
+                        <p className="text-xs text-slate-400">تاسك سلّم</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-400">{top.best_score ?? '—'}%</p>
+                        <p className="text-xs text-slate-400">أعلى درجة</p>
+                      </div>
+                    </div>
+                    {/* Badge strip */}
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                        ⚡ {top.xp} XP
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 bg-brand-500/20 border border-brand-500/40 text-brand-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                        🎯 المستوى {top.level}
+                      </span>
+                      {(top.streak_days || 0) > 0 && (
+                        <span className="inline-flex items-center gap-1.5 bg-orange-500/20 border border-orange-500/40 text-orange-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                          🔥 {top.streak_days} يوم
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Full rankings table */}
+              <div className="card overflow-hidden p-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-dark-700 bg-dark-800/60">
+                      <th className="text-right px-4 py-3 text-xs text-slate-400 font-medium w-10">#</th>
+                      <th className="text-right px-4 py-3 text-xs text-slate-400 font-medium">المتدرب</th>
+                      <th className="text-center px-3 py-3 text-xs text-slate-400 font-medium">متوسط</th>
+                      <th className="text-center px-3 py-3 text-xs text-slate-400 font-medium">كويزات</th>
+                      <th className="text-center px-3 py-3 text-xs text-slate-400 font-medium">محاولات</th>
+                      <th className="text-center px-3 py-3 text-xs text-slate-400 font-medium">تاسكات</th>
+                      <th className="text-center px-3 py-3 text-xs text-slate-400 font-medium">أعلى</th>
+                      <th className="text-center px-3 py-3 text-xs text-slate-400 font-medium">XP</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dark-700/50">
+                    {leaderboard.map((row) => {
+                      const medal = row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : row.rank === 3 ? '🥉' : null;
+                      const avgColor = (row.avg_score ?? 0) >= 80 ? 'text-green-400' : (row.avg_score ?? 0) >= 50 ? 'text-yellow-400' : row.avg_score === null ? 'text-slate-500' : 'text-red-400';
+                      return (
+                        <tr key={row.id} className={cn(
+                          'transition-colors hover:bg-dark-700/30',
+                          row.rank === 1 && 'bg-yellow-500/5'
+                        )}>
+                          <td className="px-4 py-3 text-center">
+                            {medal
+                              ? <span className="text-lg">{medal}</span>
+                              : <span className="text-slate-500 font-bold">{row.rank}</span>}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2.5">
+                              {row.avatar_url ? (
+                                <img src={row.avatar_url} alt={row.name}
+                                  className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-xs font-bold text-brand-400">
+                                    {row.name?.charAt(0)?.toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-slate-200 font-medium truncate">{row.name}</p>
+                                <p className="text-xs text-slate-500 truncate">{row.email}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <span className={cn('font-bold', avgColor)}>
+                              {row.avg_score !== null ? `${row.avg_score}%` : '—'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-center text-slate-300 font-medium">{row.quizzes_done}</td>
+                          <td className="px-3 py-3 text-center text-slate-400">{row.total_attempts}</td>
+                          <td className="px-3 py-3 text-center">
+                            <span className={cn('font-medium', row.tasks_done > 0 ? 'text-purple-400' : 'text-slate-500')}>
+                              {row.tasks_done}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-center text-slate-300">
+                            {row.best_score !== null ? `${row.best_score}%` : '—'}
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <span className="text-yellow-400 font-medium">{row.xp}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -1285,14 +1565,63 @@ export default function AdminCourseEditorPage() {
               <p className="text-xs text-slate-500 mt-1">بيانات المدرب هتظهر تلقائياً في صفحة الكورس</p>
             </div>
 
-            {/* Promo Video URL */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">رابط الفيديو الدعائي (YouTube)</label>
-              <input type="url" value={course.promo_video_url || ''}
-                onChange={(e) => setCourse({ ...course, promo_video_url: e.target.value })}
-                placeholder="https://youtube.com/watch?v=... أو https://youtu.be/..."
-                className="input" />
-              <p className="text-xs text-slate-500 mt-1">الفيديو ده هيظهر في صفحة الكورس للزائرين قبل ما يسجلوا</p>
+            {/* Promo Video */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-300">الفيديو الدعائي</label>
+
+              {/* Bunny upload button */}
+              <div className="flex items-center gap-3">
+                <label className={cn(
+                  'flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium cursor-pointer transition-all',
+                  uploadingPromo
+                    ? 'border-brand-500/40 bg-brand-500/10 text-brand-400 cursor-not-allowed'
+                    : course.promo_video_url?.includes('iframe.mediadelivery.net')
+                      ? 'border-green-500/40 bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                      : 'border-slate-600 bg-dark-700 text-slate-300 hover:border-brand-500/50 hover:text-brand-400'
+                )}>
+                  {uploadingPromo
+                    ? <><Loader2 className="w-4 h-4 animate-spin" />
+                        {promoProgress < 100 ? `${promoProgress}% جاري الرفع...` : '⏳ جاري المعالجة...'}</>
+                    : course.promo_video_url?.includes('iframe.mediadelivery.net')
+                      ? <><Video className="w-4 h-4" /> ✅ Bunny — تغيير الفيديو</>
+                      : <><Video className="w-4 h-4" /> 🎬 رفع على Bunny</>}
+                  <input type="file" accept="video/*" className="sr-only"
+                    disabled={uploadingPromo}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPromoVideo(f); e.target.value = ''; }} />
+                </label>
+                {uploadingPromo && promoProgress > 0 && promoProgress < 100 && (
+                  <div className="flex-1 h-2 bg-dark-700 rounded-full overflow-hidden">
+                    <div className="h-full bg-brand-500 rounded-full transition-all duration-300"
+                      style={{ width: `${promoProgress}%` }} />
+                  </div>
+                )}
+              </div>
+
+              {/* Preview if Bunny video */}
+              {course.promo_video_url?.includes('iframe.mediadelivery.net') && (
+                <div className="rounded-xl overflow-hidden aspect-video bg-black max-w-sm">
+                  <iframe src={course.promo_video_url} className="w-full h-full"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen style={{ border: 'none' }} />
+                </div>
+              )}
+
+              {/* Fallback: external URL */}
+              <div>
+                <p className="text-xs text-slate-500 mb-1.5">أو الصق رابط YouTube / Google Drive</p>
+                <input type="url" value={course.promo_video_url?.includes('iframe.mediadelivery.net') ? '' : (course.promo_video_url || '')}
+                  onChange={(e) => setCourse({ ...course, promo_video_url: e.target.value })}
+                  placeholder="https://youtube.com/watch?v=... أو https://youtu.be/..."
+                  className="input text-sm"
+                  disabled={!!course.promo_video_url?.includes('iframe.mediadelivery.net')} />
+                {course.promo_video_url?.includes('iframe.mediadelivery.net') && (
+                  <button onClick={() => setCourse({ ...course, promo_video_url: '' })}
+                    className="text-xs text-red-400 hover:text-red-300 mt-1">
+                    × إزالة فيديو Bunny واستخدام رابط خارجي
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">هذا الفيديو يظهر في صفحة الكورس للزائرين قبل التسجيل</p>
             </div>
 
             <div>

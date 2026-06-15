@@ -3,7 +3,7 @@ const path = require('path');
 const { authenticate, authorize } = require('../middleware/auth');
 const {
   upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny,
-  getBunnyTusToken, bunnyTusComplete,
+  getBunnyTusToken, bunnyTusComplete, getBunnyTusTokenPromo, setBunnyThumbnail,
   downloadFile, streamVideo, listCourseFiles, deleteFile,
 } = require('../controllers/fileController');
 
@@ -17,8 +17,10 @@ router.post('/upload-video', authenticate, authorize('admin'), upload.single('fi
 router.post('/upload-to-bunny', authenticate, authorize('admin'), uploadVideoToBunny);
 
 // Direct TUS upload to Bunny (browser → Bunny, bypasses this server)
-router.post('/bunny-tus-token',    authenticate, authorize('admin'), getBunnyTusToken);
-router.post('/bunny-tus-complete', authenticate, authorize('admin'), bunnyTusComplete);
+router.post('/bunny-tus-token',       authenticate, authorize('admin'), getBunnyTusToken);
+router.post('/bunny-tus-complete',    authenticate, authorize('admin'), bunnyTusComplete);
+router.post('/bunny-tus-token-promo', authenticate, authorize('admin'), getBunnyTusTokenPromo);
+router.post('/bunny-thumbnail',       authenticate, authorize('admin'), upload.single('thumbnail'), setBunnyThumbnail);
 
 // Stream local video with HTTP Range support
 router.get('/stream/*', authenticate, streamVideo);

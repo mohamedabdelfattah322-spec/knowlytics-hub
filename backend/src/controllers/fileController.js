@@ -517,4 +517,88 @@ const bunnyTusComplete = async (req, res, next) => {
   }
 };
 
-module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, getBunnyTusToken, bunnyTusComplete, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };
+// ─── POST /api/files/bunny-thumbnail ─────────────────────────────────────────
+// Upload a custom thumbnail image for a Bunny video.
+// Accepts multipart form: { video_id } + image file field "thumbnail"
+const setBunnyThumbnail = async (req, res, next) => {
+  try {
+    const { video_id } = req.body;
+    if (!video_id) return res.status(400).json({ error: 'video_id مطلوب' });
+    if (!req.file)  return res.status(400).json({ error: 'ملف الصورة مطلوب' });
+
+    const apiKey    = (process.env.BUNNY_API_KEY    || '').trim();
+    const libraryId = (process.env.BUNNY_LIBRARY_ID || '').trim();
+    if (!apiKey || !libraryId) return res.status(500).json({ error: 'Bunny غير مفعّل' });
+
+    await require('axios').post(
+      `https://video.bunnycdn.com/library/${libraryId}/videos/${video_id}/thumbnail`,
+      req.file.buffer,
+      {
+        headers: {
+          AccessKey:      apiKey,
+          'Content-Type': req.file.mimetype,
+        },
+      }
+    );
+
+    res.json({ ok: true, message: 'تم تحديث الـ thumbnail ✅' });
+  } catch (err) {
+    console.error('[BunnyThumbnail]', err.response?.data || err.message);
+    next(err);
+  }
+};
+
+// ─── POST /api/files/bunny-tus-token-promo ───────────────────────────────────
+// Creates a Bunny video for a course promo and returns TUS upload credentials.
+// Body: { course_id, title }
+const getBunnyTusTokenPromo = async (req, res, next) => {
+  try {
+    const { course_id, title } = req.body;
+    if (!course_id) return res.status(400).json({ error: 'course_id مطلوب' });
+
+    const hasBunny = !!(process.env.BUNNY_LIBRARY_ID && process.env.BUNNY_API_KEY);
+    if (!hasBunny) return res.status(500).json({ error: 'Bunny غير مفعّل' });
+
+    const courseRes = await query('SELECT id, title FROM courses WHERE id = $1', [course_id]);
+    if (!courseRes.rows.length) return res.status(404).json({ error: 'الكورس غير موجود' });
+
+    const videoTitle = title || `Promo - ${courseRes.rows[0].title}`;
+
+    const createRes = await require('axios').post(
+      `https://video.bunnycdn.com/library/${process.env.BUNNY_LIBRARY_ID}/videos`,
+      { title: videoTitle },
+      { headers: { AccessKey: process.env.BUNNY_API_KEY } }
+    );
+    const videoId = createRes.data.guid;
+
+    const apiKey    = (process.env.BUNNY_API_KEY    || '').trim();
+    const libraryId = (process.env.BUNNY_LIBRARY_ID || '').trim();
+    const expirationTime = Math.floor(Date.now() / 1000) + 3600;
+    const signature = require('crypto')
+      .createHash('sha256')
+      .update(libraryId + apiKey + String(expirationTime) + videoId)
+      .digest('hex');
+
+    const bunnyService = require('../services/bunnyService');
+    const embedUrl = bunnyService.getEmbedUrl(videoId);
+
+    // Save embed URL to course promo_video_url immediately
+    await query(
+      `UPDATE courses SET promo_video_url = $1 WHERE id = $2`,
+      [embedUrl, course_id]
+    );
+
+    res.json({
+      videoId,
+      libraryId:              parseInt(libraryId, 10),
+      authorizationSignature: signature,
+      authorizationExpire:    expirationTime,
+      embedUrl,
+    });
+  } catch (err) {
+    console.error('[BunnyTUS Promo Token]', err.response?.data || err.message);
+    next(err);
+  }
+};
+
+module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, getBunnyTusToken, bunnyTusComplete, getBunnyTusTokenPromo, setBunnyThumbnail, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };

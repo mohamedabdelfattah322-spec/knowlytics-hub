@@ -39,7 +39,13 @@ export default function LessonPlayerPage() {
 
   useEffect(() => {
     api.get(`/lessons/${lessonId}`).then(({ data }) => {
-      setLesson(data.lesson);
+      const l = data.lesson;
+      // If this lesson is a quiz type with a linked quiz, redirect immediately
+      if (l.type === 'quiz' && l.content) {
+        router.replace(`/courses/${courseId}/quiz/${l.content}`);
+        return;
+      }
+      setLesson(l);
       setVideoUrl(data.videoUrl);
     }).catch(() => {
       toast.error('Could not load lesson. Please enroll first.');

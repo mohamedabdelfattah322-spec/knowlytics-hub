@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   BookOpen, Clock, Users, Play, Lock, ChevronDown, ChevronUp, Loader2,
   CheckCircle, ShoppingCart, Phone, Trophy, Star, GraduationCap, Award,
-  Globe, Shield, BarChart3, Zap, HelpCircle,
+  Globe, Shield, BarChart3, Zap, HelpCircle, Paperclip,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -21,7 +21,7 @@ import ConsultationSection from '@/components/ConsultationSection';
 import DiscussionForum from '@/components/course/DiscussionForum';
 import AIChatbot from '@/components/AIChatbot';
 
-interface Lesson { id: string; title: string; type: string; duration_minutes: number; is_preview: boolean; }
+interface Lesson { id: string; title: string; type: string; duration_minutes: number; is_preview: boolean; has_files?: boolean; }
 interface Section { id: string; title: string; order_index: number; lessons: Lesson[]; }
 interface QuizItem { id: string; title: string; description: string; section_id: string; question_count: string; }
 interface Course {
@@ -183,18 +183,23 @@ export default function CourseDetailPage() {
                     <div className="flex items-center gap-2 font-medium text-sm mb-2" style={{ color: '#4ade80' }}>
                       <CheckCircle className="w-4 h-4" /> {isAr ? 'أنت مسجل بالفعل' : 'You are enrolled'}
                     </div>
-                    {sections[0]?.lessons?.[0] ? (
-                      <Link href={`/courses/${id}/lessons/${sections[0].lessons[0].id}`}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform"
-                        style={{ backgroundColor: '#3b82f6', color: '#fff' }}>
-                        <Play className="w-4 h-4" /> {isAr ? 'ابدأ التعلم' : 'Start Learning'}
-                      </Link>
-                    ) : (
-                      <div className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm"
-                        style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(59,130,246,0.15)' }}>
-                        <BookOpen className="w-4 h-4" /> {isAr ? 'لا توجد دروس بعد' : 'No lessons yet'}
-                      </div>
-                    )}
+                    {(() => {
+                      // Find first lesson that isn't a quiz redirect (has video/files/text)
+                      const firstLesson = sections.flatMap(s => s.lessons || [])
+                        .find(l => l.type !== 'quiz') || sections[0]?.lessons?.[0];
+                      return firstLesson ? (
+                        <Link href={`/courses/${id}/lessons/${firstLesson.id}`}
+                          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform"
+                          style={{ backgroundColor: '#3b82f6', color: '#fff' }}>
+                          <Play className="w-4 h-4" /> {isAr ? 'ابدأ التعلم' : 'Start Learning'}
+                        </Link>
+                      ) : (
+                        <div className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm"
+                          style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                          <BookOpen className="w-4 h-4" /> {isAr ? 'لا توجد دروس بعد' : 'No lessons yet'}
+                        </div>
+                      );
+                    })()}
                     {examStatus?.final_quiz && (
                       <div className="rounded-xl p-3 space-y-2" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                         <div className="flex items-center gap-2 text-sm">
@@ -357,20 +362,44 @@ export default function CourseDetailPage() {
                     </button>
                     {expanded[section.id] && (
                       <div style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
-                        {section.lessons?.map((lesson) => (
-                          <div key={lesson.id} className="flex items-center gap-3 px-4 py-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                            {lesson.is_preview || enrolled
-                              ? <Play className="w-4 h-4 flex-shrink-0" style={{ color: '#3b82f6' }} />
-                              : <Lock className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.2)' }} />}
-                            <span className="text-sm flex-1" style={{ color: lesson.is_preview || enrolled ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)' }}>
-                              {lesson.title}
-                            </span>
-                            {lesson.is_preview && !enrolled && (
-                              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>Preview</span>
-                            )}
-                            {lesson.duration_minutes > 0 && <span className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>{formatDuration(lesson.duration_minutes)}</span>}
-                          </div>
-                        ))}
+                        {section.lessons?.map((lesson) => {
+                          const canAccess = lesson.is_preview || enrolled || user?.role === 'admin';
+                          const LessonWrapper = canAccess ? Link : 'div' as any;
+                          const wrapperProps = canAccess ? { href: `/courses/${id}/lessons/${lesson.id}` } : {};
+                          return (
+                            <LessonWrapper key={lesson.id} {...wrapperProps}
+                              className="flex items-center gap-3 px-4 py-2.5 transition-colors"
+                              style={{
+                                borderTop: '1px solid rgba(255,255,255,0.04)',
+                                ...(canAccess ? { cursor: 'pointer' } : {}),
+                              }}
+                              onMouseEnter={canAccess ? (e: any) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)' : undefined}
+                              onMouseLeave={canAccess ? (e: any) => e.currentTarget.style.backgroundColor = '' : undefined}
+                            >
+                              {canAccess
+                                ? <Play className="w-4 h-4 flex-shrink-0" style={{ color: '#3b82f6' }} />
+                                : <Lock className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.2)' }} />}
+                              <span className="text-sm flex-1" style={{ color: canAccess ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)' }}>
+                                {lesson.title}
+                              </span>
+                              {/* Files badge */}
+                              {lesson.has_files && (
+                                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>
+                                  <Paperclip className="w-3 h-3" /> ملفات
+                                </span>
+                              )}
+                              {lesson.is_preview && !enrolled && (
+                                <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>مجاني</span>
+                              )}
+                              {lesson.duration_minutes > 0
+                                ? <span className="text-xs flex-shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }}>{formatDuration(lesson.duration_minutes)}</span>
+                                : lesson.has_files && canAccess
+                                  ? <span className="text-xs flex-shrink-0" style={{ color: 'rgba(255,255,255,0.3)' }}>تحميل</span>
+                                  : null}
+                            </LessonWrapper>
+                          );
+                        })}
                         {/* Quizzes for this section */}
                         {quizzes.filter(q => q.section_id === section.id).map(quiz => (
                           <div key={quiz.id} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
