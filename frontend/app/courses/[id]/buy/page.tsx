@@ -158,6 +158,14 @@ export default function BuyCoursePage() {
         coupon_code: couponData?.valid ? couponCode.trim() : undefined,
       });
       const { type, iframe_url, redirect_url, url, reference, message, payment_id } = res.data;
+
+      // Free enrollment via 100% coupon — no payment gateway needed
+      if (type === 'free') {
+        toast.success(message || 'تم التسجيل مجاناً بالكوبون 🎉');
+        setTimeout(() => router.push(`/courses/${id}`), 1500);
+        return;
+      }
+
       setPaymentId(payment_id);
       setPolling(true);
 
@@ -431,8 +439,10 @@ export default function BuyCoursePage() {
                   className="btn-primary w-full flex items-center justify-center gap-2"
                 >
                   {submitting
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> جارِ التحويل...</>
-                    : `ادفع ${formatPrice(couponData?.valid ? couponData.final_price : course.price)}`
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> جارِ التسجيل...</>
+                    : couponData?.valid && couponData.final_price === 0
+                      ? '🎉 التسجيل المجاني'
+                      : `ادفع ${formatPrice(couponData?.valid ? couponData.final_price : course.price)}`
                   }
                 </button>
               </form>

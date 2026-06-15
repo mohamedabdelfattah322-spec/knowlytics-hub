@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ShoppingCart, Trash2, Loader2, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Trash2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
@@ -92,21 +91,28 @@ export default function CartPage() {
           <div className="space-y-3">
             {items.map((item) => (
               <div key={item.id} className="card flex items-center gap-4">
-                <div className="w-20 h-14 bg-dark-700 rounded overflow-hidden flex-shrink-0">
-                  {(item.course_thumbnail || item.bundle_thumbnail) && (
-                    <Image
+                <Link
+                  href={item.course_id ? `/courses/${item.course_id}` : '#'}
+                  className="w-20 h-14 bg-dark-700 rounded overflow-hidden flex-shrink-0 block"
+                >
+                  {(item.course_thumbnail || item.bundle_thumbnail) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={item.course_thumbnail || item.bundle_thumbnail || ''}
                       alt=""
-                      width={80}
-                      height={56}
                       className="w-full h-full object-cover"
                     />
+                  ) : (
+                    <div className="w-full h-full bg-dark-600" />
                   )}
-                </div>
+                </Link>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">
+                  <Link
+                    href={item.course_id ? `/courses/${item.course_id}` : '#'}
+                    className="text-white font-medium truncate block hover:text-brand-400 transition-colors"
+                  >
                     {item.course_title || item.bundle_name}
-                  </p>
+                  </Link>
                   {item.instructor_name && (
                     <p className="text-slate-400 text-xs">{item.instructor_name}</p>
                   )}
