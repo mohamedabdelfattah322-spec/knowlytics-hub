@@ -215,7 +215,6 @@ app.use('/api/courses/:courseId/reviews', reviewRoutes);
 
 // Admin review/feedback endpoints
 const { adminGetAllFeedback, toggleReviewVisibility, adminDeleteReview } = require('./controllers/reviewController');
-const { authenticate, authorize } = require('./middleware/auth');
 app.get('/api/admin/reviews', authenticate, authorize('admin'), adminGetAllFeedback);
 app.patch('/api/admin/reviews/:id/visibility', authenticate, authorize('admin'), toggleReviewVisibility);
 app.delete('/api/admin/reviews/:id', authenticate, authorize('admin'), adminDeleteReview);
