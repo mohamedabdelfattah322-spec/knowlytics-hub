@@ -27,7 +27,7 @@ const listCourses = async (req, res, next) => {
     else if (sort === 'price_high') orderBy = 'c.price DESC';
 
     const result = await query(
-      `SELECT c.id, c.title, c.description, c.type, c.thumbnail_url, c.price,
+      `SELECT c.id, c.title, c.description, c.type, c.thumbnail_url, c.price, c.original_price,
               c.level, c.duration_hours, c.created_at, c.category_id, c.language,
               c.short_description, c.avg_rating, c.review_count,
               u.name AS instructor_name,
@@ -139,7 +139,7 @@ const updateCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
     const fields = req.body;
-    const allowed = ['title', 'description', 'type', 'level', 'price', 'duration_hours', 'thumbnail_url', 'is_published', 'default_access_days', 'category_id', 'language', 'short_description', 'promo_video_url', 'instructor_profile_id'];
+    const allowed = ['title', 'description', 'type', 'level', 'price', 'original_price', 'duration_hours', 'thumbnail_url', 'is_published', 'default_access_days', 'category_id', 'language', 'short_description', 'promo_video_url', 'instructor_profile_id'];
     const updates = [];
     const values = [];
 

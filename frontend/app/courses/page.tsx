@@ -34,7 +34,7 @@ const coursesGuide: GuideStep[] = [
 
 interface Course {
   id: string; title: string; description: string; type: string;
-  level: string; price: number; thumbnail_url: string;
+  level: string; price: number; original_price?: number | null; thumbnail_url: string;
   duration_hours: number; enrollment_count: string; instructor_name: string;
   avg_rating: number; review_count: number; category_name: string; category_name_ar: string;
 }
@@ -240,10 +240,21 @@ export default function CoursesPage() {
                     </div>
                   )}
                   <div className="flex items-center justify-between pt-3 border-t border-dark-700">
-                    {enrolled
-                      ? <span className="text-green-400 text-sm font-medium flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> تم الاشتراك</span>
-                      : <span className="text-white font-bold">{formatPrice(c.price)}</span>
-                    }
+                    {enrolled ? (
+                      <span className="text-green-400 text-sm font-medium flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> تم الاشتراك</span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        {c.original_price && c.original_price > c.price && (
+                          <span className="text-slate-500 line-through text-xs">{formatPrice(c.original_price)}</span>
+                        )}
+                        <span className="text-white font-bold">{formatPrice(c.price)}</span>
+                        {c.original_price && c.original_price > c.price && (
+                          <span className="text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full">
+                            -{Math.round((c.original_price - c.price) / c.original_price * 100)}%
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <span className="text-xs text-slate-400">{c.instructor_name}</span>
                   </div>
                 </Link>

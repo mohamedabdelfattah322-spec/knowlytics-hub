@@ -26,7 +26,7 @@ interface Section { id: string; title: string; order_index: number; lessons: Les
 interface QuizItem { id: string; title: string; description: string; section_id: string; question_count: string; }
 interface Course {
   id: string; title: string; description: string; type: string; level: string;
-  price: number; duration_hours: number; thumbnail_url: string;
+  price: number; original_price?: number | null; duration_hours: number; thumbnail_url: string;
   instructor_name: string; instructor_avatar?: string; enrollment_count: string;
   promo_video_url?: string; instructor_profile_id?: string;
 }
@@ -189,6 +189,15 @@ export default function CourseDetailPage() {
             {/* Right: Enrollment Card (2 cols) */}
             <div className="lg:col-span-2">
               <div className="rounded-2xl p-6 sticky top-24" style={{ backgroundColor: '#162038', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {course.original_price && course.original_price > course.price && (() => {
+                  const pct = Math.round((course.original_price! - course.price) / course.original_price! * 100);
+                  return (
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-slate-400 line-through text-base">{formatPrice(course.original_price!)}</span>
+                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">خصم {pct}%</span>
+                    </div>
+                  );
+                })()}
                 <p className="text-3xl font-extrabold mb-1" style={{ color: '#ffffff' }}>{formatPrice(course.price)}</p>
                 <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   {isAr ? 'وصول مدى الحياة · جميع الأجهزة' : 'Lifetime access · All devices'}

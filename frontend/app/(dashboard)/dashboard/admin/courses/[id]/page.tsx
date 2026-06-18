@@ -25,7 +25,7 @@ interface Lesson {
 interface Section { id: string; title: string; description: string | null; order_index: number; lessons: Lesson[]; }
 interface Course {
   id: string; title: string; description: string; type: string;
-  level: string; price: number; duration_hours: number; is_published: boolean;
+  level: string; price: number; original_price?: number | null; duration_hours: number; is_published: boolean;
   thumbnail_url?: string | null;
   promo_video_url?: string | null;
   default_access_days?: number;
@@ -1717,12 +1717,33 @@ export default function AdminCourseEditorPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center gap-1">
-                  <DollarSign className="w-3.5 h-3.5 text-green-400" /> السعر (جنيه)
+                  <DollarSign className="w-3.5 h-3.5 text-slate-400" /> السعر قبل الخصم (جنيه)
+                </label>
+                <input type="number" value={course.original_price ?? ''} min={0} step={0.01}
+                  onChange={(e) => setCourse({ ...course, original_price: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="input" placeholder="اختياري — يظهر مشطوب" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center gap-1">
+                  <DollarSign className="w-3.5 h-3.5 text-green-400" /> السعر النهائي (جنيه)
                 </label>
                 <input type="number" value={course.price} min={0} step={0.01}
                   onChange={(e) => setCourse({ ...course, price: parseFloat(e.target.value) || 0 })} className="input" />
                 <p className="text-xs text-slate-500 mt-1">اكتب 0 لجعل الكورس مجاني كلياً</p>
               </div>
+            </div>
+            {/* Discount preview */}
+            {course.original_price && course.original_price > course.price && (
+              <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">
+                <span className="text-green-400 font-bold text-sm">
+                  🎉 خصم {Math.round((course.original_price - course.price) / course.original_price * 100)}%
+                </span>
+                <span className="text-slate-400 text-xs">
+                  — توفير {(course.original_price - course.price).toLocaleString('ar-EG')} جنيه
+                </span>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">المدة (ساعات)</label>
                 <input type="number" value={course.duration_hours} min={0} step={0.5}
