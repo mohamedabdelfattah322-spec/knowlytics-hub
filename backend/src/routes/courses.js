@@ -21,4 +21,20 @@ router.get('/:id/feedback', authenticate, authorize('admin'), allCourseFeedback)
 // Final quiz status for the user
 router.get('/:id/final-quiz-status', authenticate, finalQuizStatus);
 
+// Completed lesson IDs for progress sidebar
+router.get('/:id/my-progress', authenticate, async (req, res, next) => {
+  try {
+    const { query: dbQuery } = require('../config/database');
+    const result = await dbQuery(
+      `SELECT l.id AS lesson_id
+       FROM lesson_progress lp
+       JOIN lessons l ON l.id = lp.lesson_id
+       JOIN sections s ON s.id = l.section_id
+       WHERE s.course_id = $1 AND lp.user_id = $2 AND lp.completed = true`,
+      [req.params.id, req.user.user_id]
+    );
+    res.json({ completed_ids: result.rows.map(r => r.lesson_id) });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
