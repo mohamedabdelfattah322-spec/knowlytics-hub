@@ -235,7 +235,7 @@ export default function AdminCourseEditorPage() {
     try {
       await api.put(`/courses/${id}`, {
         title: course.title, description: course.description, type: course.type,
-        level: course.level, price: course.price, duration_hours: course.duration_hours,
+        level: course.level, price: course.price, original_price: course.original_price ?? null, duration_hours: course.duration_hours,
         is_published: course.is_published, thumbnail_url: course.thumbnail_url,
         promo_video_url: course.promo_video_url,
         instructor_profile_id: (course as any).instructor_profile_id,

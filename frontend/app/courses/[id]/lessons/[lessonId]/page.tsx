@@ -43,7 +43,7 @@ export default function LessonPlayerPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [files, setFiles] = useState<any[]>([]);
-  const [completed, setCompleted] = useState(false);
+  const [completedManual, setCompletedManual] = useState(false);
   const [loading, setLoading] = useState(true);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<Record<string, any>>({});
@@ -55,6 +55,12 @@ export default function LessonPlayerPage() {
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [allLessons, setAllLessons] = useState<{ id: string; title: string }[]>([]);
+
+  // Reset completion guard when lesson changes
+  useEffect(() => {
+    completedRef.current = false;
+    setCompletedManual(false);
+  }, [lessonId]);
 
   useEffect(() => {
     api.get(`/lessons/${lessonId}`).then(({ data }) => {
@@ -150,13 +156,14 @@ export default function LessonPlayerPage() {
   }, []);
 
   const completedRef = useRef(false);
+  const markCompleteRef = useRef<() => Promise<void>>(async () => {});
 
   const markComplete = async () => {
     if (completedRef.current) return;
     completedRef.current = true;
     try {
       await api.post(`/lessons/${lessonId}/complete`);
-      setCompleted(true);
+      setCompletedManual(true);
       setCompletedIds(p => new Set([...p, String(lessonId)]));
       toast.success('✅ تمت المحاضرة!');
     } catch {
@@ -165,17 +172,20 @@ export default function LessonPlayerPage() {
     }
   };
 
-  // Auto-complete when Bunny.net iframe video ends (postMessage)
+  // Keep markCompleteRef always pointing to latest markComplete
+  useEffect(() => { markCompleteRef.current = markComplete; });
+
+  // Auto-complete when Bunny.net iframe video ends (postMessage) — always uses latest ref
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       try {
         const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
-        if (data?.event === 'ended' || data?.type === 'ended') markComplete();
+        if (data?.event === 'ended' || data?.type === 'ended') markCompleteRef.current();
       } catch {}
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [lessonId]);
+  }, []);
 
   const downloadFile = async (fileId: string, name: string) => {
     try {
@@ -201,6 +211,9 @@ export default function LessonPlayerPage() {
       return next;
     });
   };
+
+  // Derived — true if this lesson is in the completedIds set OR manually marked
+  const completed = completedManual || completedIds.has(String(lessonId));
 
   // Progress stats
   const totalLessons = sections.reduce((s, sec) => s + (sec.lessons?.length || 0), 0);
