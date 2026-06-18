@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Search, BookOpen, Clock, Users, Filter, Star, ShoppingCart } from 'lucide-react';
+import { Search, BookOpen, Clock, Users, Filter, Star, Package, Infinity, Tag, ArrowLeft } from 'lucide-react';
 import api from '@/lib/api';
 import { formatPrice, levelColor, cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,11 +44,19 @@ interface Category {
   id: string; name: string; name_ar: string; slug: string; icon: string; course_count: number;
 }
 
+interface Bundle {
+  id: string; name: string; description: string;
+  price: number; original_price: number | null;
+  duration_days: number; thumbnail_url: string | null;
+  course_count: number;
+}
+
 export default function CoursesPage() {
   const { user } = useAuth();
   const { t, isAr } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -58,6 +66,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     api.get('/categories').then(({ data }) => setCategories(data)).catch(() => {});
+    api.get('/bundles').then(({ data }) => setBundles(data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -113,6 +122,72 @@ export default function CoursesPage() {
             </select>
           </div>
         </div>
+
+        {/* ── Bundles section ── */}
+        {bundles.length > 0 && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-brand-400" />
+                <h2 className="text-xl font-bold text-white">الباقات الشاملة</h2>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400">وفّر أكتر</span>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {bundles.map(b => {
+                const pct = b.original_price && b.original_price > b.price
+                  ? Math.round((b.original_price - b.price) / b.original_price * 100) : null;
+                return (
+                  <Link key={b.id} href={`/bundles/${b.id}`}
+                    className="card hover:border-brand-500/50 transition-all duration-200 group flex flex-col relative overflow-hidden">
+                    {pct && (
+                      <span className="absolute top-3 right-3 z-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        خصم {pct}%
+                      </span>
+                    )}
+                    {b.thumbnail_url ? (
+                      <div className="w-full h-36 rounded-lg mb-3 overflow-hidden bg-dark-900">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={b.thumbnail_url} alt={b.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" />
+                      </div>
+                    ) : (
+                      <div className="w-full h-36 rounded-lg mb-3 bg-gradient-to-br from-brand-500/20 to-purple-500/20 flex items-center justify-center">
+                        <Package className="w-10 h-10 text-brand-400" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="badge badge-blue flex items-center gap-1 text-xs">
+                        <Package className="w-3 h-3" /> باقة
+                      </span>
+                      {b.duration_days === 0
+                        ? <span className="text-xs text-purple-400 flex items-center gap-1"><Infinity className="w-3 h-3" /> مدى الحياة</span>
+                        : <span className="text-xs text-slate-400">{b.duration_days} يوم</span>
+                      }
+                    </div>
+                    <h3 className="font-semibold text-white text-sm mb-1 line-clamp-2 group-hover:text-brand-300 transition-colors">{b.name}</h3>
+                    {b.description && <p className="text-slate-400 text-xs line-clamp-2 mb-3 flex-1">{b.description}</p>}
+                    <div className="flex items-center justify-between pt-3 border-t border-dark-700 mt-auto">
+                      <div>
+                        {b.original_price && b.original_price > b.price && (
+                          <p className="text-slate-500 line-through text-xs">{formatPrice(b.original_price)}</p>
+                        )}
+                        <p className="text-brand-400 font-bold">{formatPrice(b.price)}</p>
+                      </div>
+                      <span className="text-xs text-slate-400">
+                        {b.course_count === 0 ? 'كل الكورسات' : `${b.course_count} كورس`}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="border-t border-dark-700 mt-8 mb-6 relative">
+              <span className="absolute inset-x-0 -top-3 flex justify-center">
+                <span className="bg-dark-900 px-4 text-xs text-slate-500">أو اختر كورس بشكل منفرد</span>
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" data-guide="course-grid">
