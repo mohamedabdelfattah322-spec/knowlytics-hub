@@ -149,14 +149,33 @@ export default function LessonPlayerPage() {
     };
   }, []);
 
+  const completedRef = useRef(false);
+
   const markComplete = async () => {
+    if (completedRef.current) return;
+    completedRef.current = true;
     try {
       await api.post(`/lessons/${lessonId}/complete`);
       setCompleted(true);
       setCompletedIds(p => new Set([...p, String(lessonId)]));
       toast.success('✅ تمت المحاضرة!');
-    } catch { toast.error('فشل التحديث'); }
+    } catch {
+      completedRef.current = false;
+      toast.error('فشل التحديث');
+    }
   };
+
+  // Auto-complete when Bunny.net iframe video ends (postMessage)
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (data?.event === 'ended' || data?.type === 'ended') markComplete();
+      } catch {}
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [lessonId]);
 
   const downloadFile = async (fileId: string, name: string) => {
     try {
@@ -263,7 +282,8 @@ export default function LessonPlayerPage() {
                 <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
                   <video ref={el => { (videoRef as any).current = el; if (el) attachToVideo(el); }}
                     src={videoUrl} controls controlsList="nodownload nofullscreen"
-                    onContextMenu={blockContextMenu} className="w-full h-full" playsInline />
+                    onContextMenu={blockContextMenu} onEnded={markComplete}
+                    className="w-full h-full" playsInline />
                   <div className="video-watermark">{user?.email} · {new Date().toLocaleString()}</div>
                 </div>
               );
