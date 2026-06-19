@@ -30,16 +30,19 @@ interface CartAnalytics {
 }
 
 interface Course { id: string; title: string; price: number; type: string; }
+interface Bundle { id: string; name: string; price: number; }
 
 const emptyForm = {
   code: '', description: '', discount_type: 'percent', discount_value: '',
-  course_id: '', audience: '', max_uses: '', max_uses_per_user: '1',
+  applies_to: 'all' as 'all' | 'course' | 'bundle',
+  course_id: '', bundle_id: '', audience: '', max_uses: '', max_uses_per_user: '1',
   valid_from: '', valid_until: '',
 };
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -59,9 +62,11 @@ export default function CouponsPage() {
     Promise.all([
       api.get('/coupons'),
       api.get('/courses', { params: { admin: 'true', limit: 100 } }),
-    ]).then(([c, co]) => {
+      api.get('/bundles'),
+    ]).then(([c, co, bu]) => {
       setCoupons(c.data);
       setCourses(co.data.courses);
+      setBundles(bu.data);
     }).finally(() => setLoading(false));
   };
 
@@ -92,7 +97,10 @@ export default function CouponsPage() {
     setEditingId(c.id);
     setForm({
       code: c.code, description: c.description || '', discount_type: c.discount_type,
-      discount_value: String(c.discount_value), course_id: c.course_id || '',
+      discount_value: String(c.discount_value),
+      applies_to: (c as any).bundle_id ? 'bundle' : c.course_id ? 'course' : 'all',
+      course_id: c.course_id || '',
+      bundle_id: (c as any).bundle_id || '',
       audience: c.audience || '', max_uses: c.max_uses ? String(c.max_uses) : '',
       max_uses_per_user: String(c.max_uses_per_user),
       valid_from: c.valid_from ? c.valid_from.slice(0, 16) : '',
@@ -104,11 +112,14 @@ export default function CouponsPage() {
   const save = async () => {
     if (!form.code || !form.discount_value) { toast.error('الكود وقيمة الخصم مطلوبين'); return; }
     const payload = {
-      ...form,
+      code: form.code, description: form.description,
+      discount_type: form.discount_type,
       discount_value: Number(form.discount_value),
       max_uses: form.max_uses ? Number(form.max_uses) : null,
       max_uses_per_user: Number(form.max_uses_per_user) || 1,
-      course_id: form.course_id || null,
+      course_id: form.applies_to === 'course' ? (form.course_id || null) : null,
+      bundle_id: form.applies_to === 'bundle' ? (form.bundle_id || null) : null,
+      audience: form.audience || null,
       valid_from: form.valid_from || null,
       valid_until: form.valid_until || null,
     };
@@ -212,7 +223,13 @@ export default function CouponsPage() {
                         <td className="px-4 py-3 text-white font-bold">
                           {c.discount_type === 'percent' ? `${c.discount_value}%` : `${c.discount_value} جنيه`}
                         </td>
-                        <td className="px-4 py-3 text-slate-300 text-xs">{c.course_title || <span className="text-slate-500">كل الكورسات</span>}</td>
+                        <td className="px-4 py-3 text-slate-300 text-xs">
+                          {(c as any).bundle_title
+                            ? <span className="text-purple-300">📦 {(c as any).bundle_title}</span>
+                            : c.course_title
+                              ? <span>{c.course_title}</span>
+                              : <span className="text-slate-500">كل الكورسات والباقات</span>}
+                        </td>
                         <td className="px-4 py-3">
                           <button onClick={() => loadRedemptions(c.id)}
                             className="flex items-center gap-1 text-brand-400 hover:text-brand-300 font-bold">
@@ -391,11 +408,29 @@ export default function CouponsPage() {
                   placeholder={form.discount_type === 'percent' ? '25' : '50'} className="input" />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm text-slate-300 mb-1">الكورس (اختياري)</label>
-                <select value={form.course_id} onChange={(e) => setForm({ ...form, course_id: e.target.value })} className="input">
-                  <option value="">— كل الكورسات —</option>
-                  {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-                </select>
+                <label className="block text-sm text-slate-300 mb-1">يُطبق على</label>
+                <div className="flex gap-1 bg-dark-900 border border-dark-600 rounded-lg p-1 mb-2">
+                  {(['all', 'course', 'bundle'] as const).map(opt => (
+                    <button key={opt} type="button"
+                      onClick={() => setForm({ ...form, applies_to: opt, course_id: '', bundle_id: '' })}
+                      className={cn('flex-1 py-1.5 rounded-md text-xs font-medium transition-colors',
+                        form.applies_to === opt ? 'bg-brand-500 text-white' : 'text-slate-400 hover:text-white')}>
+                      {opt === 'all' ? '🌐 كل الكورسات والباقات' : opt === 'course' ? '📚 كورس محدد' : '📦 باقة محددة'}
+                    </button>
+                  ))}
+                </div>
+                {form.applies_to === 'course' && (
+                  <select value={form.course_id} onChange={(e) => setForm({ ...form, course_id: e.target.value })} className="input">
+                    <option value="">— اختر كورس —</option>
+                    {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                  </select>
+                )}
+                {form.applies_to === 'bundle' && (
+                  <select value={form.bundle_id} onChange={(e) => setForm({ ...form, bundle_id: e.target.value })} className="input">
+                    <option value="">— اختر باقة —</option>
+                    {bundles.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-sm text-slate-300 mb-1">الجمهور المستهدف (اختياري)</label>

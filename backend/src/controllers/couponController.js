@@ -4,10 +4,11 @@ const { query } = require('../config/database');
 const listCoupons = async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT c.*, co.title AS course_title,
+      `SELECT c.*, co.title AS course_title, b.name AS bundle_title,
               (SELECT COUNT(*) FROM coupon_redemptions WHERE coupon_id = c.id)::int AS redemption_count
        FROM coupons c
        LEFT JOIN courses co ON co.id = c.course_id
+       LEFT JOIN bundles b ON b.id = c.bundle_id
        ORDER BY c.created_at DESC`
     );
     res.json(result.rows);
@@ -18,17 +19,17 @@ const createCoupon = async (req, res, next) => {
   try {
     const {
       code, description, discount_type = 'percent', discount_value,
-      course_id, audience, max_uses, max_uses_per_user = 1,
+      course_id, bundle_id, audience, max_uses, max_uses_per_user = 1,
       valid_from, valid_until,
     } = req.body;
     if (!code || !discount_value) {
       return res.status(400).json({ error: 'code and discount_value required' });
     }
     const result = await query(
-      `INSERT INTO coupons (code, description, discount_type, discount_value, course_id, audience, max_uses, max_uses_per_user, valid_from, valid_until)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      `INSERT INTO coupons (code, description, discount_type, discount_value, course_id, bundle_id, audience, max_uses, max_uses_per_user, valid_from, valid_until)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
       [code.toUpperCase().trim(), description || null, discount_type, discount_value,
-       course_id || null, audience || null, max_uses || null, max_uses_per_user,
+       course_id || null, bundle_id || null, audience || null, max_uses || null, max_uses_per_user,
        valid_from || null, valid_until || null]
     );
     res.status(201).json(result.rows[0]);
@@ -40,7 +41,7 @@ const createCoupon = async (req, res, next) => {
 
 const updateCoupon = async (req, res, next) => {
   try {
-    const allowed = ['description', 'discount_type', 'discount_value', 'course_id',
+    const allowed = ['description', 'discount_type', 'discount_value', 'course_id', 'bundle_id',
                      'audience', 'max_uses', 'max_uses_per_user', 'valid_from', 'valid_until', 'is_active'];
     const updates = []; const values = [];
     Object.entries(req.body).forEach(([k, v]) => {
@@ -64,20 +65,34 @@ const deleteCoupon = async (req, res, next) => {
 };
 
 // ─── POST /api/coupons/validate  (any authenticated user) ────
-//   Body: { code, course_id }
+//   Body: { code, course_id } OR { code, bundle_id }
 //   Returns: { valid, discount_type, discount_value, amount_off, final_price, error? }
 const validateCoupon = async (req, res, next) => {
   try {
-    const { code, course_id } = req.body;
-    if (!code || !course_id) return res.status(400).json({ error: 'code and course_id required' });
+    const { code, course_id, bundle_id } = req.body;
+    if (!code || (!course_id && !bundle_id))
+      return res.status(400).json({ error: 'code and course_id or bundle_id required' });
 
-    const couponRes = await query(
-      `SELECT c.*, co.price AS course_price
-       FROM coupons c
-       LEFT JOIN courses co ON co.id = $2
-       WHERE c.code = $1 AND c.is_active = true`,
-      [code.toUpperCase().trim(), course_id]
-    );
+    // Fetch coupon + price of the item being purchased
+    let couponRes;
+    if (bundle_id) {
+      couponRes = await query(
+        `SELECT c.*, b.price AS item_price
+         FROM coupons c
+         LEFT JOIN bundles b ON b.id = $2
+         WHERE c.code = $1 AND c.is_active = true`,
+        [code.toUpperCase().trim(), bundle_id]
+      );
+    } else {
+      couponRes = await query(
+        `SELECT c.*, co.price AS item_price
+         FROM coupons c
+         LEFT JOIN courses co ON co.id = $2
+         WHERE c.code = $1 AND c.is_active = true`,
+        [code.toUpperCase().trim(), course_id]
+      );
+    }
+
     if (!couponRes.rows.length) return res.status(404).json({ valid: false, error: 'الكود مش صحيح' });
     const c = couponRes.rows[0];
 
@@ -87,8 +102,18 @@ const validateCoupon = async (req, res, next) => {
     if (c.valid_until && new Date(c.valid_until) < now)
       return res.json({ valid: false, error: 'الكود انتهت صلاحيته' });
 
-    if (c.course_id && c.course_id !== course_id)
-      return res.json({ valid: false, error: 'الكود مش صالح للكورس ده' });
+    // Scope check: coupon must match the item being purchased
+    if (bundle_id) {
+      if (c.bundle_id && c.bundle_id !== bundle_id)
+        return res.json({ valid: false, error: 'الكود مش صالح للباقة دي' });
+      if (c.course_id)
+        return res.json({ valid: false, error: 'الكود ده للكورسات مش للباقات' });
+    } else {
+      if (c.course_id && c.course_id !== course_id)
+        return res.json({ valid: false, error: 'الكود مش صالح للكورس ده' });
+      if (c.bundle_id)
+        return res.json({ valid: false, error: 'الكود ده للباقات مش للكورسات' });
+    }
 
     if (c.max_uses && c.used_count >= c.max_uses)
       return res.json({ valid: false, error: 'الكود استنفد عدد الاستخدامات' });
@@ -100,7 +125,7 @@ const validateCoupon = async (req, res, next) => {
     if (userUsed.rows[0].n >= c.max_uses_per_user)
       return res.json({ valid: false, error: 'استخدمت الكود ده قبل كده' });
 
-    const price = parseFloat(c.course_price || 0);
+    const price = parseFloat(c.item_price || 0);
     const amount_off = c.discount_type === 'percent'
       ? Math.round(price * parseFloat(c.discount_value) / 100 * 100) / 100
       : Math.min(parseFloat(c.discount_value), price);
