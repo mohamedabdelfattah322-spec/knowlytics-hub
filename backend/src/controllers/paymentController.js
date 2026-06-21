@@ -103,7 +103,7 @@ const getPaymentMethods = async (req, res) => {
 // ───────────────────────────────────────────────────────────
 const initiatePayment = async (req, res, next) => {
   try {
-    const { course_id, bundle_id, phone, method = 'card', wallet_number, coupon_code } = req.body;
+    const { course_id, bundle_id, phone, method = 'card', wallet_number, coupon_code, coupon_id } = req.body;
     const userId = req.user.user_id;
 
     if (!course_id && !bundle_id) {
@@ -134,36 +134,46 @@ const initiatePayment = async (req, res, next) => {
       itemTitle = item.name;
     }
 
-    // ── Apply coupon if provided ──
+    // ── Apply coupon if provided (accepts coupon_id or coupon_code) ──
     let appliedCouponId = null;
     let appliedDiscountAmount = 0;
-    if (coupon_code && course_id) {
-      const couponRes = await query(
-        `SELECT c.* FROM coupons c
-         WHERE c.code = $1 AND c.is_active = true
-           AND (c.course_id IS NULL OR c.course_id = $2)
-           AND (c.valid_from  IS NULL OR c.valid_from  <= NOW())
-           AND (c.valid_until IS NULL OR c.valid_until >= NOW())`,
-        [coupon_code.toUpperCase().trim(), course_id]
-      );
+    const couponLookup = coupon_id || coupon_code;
+    if (couponLookup) {
+      const couponRes = coupon_id
+        ? await query(
+            `SELECT * FROM coupons WHERE id = $1 AND is_active = true
+               AND (c.valid_from IS NULL OR valid_from <= NOW())
+               AND (valid_until IS NULL OR valid_until >= NOW())`.replace('c.', ''),
+            [coupon_id]
+          )
+        : await query(
+            `SELECT * FROM coupons WHERE code = $1 AND is_active = true
+               AND (valid_from IS NULL OR valid_from <= NOW())
+               AND (valid_until IS NULL OR valid_until >= NOW())`,
+            [coupon_code.toUpperCase().trim()]
+          );
       if (couponRes.rows.length) {
         const coupon = couponRes.rows[0];
-        const usedRes = await query(
-          `SELECT COUNT(*)::int AS n FROM coupon_redemptions WHERE coupon_id = $1 AND user_id = $2`,
-          [coupon.id, userId]
-        );
-        const totalUsed = await query(
-          `SELECT used_count FROM coupons WHERE id = $1`, [coupon.id]
-        );
-        const maxOk = !coupon.max_uses || totalUsed.rows[0].used_count < coupon.max_uses;
-        const userOk = usedRes.rows[0].n < coupon.max_uses_per_user;
-        if (maxOk && userOk) {
-          const discount = coupon.discount_type === 'percent'
-            ? Math.round(itemPriceEgp * parseFloat(coupon.discount_value) / 100 * 100) / 100
-            : Math.min(parseFloat(coupon.discount_value), itemPriceEgp);
-          appliedDiscountAmount = discount;
-          itemPriceEgp = Math.max(0, itemPriceEgp - discount);
-          appliedCouponId = coupon.id;
+        // Scope check: coupon must match what's being purchased
+        const scopeOk = (!coupon.course_id && !coupon.bundle_id)
+          || (course_id && coupon.course_id === course_id)
+          || (bundle_id && coupon.bundle_id === bundle_id);
+        if (scopeOk) {
+          const usedRes = await query(
+            `SELECT COUNT(*)::int AS n FROM coupon_redemptions WHERE coupon_id = $1 AND user_id = $2`,
+            [coupon.id, userId]
+          );
+          const totalUsed = await query(`SELECT used_count FROM coupons WHERE id = $1`, [coupon.id]);
+          const maxOk = !coupon.max_uses || totalUsed.rows[0].used_count < coupon.max_uses;
+          const userOk = usedRes.rows[0].n < coupon.max_uses_per_user;
+          if (maxOk && userOk) {
+            const discount = coupon.discount_type === 'percent'
+              ? Math.round(itemPriceEgp * parseFloat(coupon.discount_value) / 100 * 100) / 100
+              : Math.min(parseFloat(coupon.discount_value), itemPriceEgp);
+            appliedDiscountAmount = discount;
+            itemPriceEgp = Math.max(0, itemPriceEgp - discount);
+            appliedCouponId = coupon.id;
+          }
         }
       }
     }
@@ -171,31 +181,42 @@ const initiatePayment = async (req, res, next) => {
     const userRes = await query('SELECT id, name, email FROM users WHERE id = $1', [userId]);
     const user = userRes.rows[0];
 
-    // ── FREE after coupon: enroll directly without payment gateway ──
-    if (itemPriceEgp === 0 && course_id) {
+    // ── FREE after coupon: enroll/subscribe directly without payment gateway ──
+    if (itemPriceEgp === 0) {
       const paymentRes = await query(
-        `INSERT INTO payments (user_id, course_id, amount, currency, status, customer_phone, customer_email, payment_method)
-         VALUES ($1, $2, 0, 'EGP', 'success', $3, $4, 'coupon_free') RETURNING id`,
-        [userId, course_id, phone || null, user.email]
+        `INSERT INTO payments (user_id, course_id, bundle_id, amount, currency, status, customer_phone, customer_email, payment_method)
+         VALUES ($1, $2, $3, 0, 'EGP', 'success', $4, $5, 'coupon_free') RETURNING id`,
+        [userId, course_id || null, bundle_id || null, phone || null, user.email]
       );
       const paymentId = paymentRes.rows[0].id;
       if (appliedCouponId) {
         await query(
-          `INSERT INTO coupon_redemptions (coupon_id, user_id, course_id, payment_id, amount_off) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
-          [appliedCouponId, userId, course_id, paymentId, appliedDiscountAmount]
+          `INSERT INTO coupon_redemptions (coupon_id, user_id, course_id, bundle_id, payment_id, amount_off)
+           VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
+          [appliedCouponId, userId, course_id || null, bundle_id || null, paymentId, appliedDiscountAmount]
         );
         await query(`UPDATE coupons SET used_count = used_count + 1 WHERE id = $1`, [appliedCouponId]);
       }
-      // Enroll the user
-      const accessDays = item.default_access_days || null;
-      const expiresAt = accessDays ? new Date(Date.now() + accessDays * 86400000) : null;
-      await query(
-        `INSERT INTO enrollments (user_id, course_id, is_active, payment_ref, expires_at)
-         VALUES ($1, $2, true, $3, $4)
-         ON CONFLICT (user_id, course_id) DO UPDATE SET is_active = true, payment_ref = EXCLUDED.payment_ref`,
-        [userId, course_id, paymentId, expiresAt]
-      );
-      return res.json({ type: 'free', payment_id: paymentId, message: 'تم التسجيل مجاناً بالكوبون 🎉' });
+      if (course_id) {
+        const accessDays = item.default_access_days || null;
+        const expiresAt = accessDays ? new Date(Date.now() + accessDays * 86400000) : null;
+        await query(
+          `INSERT INTO enrollments (user_id, course_id, is_active, payment_ref, expires_at)
+           VALUES ($1, $2, true, $3, $4)
+           ON CONFLICT (user_id, course_id) DO UPDATE SET is_active = true, payment_ref = EXCLUDED.payment_ref`,
+          [userId, course_id, paymentId, expiresAt]
+        );
+      } else if (bundle_id) {
+        const durationDays = item.duration_days;
+        const expiresAt = durationDays > 0 ? new Date(Date.now() + durationDays * 86400000) : null;
+        await query(
+          `INSERT INTO bundle_subscriptions (user_id, bundle_id, payment_id, expires_at)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT DO NOTHING`,
+          [userId, bundle_id, paymentId, expiresAt]
+        );
+      }
+      return res.json({ type: 'free', payment_id: paymentId, message: 'تم الاشتراك مجاناً بالكوبون 🎉' });
     }
 
     // Insert pending payment row

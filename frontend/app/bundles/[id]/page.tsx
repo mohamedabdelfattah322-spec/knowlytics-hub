@@ -139,6 +139,11 @@ export default function BundleDetailPage() {
         coupon_id: couponResult?.valid ? couponResult.coupon_id : undefined,
       });
       const { type, iframe_url, redirect_url, url, reference, message, payment_id } = res.data;
+      if (type === 'free') {
+        toast.success(message || '🎉 تم الاشتراك مجاناً!');
+        setTimeout(() => router.push('/dashboard/student/courses'), 1500);
+        return;
+      }
       setPaymentId(payment_id);
       setPolling(true);
       if (type === 'iframe') setIframeUrl(iframe_url);
