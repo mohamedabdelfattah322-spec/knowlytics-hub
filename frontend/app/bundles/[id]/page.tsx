@@ -61,6 +61,9 @@ export default function BundleDetailPage() {
   const [kioskRef, setKioskRef] = useState<string | null>(null);
   const [walletMsg, setWalletMsg] = useState<string | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponResult, setCouponResult] = useState<{ valid: boolean; discount_type: string; discount_value: number; amount_off: number; final_price: number; coupon_id: string; error?: string } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm<FormValues>();
 
@@ -106,6 +109,24 @@ export default function BundleDetailPage() {
     return () => clearInterval(iv);
   }, [paymentId, polling, router]);
 
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponResult(null);
+    try {
+      const { data } = await api.post('/coupons/validate', { code: couponCode.trim(), bundle_id: id });
+      setCouponResult(data);
+      if (data.valid) toast.success('✅ كوبون صالح!');
+      else toast.error(data.error || 'كوبون غير صالح');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'كوبون غير صالح';
+      setCouponResult({ valid: false, error: msg } as any);
+      toast.error(msg);
+    } finally { setCouponLoading(false); }
+  };
+
+  const finalPrice = couponResult?.valid ? couponResult.final_price : (bundle?.price ?? 0);
+
   const onSubmit = async (data: FormValues) => {
     if (!user) { router.push(`/login?redirect=/bundles/${id}`); return; }
     setSubmitting(true);
@@ -115,6 +136,7 @@ export default function BundleDetailPage() {
         phone: data.phone,
         method: selectedMethod,
         wallet_number: data.wallet_number,
+        coupon_id: couponResult?.valid ? couponResult.coupon_id : undefined,
       });
       const { type, iframe_url, redirect_url, url, reference, message, payment_id } = res.data;
       setPaymentId(payment_id);
@@ -326,6 +348,36 @@ export default function BundleDetailPage() {
                     </div>
                   )}
 
+                  {/* Coupon */}
+                  <div>
+                    <label className="block text-sm text-slate-300 mb-1 flex items-center gap-1">
+                      <Tag className="w-3.5 h-3.5 text-brand-400" /> كوبون خصم (اختياري)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        value={couponCode}
+                        onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponResult(null); }}
+                        className="input flex-1 font-mono text-sm"
+                        placeholder="أدخل كود الخصم"
+                      />
+                      <button type="button" onClick={validateCoupon} disabled={couponLoading || !couponCode.trim()}
+                        className="btn-secondary px-3 text-sm whitespace-nowrap">
+                        {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'تحقق'}
+                      </button>
+                    </div>
+                    {couponResult?.valid && (
+                      <div className="mt-2 flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">
+                        <span className="text-green-400 text-xs font-medium">
+                          ✅ خصم {couponResult.discount_type === 'percent' ? `${couponResult.discount_value}%` : formatPrice(couponResult.discount_value)}
+                        </span>
+                        <span className="text-green-400 text-sm font-bold">{formatPrice(couponResult.final_price)}</span>
+                      </div>
+                    )}
+                    {couponResult && !couponResult.valid && (
+                      <p className="text-red-400 text-xs mt-1">❌ {couponResult.error}</p>
+                    )}
+                  </div>
+
                   {!user ? (
                     <Link href={`/login?redirect=/bundles/${id}`} className="btn-primary w-full text-center block">
                       سجل دخول للاشتراك
@@ -333,7 +385,7 @@ export default function BundleDetailPage() {
                   ) : (
                     <button type="submit" disabled={submitting} className="btn-primary w-full flex items-center justify-center gap-2">
                       {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
-                      {submitting ? 'جارِ المعالجة...' : `اشترك الآن — ${formatPrice(bundle.price)}`}
+                      {submitting ? 'جارِ المعالجة...' : `اشترك الآن — ${formatPrice(finalPrice)}`}
                     </button>
                   )}
 
