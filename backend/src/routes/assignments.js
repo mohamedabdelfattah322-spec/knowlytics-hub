@@ -16,6 +16,26 @@ router.post('/', authenticate, authorize('admin'), async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── Admin: all assignments across all courses with submission stats ──
+router.get('/admin/all', authenticate, authorize('admin'), async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT a.*, l.title AS lesson_title, c.id AS course_id, c.title AS course_title,
+              COUNT(s.id)::int AS submission_count,
+              COUNT(CASE WHEN s.grade IS NOT NULL THEN 1 END)::int AS graded_count,
+              COUNT(CASE WHEN s.grade IS NULL THEN 1 END)::int AS pending_count
+       FROM assignments a
+       JOIN lessons l ON l.id = a.lesson_id
+       JOIN sections sec ON sec.id = l.section_id
+       JOIN courses c ON c.id = sec.course_id
+       LEFT JOIN assignment_submissions s ON s.assignment_id = a.id
+       GROUP BY a.id, l.title, c.id, c.title
+       ORDER BY a.created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) { next(err); }
+});
+
 // ── Admin: list assignments for a lesson ──────────────────
 router.get('/lesson/:lessonId', authenticate, async (req, res, next) => {
   try {

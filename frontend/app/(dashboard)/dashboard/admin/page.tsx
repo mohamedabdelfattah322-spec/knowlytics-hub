@@ -4,6 +4,25 @@ import { Users, BookOpen, TrendingUp, DollarSign, Activity, Clock } from 'lucide
 import { formatCurrency } from '@/lib/utils';
 import api from '@/lib/api';
 import { format } from 'date-fns';
+import { useLanguage } from '@/hooks/useLanguage';
+import PageGuide, { GuideButton, type GuideStep } from '@/components/ui/PageGuide';
+
+const adminGuide: GuideStep[] = [
+  {
+    titleAr: 'لوحة تحكم الأدمن', titleEn: 'Admin Dashboard',
+    descAr: 'هنا بتشوف ملخص عام عن المنصة: الطلاب، الكورسات، الإيرادات، وآخر التسجيلات.', descEn: 'Overview of the platform: students, courses, revenue, and recent enrollments.',
+  },
+  {
+    target: '[data-guide="admin-stats"]',
+    titleAr: 'الإحصائيات', titleEn: 'Statistics',
+    descAr: 'أرقام سريعة عن عدد المستخدمين، الكورسات، التسجيلات، والإيرادات الشهرية.', descEn: 'Quick numbers: users, courses, enrollments, and monthly revenue.',
+  },
+  {
+    target: '[data-guide="sidebar"]',
+    titleAr: 'القائمة الجانبية', titleEn: 'Sidebar',
+    descAr: 'من هنا تتنقل بين: إدارة الكورسات، المستخدمين، المدفوعات، الكوبونات، التحليلات، والإعدادات.', descEn: 'Navigate: Courses, Users, Payments, Coupons, Analytics, and Settings.',
+  },
+];
 
 interface Stats {
   users: { total: string; students: string; new_this_month: string };
@@ -36,6 +55,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recent, setRecent] = useState<RecentEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
     api.get('/admin/dashboard').then(({ data }) => {
@@ -57,17 +77,19 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8 animate-slide-up">
+      <PageGuide pageId="admin-dashboard" steps={adminGuide} forceOpen={guideOpen} onClose={() => setGuideOpen(false)} />
+      <GuideButton onClick={() => setGuideOpen(true)} />
       <div>
         <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
         <p className="text-slate-400 text-sm mt-1">Platform overview — {format(new Date(), 'MMMM d, yyyy')}</p>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-guide="admin-stats">
         <StatCard icon={Users} label="Total Users" value={stats?.users.total} sub={`${stats?.users.new_this_month} new this month`} color="bg-blue-600" />
         <StatCard icon={BookOpen} label="Courses" value={stats?.courses.total} sub={`${stats?.courses.published} published`} color="bg-purple-600" />
         <StatCard icon={TrendingUp} label="Enrollments" value={stats?.enrollments.total} sub={`${stats?.enrollments.completed} completed`} color="bg-green-600" />
-        <StatCard icon={DollarSign} label="Monthly Revenue" value={formatCurrency(parseFloat(stats?.monthly_revenue || '0'))} color="bg-brand-600" />
+        <StatCard icon={DollarSign} label="الإيرادات الشهرية" value={formatCurrency(parseFloat(stats?.monthly_revenue || '0'))} color="bg-brand-600" />
       </div>
 
       {/* Recent Enrollments */}

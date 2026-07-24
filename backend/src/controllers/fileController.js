@@ -49,13 +49,26 @@ if (USE_S3) {
 }
 
 const ALLOWED_TYPES = [
+  // Videos
   'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo',
+  // Documents
   'application/pdf',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/msword',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+  'application/vnd.ms-excel',                                           // xls
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+  'application/msword',                                                  // doc
+  'application/vnd.ms-powerpoint',                                       // ppt
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
+  // CSV
+  'text/csv',
+  'application/csv',
+  'text/plain',
+  // Images
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  // Archives
+  'application/zip',
+  'application/x-rar-compressed',
+  'application/x-zip-compressed',
 ];
 
 const upload = multer({
@@ -80,9 +93,22 @@ const uploadFile = async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'لم يتم إرسال ملف' });
 
-    const { course_id, lesson_id, title } = req.body;
+    const { course_id, lesson_id, title, image_only } = req.body;
     const file = req.file;
     const fileKey = getFileKey(file);
+
+    // Build public URL for the uploaded file
+    const baseHost = (process.env.BACKEND_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+    const publicUrl = `${baseHost}/uploads/${fileKey}`;
+
+    // If image_only flag is set (thumbnail, instructor photo, etc.)
+    // → just return the URL without saving to course_files
+    if (image_only === 'true' || image_only === true) {
+      return res.status(201).json({
+        file: { file_key: fileKey, public_url: publicUrl },
+        storage: USE_S3 ? 's3' : 'local',
+      });
+    }
 
     const result = await query(
       `INSERT INTO course_files (course_id, lesson_id, name, file_key, file_type, file_size)
@@ -104,8 +130,9 @@ const uploadFile = async (req, res, next) => {
 };
 
 // ─── POST /api/files/upload-video-to-lesson ───────────────
-// Uploads a video and directly links it to a lesson's video_key
+// Uploads a video → saves locally → responds immediately → uploads to Bunny in background
 const uploadVideoToLesson = async (req, res, next) => {
+  const localFilePath = req.file ? path.join(UPLOAD_DIR, getFileKey(req.file)) : null;
   try {
     if (!req.file) return res.status(400).json({ error: 'لم يتم إرسال فيديو' });
     const { lesson_id } = req.body;
@@ -113,15 +140,159 @@ const uploadVideoToLesson = async (req, res, next) => {
 
     const fileKey = getFileKey(req.file);
 
-    // Update the lesson's video_key
-    const result = await query(
-      `UPDATE lessons SET video_key = $1, updated_at = NOW() WHERE id = $2 RETURNING id, title, video_key`,
+    const lessonRes = await query('SELECT id, title FROM lessons WHERE id = $1', [lesson_id]);
+    if (!lessonRes.rows.length) return res.status(404).json({ error: 'الدرس غير موجود' });
+    const lessonTitle = lessonRes.rows[0].title;
+
+    const bunnyService = require('../services/bunnyService');
+    const hasBunny = !!(process.env.BUNNY_LIBRARY_ID && process.env.BUNNY_API_KEY);
+
+    if (!hasBunny) {
+      // No Bunny — save locally and respond
+      const result = await query(
+        `UPDATE lessons SET video_key = $1, updated_at = NOW()
+         WHERE id = $2 RETURNING id, title, video_key, bunny_video_id, bunny_embed_url, duration_minutes`,
+        [fileKey, lesson_id]
+      );
+      return res.json({ lesson: result.rows[0], storage: 'local', message: '✅ تم رفع الفيديو' });
+    }
+
+    // ── Bunny mode: respond immediately, upload in background ──
+    const initialResult = await query(
+      `UPDATE lessons SET video_key = $1, updated_at = NOW()
+       WHERE id = $2 RETURNING id, title, video_key, bunny_video_id, bunny_embed_url, duration_minutes`,
       [fileKey, lesson_id]
     );
-    if (!result.rows.length) return res.status(404).json({ error: 'الدرس غير موجود' });
 
-    res.json({ lesson: result.rows[0], storage: USE_S3 ? 's3' : 'local' });
+    // Respond to client immediately
+    res.json({
+      lesson: initialResult.rows[0],
+      storage: 'bunny_processing',
+      message: '⏳ تم استلام الفيديو — جاري الرفع لـ Bunny في الخلفية...',
+    });
+
+    // Upload to Bunny in background after response
+    setImmediate(async () => {
+      try {
+        console.log(`[Bunny] Starting background upload for lesson ${lesson_id} (${req.file.size} bytes)`);
+        const bunnyData = await bunnyService.uploadVideoToBunny(localFilePath, lessonTitle);
+        const bunnyVideoId = bunnyData.videoId;
+        const bunnyEmbedUrl = bunnyService.getEmbedUrl(bunnyData.videoId);
+
+        const durationSeconds = await bunnyService.getVideoDuration(bunnyData.videoId);
+        const durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
+
+        await query(
+          `UPDATE lessons SET video_key = NULL, bunny_video_id = $1, bunny_embed_url = $2,
+           duration_minutes = COALESCE($3, duration_minutes), updated_at = NOW() WHERE id = $4`,
+          [bunnyVideoId, bunnyEmbedUrl, durationMinutes, lesson_id]
+        );
+
+        if (durationMinutes) {
+          const courseRes = await query(
+            `SELECT s.course_id FROM lessons l JOIN sections s ON s.id = l.section_id WHERE l.id = $1`,
+            [lesson_id]
+          );
+          if (courseRes.rows.length) {
+            await query(
+              `UPDATE courses SET duration_hours = ROUND(
+                (SELECT COALESCE(SUM(l.duration_minutes), 0)
+                 FROM lessons l JOIN sections s ON s.id = l.section_id
+                 WHERE s.course_id = $1) / 60.0, 1) WHERE id = $1`,
+              [courseRes.rows[0].course_id]
+            );
+          }
+        }
+
+        try { fs.unlinkSync(localFilePath); } catch (e) {}
+        console.log(`[Bunny] ✅ Background upload complete for lesson ${lesson_id}${durationMinutes ? ` — ${durationMinutes} min` : ''}`);
+      } catch (e) {
+        console.error(`[Bunny] ❌ Background upload failed for lesson ${lesson_id}:`, e.message);
+        try { fs.unlinkSync(localFilePath); } catch (err) {}
+      }
+    });
+
   } catch (err) {
+    if (localFilePath && fs.existsSync(localFilePath)) {
+      try { fs.unlinkSync(localFilePath); } catch (e) {}
+    }
+    next(err);
+  }
+};
+
+// ─── POST /api/files/upload-to-bunny ────────────────────
+// Upload a local video file to Bunny.net and link it to lesson
+const uploadVideoToBunny = async (req, res, next) => {
+  try {
+    const { lesson_id } = req.body;
+    if (!lesson_id) return res.status(400).json({ error: 'lesson_id مطلوب' });
+
+    // Get the lesson to find its current video
+    const lessonRes = await query('SELECT id, title, video_key FROM lessons WHERE id = $1', [lesson_id]);
+    if (!lessonRes.rows.length) return res.status(404).json({ error: 'الدرس غير موجود' });
+
+    const lesson = lessonRes.rows[0];
+    if (!lesson.video_key) return res.status(400).json({ error: 'لا يوجد فيديو محفوظ للدرس' });
+
+    // Get the local file path
+    const UPLOAD_DIR = path.join(__dirname, '../../uploads');
+    const filePath = path.join(UPLOAD_DIR, lesson.video_key);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'الملف المحلي غير موجود' });
+    }
+
+    // Upload to Bunny
+    const bunnyService = require('../services/bunnyService');
+    const bunnyData = await bunnyService.uploadVideoToBunny(filePath, lesson.title);
+    const embedUrl = bunnyService.getEmbedUrl(bunnyData.videoId);
+
+    // Get video duration from Bunny (wait for processing)
+    const durationSeconds = await bunnyService.getVideoDuration(bunnyData.videoId);
+    const durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
+
+    // Update lesson with Bunny info + duration
+    const updateRes = await query(
+      `UPDATE lessons
+       SET bunny_video_id = $1, bunny_embed_url = $2,
+           duration_minutes = COALESCE($3, duration_minutes),
+           updated_at = NOW()
+       WHERE id = $4 RETURNING id, bunny_video_id, bunny_embed_url, duration_minutes`,
+      [bunnyData.videoId, embedUrl, durationMinutes, lesson_id]
+    );
+
+    // Recalculate course total duration from all lessons
+    const courseRes = await query(
+      `SELECT s.course_id FROM lessons l
+       JOIN sections s ON s.id = l.section_id
+       WHERE l.id = $1`,
+      [lesson_id]
+    );
+
+    if (courseRes.rows.length) {
+      const courseId = courseRes.rows[0].course_id;
+      await query(
+        `UPDATE courses
+         SET duration_hours = ROUND(
+           (SELECT COALESCE(SUM(l.duration_minutes), 0)
+            FROM lessons l
+            JOIN sections s ON s.id = l.section_id
+            WHERE s.course_id = $1) / 60.0, 1
+         )
+         WHERE id = $1`,
+        [courseId]
+      );
+      console.log(`[Auto] Updated course ${courseId} duration`);
+    }
+
+    res.json({
+      lesson: updateRes.rows[0],
+      bunny: bunnyData,
+      duration_minutes: durationMinutes,
+      message: `✅ تم رفع الفيديو إلى Bunny${durationMinutes ? ` — المدة: ${durationMinutes} دقيقة` : ''}`
+    });
+  } catch (err) {
+    console.error('[Bunny Upload Error]', err);
     next(err);
   }
 };
@@ -164,8 +335,11 @@ const streamVideo = async (req, res, next) => {
   try {
     const fileKey = req.params.fileKey;
 
-    // Security: only allow paths that are in uploads/ folder
-    if (fileKey.includes('..')) return res.status(400).json({ error: 'Invalid path' });
+    // Security: block path traversal (encoded & raw) and absolute paths
+    const decoded = decodeURIComponent(fileKey);
+    if (decoded.includes('..') || fileKey.includes('..') || path.isAbsolute(fileKey) || /[<>"|?*]/.test(fileKey)) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
 
     const localPath = path.join(UPLOAD_DIR, fileKey);
     if (!fs.existsSync(localPath)) return res.status(404).json({ error: 'الفيديو غير موجود' });
@@ -237,4 +411,290 @@ const deleteFile = async (req, res, next) => {
   }
 };
 
-module.exports = { upload, uploadFile, uploadVideoToLesson, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };
+// ─── POST /api/files/bunny-tus-token ─────────────────────────────────────────
+// Creates a Bunny video entry + returns TUS upload credentials so the browser
+// can upload directly to Bunny (bypassing this server entirely).
+// Body: { lesson_id, title }
+// Returns: { videoId, uploadUrl, authorizationSignature, authorizationExpire, libraryId }
+const getBunnyTusToken = async (req, res, next) => {
+  try {
+    const { lesson_id, title } = req.body;
+    if (!lesson_id) return res.status(400).json({ error: 'lesson_id مطلوب' });
+
+    const hasBunny = !!(process.env.BUNNY_LIBRARY_ID && process.env.BUNNY_API_KEY);
+    if (!hasBunny) return res.status(500).json({ error: 'Bunny غير مفعّل' });
+
+    // Step 1: Create video entry on Bunny
+    const bunnyService = require('../services/bunnyService');
+    const lessonRes = await query('SELECT id, title FROM lessons WHERE id = $1', [lesson_id]);
+    if (!lessonRes.rows.length) return res.status(404).json({ error: 'الدرس غير موجود' });
+
+    const videoTitle = title || lessonRes.rows[0].title || 'lesson';
+
+    const createRes = await require('axios').post(
+      `https://video.bunnycdn.com/library/${process.env.BUNNY_LIBRARY_ID}/videos`,
+      { title: videoTitle },
+      { headers: { AccessKey: process.env.BUNNY_API_KEY } }
+    );
+    const videoId = createRes.data.guid;
+
+    // Step 2: Generate TUS signature
+    // Bunny TUS auth (CORRECT format): SHA256(libraryId + apiKey + expirationTime + videoId)
+    const apiKey      = (process.env.BUNNY_API_KEY    || '').trim();
+    const libraryId   = (process.env.BUNNY_LIBRARY_ID || '').trim();
+    const expirationTime   = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+    const signatureInput   = libraryId + apiKey + String(expirationTime) + videoId;
+    const signature        = require('crypto')
+      .createHash('sha256')
+      .update(signatureInput)
+      .digest('hex');
+
+    console.log('[BunnyTUS] Credentials:', { videoId, libraryId, expirationTime, sigHead: signature.substring(0, 12) });
+
+    // Step 3: Save video ID to lesson immediately
+    await query(
+      `UPDATE lessons SET bunny_video_id = $1, bunny_embed_url = $2, updated_at = NOW() WHERE id = $3`,
+      [videoId, bunnyService.getEmbedUrl(videoId), lesson_id]
+    );
+
+    res.json({
+      videoId,
+      libraryId:              parseInt(libraryId, 10),
+      authorizationSignature: signature,
+      authorizationExpire:    expirationTime,
+    });
+  } catch (err) {
+    console.error('[BunnyTUS Token]', err.response?.data || err.message);
+    next(err);
+  }
+};
+
+// ─── POST /api/files/bunny-tus-complete ──────────────────────────────────────
+// Called after TUS upload finishes — triggers duration fetch & course update
+// Body: { lesson_id, video_id }
+const bunnyTusComplete = async (req, res, next) => {
+  try {
+    const { lesson_id, video_id } = req.body;
+    if (!lesson_id || !video_id) return res.status(400).json({ error: 'lesson_id و video_id مطلوبان' });
+
+    const bunnyService = require('../services/bunnyService');
+
+    // Fetch duration in background (Bunny needs time to process)
+    setImmediate(async () => {
+      try {
+        const durationSeconds = await bunnyService.getVideoDuration(video_id);
+        const durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
+
+        await query(
+          `UPDATE lessons SET duration_minutes = COALESCE($1, duration_minutes), updated_at = NOW() WHERE id = $2`,
+          [durationMinutes, lesson_id]
+        );
+
+        if (durationMinutes) {
+          const courseRes = await query(
+            `SELECT s.course_id FROM lessons l JOIN sections s ON s.id = l.section_id WHERE l.id = $1`,
+            [lesson_id]
+          );
+          if (courseRes.rows.length) {
+            await query(
+              `UPDATE courses SET duration_hours = ROUND(
+                (SELECT COALESCE(SUM(l.duration_minutes), 0)
+                 FROM lessons l JOIN sections s ON s.id = l.section_id
+                 WHERE s.course_id = $1) / 60.0, 1) WHERE id = $1`,
+              [courseRes.rows[0].course_id]
+            );
+          }
+        }
+        console.log(`[BunnyTUS] ✅ Duration updated for lesson ${lesson_id}: ${durationMinutes} min`);
+      } catch (e) {
+        console.error('[BunnyTUS Complete]', e.message);
+      }
+    });
+
+    res.json({ ok: true, message: 'جاري معالجة الفيديو وحساب المدة...' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── POST /api/files/refresh-durations-bulk ──────────────────────────────────
+// Re-fetch durations from Bunny for ALL lessons in a course that have 0/null duration.
+// Body: { course_id }
+const refreshAllDurations = async (req, res, next) => {
+  try {
+    const { course_id } = req.body;
+    if (!course_id) return res.status(400).json({ error: 'course_id مطلوب' });
+
+    const lessonsRes = await query(
+      `SELECT l.id, l.bunny_video_id FROM lessons l
+       JOIN sections s ON s.id = l.section_id
+       WHERE s.course_id = $1 AND l.bunny_video_id IS NOT NULL
+         AND (l.duration_minutes IS NULL OR l.duration_minutes = 0)`,
+      [course_id]
+    );
+
+    if (!lessonsRes.rows.length) return res.json({ ok: true, updated: 0, message: 'كل الدروس عندها مدة بالفعل' });
+
+    const bunnyService = require('../services/bunnyService');
+    let updated = 0;
+
+    for (const lesson of lessonsRes.rows) {
+      try {
+        const secs = await bunnyService.getVideoDuration(lesson.bunny_video_id, 1, 0);
+        if (secs) {
+          const mins = Math.ceil(secs / 60);
+          await query(`UPDATE lessons SET duration_minutes = $1, updated_at = NOW() WHERE id = $2`, [mins, lesson.id]);
+          updated++;
+        }
+      } catch (_) { /* skip this lesson, move on */ }
+    }
+
+    // Recalculate course total
+    await query(
+      `UPDATE courses SET duration_hours = ROUND(
+        (SELECT COALESCE(SUM(l.duration_minutes), 0)
+         FROM lessons l JOIN sections s ON s.id = l.section_id
+         WHERE s.course_id = $1) / 60.0, 1) WHERE id = $1`,
+      [course_id]
+    );
+
+    res.json({ ok: true, updated, total: lessonsRes.rows.length });
+  } catch (err) {
+    console.error('[RefreshAllDurations]', err.message);
+    next(err);
+  }
+};
+
+// ─── POST /api/files/refresh-duration ────────────────────────────────────────
+// Re-fetch duration from Bunny for a single lesson and update DB + course total.
+// Body: { lesson_id }
+const refreshLessonDuration = async (req, res, next) => {
+  try {
+    const { lesson_id } = req.body;
+    if (!lesson_id) return res.status(400).json({ error: 'lesson_id مطلوب' });
+
+    const lessonRes = await query(
+      `SELECT l.id, l.bunny_video_id, s.course_id
+       FROM lessons l JOIN sections s ON s.id = l.section_id WHERE l.id = $1`,
+      [lesson_id]
+    );
+    if (!lessonRes.rows.length) return res.status(404).json({ error: 'الدرس غير موجود' });
+
+    const { bunny_video_id, course_id } = lessonRes.rows[0];
+    if (!bunny_video_id) return res.status(400).json({ error: 'الدرس ليس لديه فيديو Bunny' });
+
+    const bunnyService = require('../services/bunnyService');
+    const durationSeconds = await bunnyService.getVideoDuration(bunny_video_id);
+    const durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
+
+    if (!durationMinutes) return res.status(202).json({ ok: false, message: 'الفيديو لسه بيتعالج، جرب تاني بعد شوية' });
+
+    await query(
+      `UPDATE lessons SET duration_minutes = $1, updated_at = NOW() WHERE id = $2`,
+      [durationMinutes, lesson_id]
+    );
+
+    // Recalculate course total duration
+    await query(
+      `UPDATE courses SET duration_hours = ROUND(
+        (SELECT COALESCE(SUM(l.duration_minutes), 0)
+         FROM lessons l JOIN sections s ON s.id = l.section_id
+         WHERE s.course_id = $1) / 60.0, 1) WHERE id = $1`,
+      [course_id]
+    );
+
+    res.json({ ok: true, duration_minutes: durationMinutes });
+  } catch (err) {
+    console.error('[RefreshDuration]', err.message);
+    next(err);
+  }
+};
+
+// ─── POST /api/files/bunny-thumbnail ─────────────────────────────────────────
+// Upload a custom thumbnail image for a Bunny video.
+// Bunny requires a public URL — save image locally then pass URL via ?thumbnailUrl=
+// Accepts multipart form: { video_id } + image file field "thumbnail"
+const setBunnyThumbnail = async (req, res, next) => {
+  try {
+    const { video_id } = req.body;
+    if (!video_id) return res.status(400).json({ error: 'video_id مطلوب' });
+    if (!req.file)  return res.status(400).json({ error: 'ملف الصورة مطلوب' });
+
+    const apiKey    = (process.env.BUNNY_API_KEY    || '').trim();
+    const libraryId = (process.env.BUNNY_LIBRARY_ID || '').trim();
+    if (!apiKey || !libraryId) return res.status(500).json({ error: 'Bunny غير مفعّل' });
+
+    // 1. Multer (disk storage) already saved the file — build its public URL
+    //    req.file.filename is set by diskStorage; req.file.buffer is undefined in disk mode
+    const filename     = req.file.filename || `thumb-${uuidv4()}${path.extname(req.file.originalname || '.jpg')}`;
+    const baseUrl      = (process.env.BACKEND_URL || process.env.API_URL || '').replace(/\/+$/, '');
+    const thumbnailUrl = `${baseUrl}/uploads/files/${filename}`;
+
+    // 2. Tell Bunny to download and use that URL as the video thumbnail
+    await require('axios').post(
+      `https://video.bunnycdn.com/library/${libraryId}/videos/${video_id}/thumbnail`,
+      {},
+      { params: { thumbnailUrl }, headers: { AccessKey: apiKey } }
+    );
+
+    res.json({ ok: true, message: 'تم تحديث الـ thumbnail ✅', thumbnailUrl });
+  } catch (err) {
+    console.error('[BunnyThumbnail]', err.response?.data || err.message);
+    next(err);
+  }
+};
+
+// ─── POST /api/files/bunny-tus-token-promo ───────────────────────────────────
+// Creates a Bunny video for a course promo and returns TUS upload credentials.
+// Body: { course_id, title }
+const getBunnyTusTokenPromo = async (req, res, next) => {
+  try {
+    const { course_id, title } = req.body;
+    if (!course_id) return res.status(400).json({ error: 'course_id مطلوب' });
+
+    const hasBunny = !!(process.env.BUNNY_LIBRARY_ID && process.env.BUNNY_API_KEY);
+    if (!hasBunny) return res.status(500).json({ error: 'Bunny غير مفعّل' });
+
+    const courseRes = await query('SELECT id, title FROM courses WHERE id = $1', [course_id]);
+    if (!courseRes.rows.length) return res.status(404).json({ error: 'الكورس غير موجود' });
+
+    const videoTitle = title || `Promo - ${courseRes.rows[0].title}`;
+
+    const createRes = await require('axios').post(
+      `https://video.bunnycdn.com/library/${process.env.BUNNY_LIBRARY_ID}/videos`,
+      { title: videoTitle },
+      { headers: { AccessKey: process.env.BUNNY_API_KEY } }
+    );
+    const videoId = createRes.data.guid;
+
+    const apiKey    = (process.env.BUNNY_API_KEY    || '').trim();
+    const libraryId = (process.env.BUNNY_LIBRARY_ID || '').trim();
+    const expirationTime = Math.floor(Date.now() / 1000) + 3600;
+    const signature = require('crypto')
+      .createHash('sha256')
+      .update(libraryId + apiKey + String(expirationTime) + videoId)
+      .digest('hex');
+
+    const bunnyService = require('../services/bunnyService');
+    const embedUrl = bunnyService.getEmbedUrl(videoId);
+
+    // Save embed URL to course promo_video_url immediately
+    await query(
+      `UPDATE courses SET promo_video_url = $1 WHERE id = $2`,
+      [embedUrl, course_id]
+    );
+
+    res.json({
+      videoId,
+      libraryId:              parseInt(libraryId, 10),
+      authorizationSignature: signature,
+      authorizationExpire:    expirationTime,
+      embedUrl,
+    });
+  } catch (err) {
+    console.error('[BunnyTUS Promo Token]', err.response?.data || err.message);
+    next(err);
+  }
+};
+
+module.exports = { upload, uploadFile, uploadVideoToLesson, uploadVideoToBunny, getBunnyTusToken, bunnyTusComplete, getBunnyTusTokenPromo, setBunnyThumbnail, refreshLessonDuration, refreshAllDurations, downloadFile, streamVideo, listCourseFiles, deleteFile, USE_S3 };

@@ -1,0 +1,455 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import {
+  Loader2, BookOpen, ShoppingCart, ArrowLeft, CreditCard,
+  Smartphone, Store, Wallet, Globe2, CheckCircle, Copy,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import api from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
+import { formatPrice } from '@/lib/utils';
+
+interface Course {
+  id: string; title: string; description: string; type: string;
+  price: number; duration_hours: number;
+}
+
+type Method = 'card' | 'wallet' | 'kiosk' | 'valu' | 'stripe' | 'easykash';
+
+interface MethodsResponse {
+  paymob:   { enabled: boolean; methods: Record<string, boolean> };
+  stripe:   { enabled: boolean };
+  easykash: { enabled: boolean };
+}
+
+interface FormValues { phone: string; wallet_number?: string }
+
+const METHOD_INFO: Record<Method, { label: string; icon: any; desc: string; foreign?: boolean }> = {
+  card:     { label: 'فيزا / ماستركارد / ميزة',   icon: CreditCard, desc: 'دفع آمن بالبطاقة عبر Paymob' },
+  wallet:   { label: 'محفظة / إنستاباي',          icon: Smartphone, desc: 'فودافون كاش، أورانج موني، إنستاباي' },
+  kiosk:    { label: 'فوري / أمان (نقدي)',         icon: Store,      desc: 'ادفع نقداً في أي منفذ فوري أو أمان' },
+  valu:     { label: 'ڤاليو (تقسيط)',              icon: Wallet,     desc: 'قسّط على 6/9/12/18 شهر' },
+  stripe:   { label: 'بطاقة دولية (خارج مصر)',    icon: Globe2,     desc: 'Visa / Mastercard / Apple Pay — بالدولار', foreign: true },
+  easykash: { label: 'EasyKash',                   icon: CreditCard, desc: 'فيزا، فوري، محفظة، أمان — مدعوم بـ EasyKash' },
+};
+
+export default function BuyCoursePage() {
+  const { id } = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+
+  const [course, setCourse] = useState<Course | null>(null);
+  const [methods, setMethods] = useState<MethodsResponse | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<Method>('card');
+
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [kioskRef, setKioskRef] = useState<string | null>(null);
+  const [walletMessage, setWalletMessage] = useState<string | null>(null);
+  const [polling, setPolling] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [couponCode, setCouponCode]   = useState('');
+  const [couponData, setCouponData]   = useState<{ valid: boolean; amount_off: number; final_price: number; discount_type: string; discount_value: number; error?: string } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<FormValues>();
+
+  // Handle return from Stripe / EasyKash after payment redirect
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const pid    = searchParams.get('payment_id');
+    if (status === 'success' && pid) {
+      toast.success('تم الدفع بنجاح! 🎉');
+      setTimeout(() => router.push(`/courses/${id}`), 1500);
+    } else if (status === 'pending' && pid) {
+      // EasyKash pending — start polling
+      setPaymentId(pid);
+      setPolling(true);
+      toast('⏳ الدفع قيد المعالجة — سيتم تأكيده قريباً');
+    } else if (status === 'cancel') {
+      toast.error('تم إلغاء الدفع');
+    }
+  }, [searchParams, id, router]);
+
+  useEffect(() => {
+    // If returning from EasyKash with success, redirect to course directly (even if session expired)
+    const returnStatus = searchParams.get('status');
+    if (returnStatus === 'success') {
+      router.push(`/courses/${id}`);
+      return;
+    }
+    if (!user) { router.push(`/login?redirect=/courses/${id}/buy`); return; }
+    Promise.all([
+      api.get(`/courses/${id}`),
+      api.get('/payments/methods'),
+    ]).then(([cRes, mRes]) => {
+      setCourse(cRes.data.course);
+      setMethods(mRes.data);
+      // Pick first enabled method as default
+      const m = mRes.data as MethodsResponse;
+      if (m.paymob.enabled) {
+        const first = (['card', 'wallet', 'kiosk', 'valu'] as Method[]).find((k) => m.paymob.methods[k]);
+        if (first) setSelectedMethod(first);
+      } else if (m.stripe.enabled) {
+        setSelectedMethod('stripe');
+      } else if (m.easykash?.enabled) {
+        setSelectedMethod('easykash');
+      }
+      if (cRes.data.course.type === 'live') {
+        toast.error('الكورسات المباشرة لا تُشترى أونلاين');
+        router.push(`/courses/${id}`);
+      }
+    }).finally(() => setLoading(false));
+  }, [id, user, router]);
+
+  // Poll payment status
+  useEffect(() => {
+    if (!paymentId || !polling) return;
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await api.get('/payments/my');
+        const payment = data.find((p: any) => p.id === paymentId);
+        if (payment?.status === 'success') {
+          clearInterval(interval);
+          setPolling(false);
+          toast.success('تم الدفع بنجاح! تم تسجيلك في الكورس 🎉');
+          setTimeout(() => router.push(`/courses/${id}`), 1500);
+        } else if (payment?.status === 'failed') {
+          clearInterval(interval);
+          setPolling(false);
+          toast.error('فشل الدفع — حاول مرة أخرى');
+          setIframeUrl(null);
+          setKioskRef(null);
+          setWalletMessage(null);
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [paymentId, polling, id, router]);
+
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    try {
+      const { data } = await api.post('/coupons/validate', { code: couponCode.trim(), course_id: id });
+      setCouponData(data);
+      if (data.valid) toast.success(`✅ خصم ${data.discount_type === 'percent' ? data.discount_value + '%' : formatPrice(data.discount_value)}`);
+      else toast.error(data.error || 'كود غير صالح');
+    } catch (e: any) {
+      setCouponData({ valid: false, amount_off: 0, final_price: course?.price || 0, discount_type: '', discount_value: 0, error: e?.response?.data?.error || 'كود غير صالح' });
+      toast.error(e?.response?.data?.error || 'كود غير صالح');
+    } finally { setCouponLoading(false); }
+  };
+
+  const onSubmit = async (data: FormValues) => {
+    setSubmitting(true);
+    try {
+      const res = await api.post('/payments/initiate', {
+        course_id: id,
+        phone: data.phone,
+        method: selectedMethod,
+        wallet_number: data.wallet_number,
+        coupon_code: couponData?.valid ? couponCode.trim() : undefined,
+      });
+      const { type, iframe_url, redirect_url, url, reference, message, payment_id } = res.data;
+
+      // Free enrollment via 100% coupon — no payment gateway needed
+      if (type === 'free') {
+        toast.success(message || 'تم التسجيل مجاناً بالكوبون 🎉');
+        setTimeout(() => router.push(`/courses/${id}`), 1500);
+        return;
+      }
+
+      setPaymentId(payment_id);
+      setPolling(true);
+
+      if (type === 'iframe') setIframeUrl(iframe_url);
+      else if (type === 'redirect') window.location.href = url;
+      else if (type === 'wallet') {
+        setWalletMessage(message);
+        if (redirect_url) window.open(redirect_url, '_blank');
+      }
+      else if (type === 'kiosk') setKioskRef(reference);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'تعذر بدء عملية الدفع');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
+      </div>
+    );
+  }
+  if (!course) return null;
+
+  const availableMethods: Method[] = [];
+  if (methods?.paymob.enabled) {
+    if (methods.paymob.methods.card)   availableMethods.push('card');
+    if (methods.paymob.methods.wallet) availableMethods.push('wallet');
+    if (methods.paymob.methods.kiosk)  availableMethods.push('kiosk');
+    if (methods.paymob.methods.valu)   availableMethods.push('valu');
+  }
+  if (methods?.stripe.enabled)   availableMethods.push('stripe');
+  if (methods?.easykash?.enabled) availableMethods.push('easykash');
+
+  // ─── Show payment-in-progress UI ───
+  if (iframeUrl || kioskRef || walletMessage) {
+    return (
+      <div className="min-h-screen bg-dark-900">
+        <div className="max-w-3xl mx-auto px-6 py-10">
+          {iframeUrl && (
+            <div className="card">
+              <div className="flex items-center gap-2 text-yellow-400 text-sm mb-4">
+                <Loader2 className="w-4 h-4 animate-spin" /> في انتظار إكمال الدفع...
+              </div>
+              <iframe src={iframeUrl} className="w-full rounded-lg border border-dark-700" style={{ height: '700px' }} title="Payment" />
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-slate-400 text-xs">سيتم تسجيلك تلقائياً في الكورس بعد إتمام الدفع</p>
+                <button onClick={() => { setIframeUrl(null); setPolling(false); }} className="text-sm text-slate-400 hover:text-white">إلغاء</button>
+              </div>
+            </div>
+          )}
+
+          {kioskRef && (
+            <div className="card">
+              <div className="text-center py-6">
+                <Store className="w-14 h-14 text-brand-400 mx-auto mb-4" />
+                <h2 className="text-xl font-bold text-white mb-3">رقم الدفع المرجعي</h2>
+                <p className="text-slate-400 text-sm mb-4">اذهب لأقرب فرع <strong className="text-white">فوري</strong> أو <strong className="text-white">أمان</strong> وادفع باستخدام الرقم التالي:</p>
+                <div className="bg-dark-800 border-2 border-brand-500 rounded-xl p-6 mb-4 inline-block">
+                  <p className="text-3xl font-mono font-bold text-brand-400 tracking-wider">{kioskRef}</p>
+                </div>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(kioskRef); toast.success('تم النسخ'); }}
+                  className="btn-secondary flex items-center gap-2 mx-auto"
+                >
+                  <Copy className="w-4 h-4" /> نسخ الرقم
+                </button>
+                <p className="text-slate-500 text-xs mt-6">سيتم تسجيلك تلقائياً في الكورس بمجرد إتمام الدفع. الرقم صالح لمدة 24 ساعة.</p>
+              </div>
+            </div>
+          )}
+
+          {walletMessage && (
+            <div className="card">
+              <div className="text-center py-6">
+                <Smartphone className="w-14 h-14 text-brand-400 mx-auto mb-4" />
+                <h2 className="text-xl font-bold text-white mb-3">أكمل الدفع على محفظتك</h2>
+                <p className="text-slate-300 text-sm">{walletMessage}</p>
+                <p className="text-slate-500 text-xs mt-6">سيتم تأكيد الدفع تلقائياً بعد إكماله من تطبيق محفظتك.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Main checkout form ───
+  return (
+    <div className="min-h-screen bg-dark-900">
+      <div className="border-b border-dark-700 px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center gap-3">
+          <Link href={`/courses/${id}`} className="text-slate-400 hover:text-white flex items-center gap-1 text-sm">
+            <ArrowLeft className="w-4 h-4" /> رجوع
+          </Link>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Order summary */}
+          <div className="card lg:col-span-1 h-fit">
+            <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-brand-400" /> ملخص الطلب
+            </h2>
+            <div className="w-full h-28 bg-gradient-to-br from-brand-500/30 to-purple-500/30 rounded-lg flex items-center justify-center mb-3">
+              <BookOpen className="w-8 h-8 text-brand-400" />
+            </div>
+            <h3 className="font-semibold text-white text-sm mb-2 line-clamp-2">{course.title}</h3>
+            <p className="text-slate-400 text-xs mb-4 line-clamp-2">{course.description}</p>
+            <div className="border-t border-dark-700 pt-3 space-y-1.5 text-sm">
+              <div className="flex justify-between text-slate-400"><span>المدة</span><span className="text-white">{course.duration_hours} ساعة</span></div>
+              <div className="flex justify-between text-slate-400"><span>النوع</span><span className="text-white capitalize">{course.type}</span></div>
+
+              {/* Coupon input */}
+              <div className="border-t border-dark-700 pt-3 mt-3">
+                <p className="text-xs text-slate-400 mb-1.5">كود خصم؟</p>
+                <div className="flex gap-2">
+                  <input
+                    value={couponCode}
+                    onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponData(null); }}
+                    onKeyDown={(e) => e.key === 'Enter' && validateCoupon()}
+                    placeholder="أدخل الكود"
+                    className="input flex-1 text-sm text-center tracking-widest font-mono"
+                  />
+                  <button type="button" onClick={validateCoupon} disabled={couponLoading || !couponCode.trim()}
+                    className="px-3 py-2 rounded-lg bg-dark-700 border border-dark-600 text-slate-300 text-xs hover:border-brand-500/50 hover:text-brand-400 transition-all disabled:opacity-40">
+                    {couponLoading ? '...' : 'تحقق'}
+                  </button>
+                </div>
+                {couponData?.valid && (
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="text-green-400">✅ تم تطبيق الخصم</span>
+                    <button onClick={() => { setCouponData(null); setCouponCode(''); }} className="text-red-400 hover:text-red-300">× إلغاء</button>
+                  </div>
+                )}
+                {couponData && !couponData.valid && (
+                  <p className="text-red-400 text-xs mt-1">❌ {couponData.error}</p>
+                )}
+              </div>
+
+              <div className="border-t border-dark-700 pt-3 mt-3 space-y-1">
+                {couponData?.valid && (
+                  <>
+                    <div className="flex justify-between text-slate-400">
+                      <span>السعر الأصلي</span>
+                      <span className="line-through">{formatPrice(course.price)}</span>
+                    </div>
+                    <div className="flex justify-between text-green-400">
+                      <span>الخصم</span>
+                      <span>- {formatPrice(couponData.amount_off)}</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-300">الإجمالي</span>
+                  <span className="text-white text-lg">{formatPrice(couponData?.valid ? couponData.final_price : course.price)}</span>
+                </div>
+              </div>
+
+              {selectedMethod === 'stripe' && (
+                <p className="text-xs text-blue-400 mt-2">💱 سيُحوَّل إلى الدولار عند الدفع</p>
+              )}
+            </div>
+          </div>
+
+          {/* Payment method selector + form */}
+          <div className="lg:col-span-2 space-y-5">
+            {/* Method cards */}
+            <div>
+              <h2 className="text-base font-bold text-white mb-3">اختر وسيلة الدفع</h2>
+              {availableMethods.length === 0 ? (
+                <div className="card text-center py-6">
+                  <p className="text-slate-400 text-sm">لا توجد وسائل دفع متاحة حالياً.</p>
+                  <p className="text-slate-500 text-xs mt-1">يرجى التواصل مع الإدارة لتفعيل الدفع.</p>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {availableMethods.map((m) => {
+                    const info = METHOD_INFO[m];
+                    const Icon = info.icon;
+                    const active = selectedMethod === m;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setSelectedMethod(m)}
+                        className={`p-4 rounded-xl border-2 text-right transition-all ${
+                          active
+                            ? 'border-brand-500 bg-brand-500/10'
+                            : 'border-dark-700 bg-dark-800 hover:border-dark-600'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg ${active ? 'bg-brand-500/20' : 'bg-dark-700'}`}>
+                            <Icon className={`w-5 h-5 ${active ? 'text-brand-400' : 'text-slate-400'}`} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-white text-sm">{info.label}</span>
+                              {active && <CheckCircle className="w-4 h-4 text-brand-400" />}
+                              {info.foreign && <span className="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">دولي</span>}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1">{info.desc}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Form */}
+            {availableMethods.length > 0 && (
+              <form onSubmit={handleSubmit(onSubmit)} className="card space-y-4">
+                <h3 className="font-semibold text-white text-sm">بيانات الدفع</h3>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1.5">الاسم</label>
+                    <input value={user?.name || ''} disabled className="input opacity-60 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1.5">البريد</label>
+                    <input value={user?.email || ''} disabled className="input opacity-60 text-sm" />
+                  </div>
+                </div>
+
+                {selectedMethod !== 'stripe' && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1.5">رقم الموبايل *</label>
+                    <input
+                      {...register('phone', {
+                        required: 'رقم الموبايل مطلوب',
+                        pattern: { value: /^\+?[0-9]{7,15}$/, message: 'أدخل رقم موبايل صحيح' },
+                      })}
+                      type="tel"
+                      placeholder="01xxxxxxxxx أو +966xxxxxxxxx"
+                      className="input"
+                    />
+                    {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>}
+                  </div>
+                )}
+
+                {selectedMethod === 'wallet' && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1.5">رقم المحفظة *</label>
+                    <input
+                      {...register('wallet_number', {
+                        required: selectedMethod === 'wallet' ? 'رقم المحفظة مطلوب' : false,
+                        pattern: { value: /^01\d{9}$/, message: 'أدخل رقم محفظة صحيح' },
+                      })}
+                      type="tel"
+                      placeholder="01xxxxxxxxx"
+                      className="input"
+                    />
+                    {errors.wallet_number && <p className="text-red-400 text-xs mt-1">{errors.wallet_number.message}</p>}
+                    <p className="text-xs text-slate-500 mt-1">سيُرسل طلب الدفع لهذا الرقم — أكمله من تطبيق المحفظة.</p>
+                  </div>
+                )}
+
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-xs text-blue-300">
+                  🔒 الدفع آمن ومشفّر. لن يتم خصم أي مبلغ إلا بعد تأكيدك.
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-primary w-full flex items-center justify-center gap-2"
+                >
+                  {submitting
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> جارِ التسجيل...</>
+                    : couponData?.valid && couponData.final_price === 0
+                      ? '🎉 التسجيل المجاني'
+                      : `ادفع ${formatPrice(couponData?.valid ? couponData.final_price : course.price)}`
+                  }
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

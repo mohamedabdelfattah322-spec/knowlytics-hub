@@ -9,7 +9,7 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   setUser: (u: User | null) => void;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, remember?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
 }
@@ -22,11 +22,12 @@ export const useAuth = create<AuthState>()(
 
       setUser: (user) => set({ user }),
 
-      login: async (email, password) => {
+      login: async (email, password, remember = true) => {
         set({ loading: true });
         try {
           const { data } = await api.post('/auth/login', { email, password });
-          saveToken(data.token);
+          // remember=true → 30 days; remember=false → session cookie (closes with browser)
+          saveToken(data.token, remember ? 30 : undefined);
           set({ user: data.user, loading: false });
         } catch (err) {
           set({ loading: false });

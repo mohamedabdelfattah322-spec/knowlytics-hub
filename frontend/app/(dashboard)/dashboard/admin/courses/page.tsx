@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Plus, Pencil, Trash2, Eye, EyeOff, Search, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { formatCurrency, levelColor } from '@/lib/utils';
+import { formatPrice, levelColor } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 interface Course {
@@ -109,7 +109,7 @@ export default function AdminCoursesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4"><span className={levelColor(c.level)}>{c.level}</span></td>
-                    <td className="px-4 py-4 text-slate-300">{formatCurrency(c.price)}</td>
+                    <td className="px-4 py-4 text-slate-300">{formatPrice(c.price)}</td>
                     <td className="px-4 py-4 text-slate-300">{c.enrollment_count}</td>
                     <td className="px-4 py-4">
                       <span className={cn('badge', c.is_published ? 'badge-green' : 'badge-yellow')}>

@@ -1,29 +1,39 @@
 const { query } = require('../config/database');
 const emailService = require('../services/emailService');
 
-// POST /api/enrollments  — admin enrolls a student manually
+// POST /api/enrollments
+// - Admin: can enroll any student (pass user_id + optional payment_ref)
+// - Student: can self-enroll in free courses only
 const enroll = async (req, res, next) => {
   try {
     const { course_id, user_id, payment_ref } = req.body;
 
-    // Only admins can enroll students
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'التسجيل يتم عن طريق الأدمن فقط' });
-    }
+    const isAdmin = req.user.role === 'admin';
+    const targetUserId = isAdmin && user_id ? user_id : req.user.user_id;
 
     const courseResult = await query('SELECT * FROM courses WHERE id = $1', [course_id]);
     if (!courseResult.rows.length) return res.status(404).json({ error: 'Course not found' });
 
     const course = courseResult.rows[0];
 
-    // Paid course requires a payment reference
-    if (parseFloat(course.price) > 0 && !payment_ref) {
+    // Students can only self-enroll in free courses
+    if (!isAdmin) {
+      if (parseFloat(course.price) > 0) {
+        return res.status(403).json({ error: 'الكورس مدفوع — التسجيل يتم عن طريق الأدمن فقط' });
+      }
+      if (targetUserId !== req.user.user_id) {
+        return res.status(403).json({ error: 'غير مسموح' });
+      }
+    }
+
+    // Admin enrolling in paid course requires a payment reference
+    if (isAdmin && parseFloat(course.price) > 0 && !payment_ref) {
       return res.status(400).json({ error: 'الكورس مدفوع — أدخل رقم مرجع الدفع أولاً' });
     }
 
     const existing = await query(
       'SELECT id, is_active FROM enrollments WHERE user_id = $1 AND course_id = $2',
-      [user_id, course_id]
+      [targetUserId, course_id]
     );
 
     let result;
@@ -32,12 +42,12 @@ const enroll = async (req, res, next) => {
       result = await query(
         `UPDATE enrollments SET is_active = true, payment_ref = $1, enrolled_at = NOW()
          WHERE user_id = $2 AND course_id = $3 RETURNING *`,
-        [payment_ref || null, user_id, course_id]
+        [payment_ref || null, targetUserId, course_id]
       );
     } else {
       result = await query(
         `INSERT INTO enrollments (user_id, course_id, payment_ref) VALUES ($1, $2, $3) RETURNING *`,
-        [user_id, course_id, payment_ref || null]
+        [targetUserId, course_id, payment_ref || null]
       );
     }
 

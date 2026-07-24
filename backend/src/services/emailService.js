@@ -1,21 +1,68 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_PORT === '465',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// ─── Email Provider Setup ────────────────────────────────
+// Priority: RESEND_API_KEY (HTTP API) > SMTP (direct connection)
 
-const FROM = process.env.EMAIL_FROM || 'Knowlytics Hub <noreply@knowlyticshub.com>';
+let sendMail;
 
-const sendMail = async ({ to, subject, html }) => {
-  if (process.env.NODE_ENV === 'test') return; // suppress in tests
-  await transporter.sendMail({ from: FROM, to, subject, html });
-};
+const FROM = process.env.EMAIL_FROM || 'Knowlytics Hub <Sales@knowlyticshub.com>';
+
+if (process.env.RESEND_API_KEY) {
+  // ── Resend (HTTP API — works on all cloud platforms) ──
+  const { Resend } = require('resend');
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  sendMail = async ({ to, subject, html }) => {
+    if (process.env.NODE_ENV === 'test') return;
+    try {
+      await resend.emails.send({ from: FROM, to, subject, html });
+      console.log(`📧 Email sent (Resend) → ${to}: ${subject}`);
+    } catch (err) {
+      console.error(`❌ Email failed (Resend) → ${to}:`, err.message);
+      throw err;
+    }
+  };
+  console.log('📧 Email provider: Resend (HTTP API)');
+
+} else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_USER !== 'your@gmail.com') {
+  // ── SMTP (direct connection) ──
+  const smtpPort = (process.env.SMTP_PORT || '587').trim();
+  const transporter = nodemailer.createTransport({
+    host: (process.env.SMTP_HOST || '').trim(),
+    port: parseInt(smtpPort),
+    secure: smtpPort === '465',
+    requireTLS: smtpPort !== '465',
+    auth: {
+      user: (process.env.SMTP_USER || '').trim(),
+      pass: (process.env.SMTP_PASS || '').trim(),
+    },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+  });
+
+  sendMail = async ({ to, subject, html }) => {
+    if (process.env.NODE_ENV === 'test') return;
+    try {
+      await transporter.sendMail({ from: FROM, to, subject, html });
+      console.log(`📧 Email sent (SMTP) → ${to}: ${subject}`);
+    } catch (err) {
+      console.error(`❌ Email failed (SMTP) → ${to}:`, err.message);
+      throw err;
+    }
+  };
+  console.log('📧 Email provider: SMTP');
+
+} else {
+  // ── Fallback: log only ──
+  sendMail = async ({ to, subject }) => {
+    console.log('\n📧 [EMAIL FALLBACK — not configured]');
+    console.log('   To:     ', to);
+    console.log('   Subject:', subject);
+    console.log('   (set RESEND_API_KEY or SMTP vars to send)\n');
+  };
+  console.log('📧 Email provider: NONE (logging only)');
+}
 
 // ─── Templates ────────────────────────────────────────────
 
@@ -98,9 +145,139 @@ const sendNewLiveSessionEmail = async (user, meeting) => {
   });
 };
 
+const sendRefundEmail = async (user, payment, reason) => {
+  await sendMail({
+    to: user.email,
+    subject: `💸 استرداد المبلغ — ${payment.amount} جنيه`,
+    html: baseTemplate(`
+      <h2>تم استرداد مبلغك</h2>
+      <p>مرحباً ${user.name}،</p>
+      <p>تم استرداد مبلغ <strong>${payment.amount} ${payment.currency}</strong> الخاص بطلبك.</p>
+      ${reason ? `<p>السبب: ${reason}</p>` : ''}
+      <p>سيتم إرجاع المبلغ خلال 5-7 أيام عمل حسب بنكك.</p>
+      <a href="${process.env.FRONTEND_URL}/dashboard/student" class="btn">الذهاب للداشبورد</a>
+    `),
+  });
+};
+
+const sendBroadcastEmail = async (to, subject, htmlBody) => {
+  await sendMail({ to, subject, html: baseTemplate(htmlBody) });
+};
+
+const sendPasswordResetEmail = async (user, resetUrl) => {
+  await sendMail({
+    to: user.email,
+    subject: 'إعادة تعيين كلمة المرور — Knowlytics Hub',
+    html: baseTemplate(`
+      <h1>مرحباً ${user.name}</h1>
+      <p>وصلنا طلب إعادة تعيين كلمة المرور لحسابك. اضغط الزر التالي لتعيين كلمة مرور جديدة:</p>
+      <a href="${resetUrl}" class="btn">إعادة تعيين كلمة المرور</a>
+      <p style="margin-top:20px; color:#94a3b8; font-size:13px;">
+        هذا الرابط صالح لمدة <strong>30 دقيقة فقط</strong>. إذا لم تطلب إعادة التعيين، تجاهل هذه الرسالة.
+      </p>
+      <p style="color:#94a3b8; font-size:12px; margin-top:10px;">
+        إن لم يعمل الزر، انسخ هذا الرابط إلى متصفحك:<br>
+        <span style="word-break:break-all; color:#6366f1;">${resetUrl}</span>
+      </p>
+    `),
+  });
+};
+
+const sendLoginAlertEmail = async (user, { ip, deviceInfo, time, isNewIP, isNewDevice }) => {
+  const reason = isNewIP && isNewDevice
+    ? 'من جهاز جديد وعنوان IP مختلف'
+    : isNewIP ? 'من عنوان IP مختلف' : 'من جهاز جديد';
+
+  await sendMail({
+    to: user.email,
+    subject: '🔐 تنبيه أمان — تسجيل دخول جديد لحسابك',
+    html: baseTemplate(`
+      <h2>تسجيل دخول جديد ${reason}</h2>
+      <p>مرحباً ${user.name}،</p>
+      <p>تم تسجيل الدخول إلى حسابك ${reason}. إليك التفاصيل:</p>
+      <table style="width:100%; border-collapse:collapse; margin:16px 0;">
+        <tr><td style="padding:8px; color:#94a3b8;">📱 الجهاز</td><td style="padding:8px; color:#f8fafc;">${deviceInfo}</td></tr>
+        <tr><td style="padding:8px; color:#94a3b8;">🌐 عنوان IP</td><td style="padding:8px; color:#f8fafc;">${ip}</td></tr>
+        <tr><td style="padding:8px; color:#94a3b8;">🕐 الوقت</td><td style="padding:8px; color:#f8fafc;">${time}</td></tr>
+      </table>
+      <p style="color:#f59e0b; font-weight:600;">⚠️ إذا لم تكن أنت، غيّر كلمة المرور فوراً:</p>
+      <a href="${process.env.FRONTEND_URL}/forgot-password" class="btn" style="background:#ef4444;">تغيير كلمة المرور الآن</a>
+      <p style="margin-top:16px; color:#64748b; font-size:13px;">إذا كنت أنت من سجّل الدخول، تجاهل هذه الرسالة.</p>
+    `),
+  });
+};
+
+const sendPasswordChangedEmail = async (user) => {
+  await sendMail({
+    to: user.email,
+    subject: '🔑 تم تغيير كلمة المرور — Knowlytics Hub',
+    html: baseTemplate(`
+      <h2>تم تغيير كلمة المرور</h2>
+      <p>مرحباً ${user.name}،</p>
+      <p>تم تغيير كلمة المرور الخاصة بحسابك بنجاح.</p>
+      <p>تم تسجيل الخروج من جميع الأجهزة الأخرى للأمان.</p>
+      <p style="color:#f59e0b; font-weight:600;">⚠️ إذا لم تقم بهذا التغيير، تواصل مع الدعم فوراً:</p>
+      <a href="mailto:Sales@knowlyticshub.com" class="btn" style="background:#ef4444;">تواصل مع الدعم</a>
+    `),
+  });
+};
+
+const sendLoginInfoEmail = async (user, { ip, deviceInfo, time }) => {
+  await sendMail({
+    to: user.email,
+    subject: '✅ تم تسجيل الدخول لحسابك — Knowlytics Hub',
+    html: baseTemplate(`
+      <h2>تسجيل دخول ناجح</h2>
+      <p>مرحباً ${user.name}،</p>
+      <p>تم تسجيل الدخول إلى حسابك بنجاح. إليك التفاصيل:</p>
+      <table style="width:100%; border-collapse:collapse; margin:16px 0; background:#0f172a; border-radius:8px;">
+        <tr><td style="padding:10px 16px; color:#94a3b8; font-size:13px;">📱 الجهاز</td><td style="padding:10px 16px; color:#f8fafc; font-size:13px;">${deviceInfo}</td></tr>
+        <tr><td style="padding:10px 16px; color:#94a3b8; font-size:13px;">🌐 عنوان IP</td><td style="padding:10px 16px; color:#f8fafc; font-size:13px;">${ip}</td></tr>
+        <tr><td style="padding:10px 16px; color:#94a3b8; font-size:13px;">🕐 الوقت</td><td style="padding:10px 16px; color:#f8fafc; font-size:13px;">${time}</td></tr>
+      </table>
+      <p style="color:#94a3b8; font-size:13px;">إذا لم تكن أنت من سجّل الدخول، غيّر كلمة المرور فوراً:</p>
+      <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/forgot-password" class="btn" style="background:#ef4444;">تغيير كلمة المرور</a>
+      <p style="margin-top:16px; color:#64748b; font-size:12px;">هذا إشعار أمان تلقائي يُرسل مع كل تسجيل دخول لحماية حسابك.</p>
+    `),
+  });
+};
+
+const sendWelcomeEmail = async (user) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  await sendMail({
+    to: user.email,
+    subject: '🎉 مرحباً بك في Knowlytics Hub!',
+    html: baseTemplate(`
+      <h2>أهلاً وسهلاً ${user.name}! 🎓</h2>
+      <p>تم إنشاء حسابك بنجاح على <strong>Knowlytics Hub</strong>.</p>
+      <p>يمكنك الآن:</p>
+      <ul style="color:#94a3b8; line-height:2;">
+        <li>📚 تصفّح الدورات المتاحة والتسجيل فيها</li>
+        <li>📊 متابعة تقدّمك ونتائجك</li>
+        <li>🏆 الحصول على شهادات إتمام الدورات</li>
+        <li>💬 التواصل مع المدربين والطلاب</li>
+      </ul>
+      <p style="margin-top:20px;">ابدأ رحلتك التعليمية الآن:</p>
+      <a href="${frontendUrl}/courses" class="btn">تصفّح الدورات</a>
+      <table style="width:100%; border-collapse:collapse; margin:24px 0; background:#0f172a; border-radius:8px;">
+        <tr><td style="padding:12px 16px; color:#94a3b8; font-size:13px;">📧 البريد</td><td style="padding:12px 16px; color:#f8fafc; font-size:13px;">${user.email}</td></tr>
+        <tr><td style="padding:12px 16px; color:#94a3b8; font-size:13px;">👤 الاسم</td><td style="padding:12px 16px; color:#f8fafc; font-size:13px;">${user.name}</td></tr>
+      </table>
+      <p style="color:#64748b; font-size:12px;">إذا لم تقم بإنشاء هذا الحساب، تجاهل هذه الرسالة أو تواصل مع الدعم.</p>
+    `),
+  });
+};
+
 module.exports = {
   sendEnrollmentConfirmation,
   sendCourseCompletionEmail,
   sendInactivityReminder,
   sendNewLiveSessionEmail,
+  sendRefundEmail,
+  sendBroadcastEmail,
+  sendPasswordResetEmail,
+  sendLoginAlertEmail,
+  sendLoginInfoEmail,
+  sendPasswordChangedEmail,
+  sendWelcomeEmail,
 };

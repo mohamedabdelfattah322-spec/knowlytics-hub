@@ -15,25 +15,52 @@ const getLesson = async (req, res, next) => {
 
     const lesson = lessonResult.rows[0];
 
-    // Check enrollment unless admin or lesson is free preview
+    // Check access unless admin or lesson is free preview
     if (!lesson.is_preview && req.user.role !== 'admin') {
+      // 1. Check enrollment (not expired)
       const enrollment = await query(
-        `SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2 AND is_active = true`,
+        `SELECT id FROM enrollments
+         WHERE user_id = $1 AND course_id = $2 AND is_active = true
+           AND (expires_at IS NULL OR expires_at > NOW())`,
         [userId, lesson.course_id]
       );
-      if (!enrollment.rows.length) {
-        return res.status(403).json({ error: 'Not enrolled in this course' });
+      let hasAccess = enrollment.rows.length > 0;
+
+      // 2. If not enrolled, check active bundle subscription
+      if (!hasAccess) {
+        const bundle = await query(
+          `SELECT bs.id FROM bundle_subscriptions bs
+           JOIN bundles b ON b.id = bs.bundle_id
+           LEFT JOIN bundle_courses bc ON bc.bundle_id = b.id
+           WHERE bs.user_id = $1 AND bs.is_active = true
+             AND (bs.expires_at IS NULL OR bs.expires_at > NOW())
+             AND b.is_active = true
+             AND (bc.course_id = $2 OR NOT EXISTS (SELECT 1 FROM bundle_courses WHERE bundle_id = b.id))
+           LIMIT 1`,
+          [userId, lesson.course_id]
+        );
+        hasAccess = bundle.rows.length > 0;
+      }
+
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'صلاحية الوصول للكورس انتهت أو لم تشترك بعد' });
       }
     }
 
-    // Build video URL — S3 signed URL or local stream endpoint
+    // Build video URL — Bunny > external link > S3 signed URL > local stream
     let videoUrl = null;
-    if (lesson.video_key) {
+    if (lesson.bunny_video_id) {
+      // Bunny.net hosted video — generate fresh signed URL (expires in 4h)
+      const bunnyService = require('../services/bunnyService');
+      videoUrl = bunnyService.getSignedEmbedUrl(lesson.bunny_video_id, 14400);
+    } else if (lesson.video_url) {
+      // External URL (Google Drive, YouTube, Vimeo, etc.) — use as-is
+      videoUrl = lesson.video_url;
+    } else if (lesson.video_key) {
       if (USE_S3) {
         const { getSignedVideoUrl } = require('../config/aws');
         videoUrl = await getSignedVideoUrl(lesson.video_key, 3600);
       } else {
-        // Local streaming via authenticated endpoint
         videoUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/files/stream/${lesson.video_key}`;
       }
     }
@@ -76,7 +103,7 @@ const createLesson = async (req, res, next) => {
 const updateLesson = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const allowed = ['title', 'type', 'video_key', 'duration_minutes', 'order_index', 'is_preview', 'content'];
+    const allowed = ['title', 'type', 'video_key', 'video_url', 'duration_minutes', 'order_index', 'is_preview', 'content'];
     const updates = [];
     const values = [];
     Object.entries(req.body).forEach(([k, v]) => {
@@ -146,7 +173,7 @@ const recalculateCourseProgress = async (userId, courseId) => {
   const pct = total_lessons > 0 ? Math.round((completed_lessons / total_lessons) * 100) : 0;
 
   await query(
-    `UPDATE enrollments SET progress_pct = $1, completed_at = CASE WHEN $1 = 100 THEN NOW() ELSE NULL END
+    `UPDATE enrollments SET progress_pct = $1::smallint, completed_at = CASE WHEN $1::int = 100 THEN NOW() ELSE NULL END
      WHERE user_id = $2 AND course_id = $3`,
     [pct, userId, courseId]
   );
