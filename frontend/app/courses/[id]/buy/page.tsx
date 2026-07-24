@@ -402,10 +402,10 @@ export default function BuyCoursePage() {
                     <input
                       {...register('phone', {
                         required: 'رقم الموبايل مطلوب',
-                        pattern: { value: /^01\d{9}$/, message: 'أدخل رقم موبايل مصري صحيح' },
+                        pattern: { value: /^\+?[0-9]{7,15}$/, message: 'أدخل رقم موبايل صحيح' },
                       })}
                       type="tel"
-                      placeholder="01xxxxxxxxx"
+                      placeholder="01xxxxxxxxx أو +966xxxxxxxxx"
                       className="input"
                     />
                     {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>}
